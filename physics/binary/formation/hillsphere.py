@@ -1,4 +1,9 @@
+import sys
+
 import numpy as np
+import astropy.constants as const
+
+G = const.G.cgs.value # gravitational constant
 
 
 def calculate_hill_sphere(prograde_bh_locations, prograde_bh_masses, mass_smbh):
@@ -426,6 +431,48 @@ def binary_check(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_
     #return all_binary_indices
     return final_binary_indices
 
+def eccentricity_check(prograde_bh_locations, prograde_bh_orb_ecc, e_crit):
+    """If singleton orbital eccentricities are below the critical value (e <= e_crit (usually 0.01)), 
+    they are eligible for binary formation.
+
+    Parameters
+    ----------
+    prograde_bh_locations : float array
+        locations of prograde singleton BH at start of timestep in units of 
+        gravitational radii (r_g=GM_SMBH/c^2)
+    prograde_bh_orb_ecc : float array
+        Orbital ecc of singleton BH after damping during timestep
+    e_crit : float
+        Critical eccentricity allowing bin formation and migration
+
+    Returns
+    -------
+    subset : [2,N] int array
+        Array of indices corresponding to locations in prograde_bh_locations, prograde_bh_masses,
+        prograde_bh_spins, prograde_bh_spin_angles, prograde_bh_orb_ecc and prograde_bh_generations which corresponds
+        to binaries that form in this timestep. it has a length of the number of binaries to form (N)
+        and a width of 2.
+    sorted_bh_locations : 
+    """
+    
+    #Singleton BH with orb ecc < e_crit (candidates for binary formation)
+    print(prograde_bh_orb_ecc, e_crit, prograde_bh_orb_ecc)
+    prograde_bh_can_form_bins = np.ma.masked_where(prograde_bh_orb_ecc >e_crit, prograde_bh_orb_ecc)    
+    indices_bh_can_form_bins = np.ma.nonzero(prograde_bh_can_form_bins)
+    # Indices of those candidates for binary formation
+    allowed_to_form_bins = np.array(indices_bh_can_form_bins[0])
+    #Sort the location of the candidates
+    sorted_bh_locations = np.sort(prograde_bh_locations[allowed_to_form_bins])
+    #Sort the indices of all singleton BH (the superset)
+    sorted_bh_location_indices_superset = np.argsort(prograde_bh_locations)
+    #Set the condition for membership in candidate array to be searched/tested
+    condition = np.isin(sorted_bh_location_indices_superset, allowed_to_form_bins)
+    #Here is the subset of indices that can be tested for binarity
+    subset = np.extract(condition,sorted_bh_location_indices_superset)
+
+    return subset, sorted_bh_locations
+
+
 def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, e_crit):
     """Determines which prograde BH will form binaries in this timestep. Takes as inputs
     the singleton BH locations,masses & orbital eccentricities, and takes the candidate binary population from 
@@ -451,7 +498,8 @@ def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde
     prograde_bh_orb_ecc : float array
         Orbital ecc of singleton BH after damping during timestep
     e_crit : float
-        Critical eccentricity allowing bin formation and migration    
+        Critical eccentricity allowing bin formation and migration
+
     Returns
     -------
     all_binary_indices : [2,N] int array
@@ -461,22 +509,10 @@ def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde
         and a width of 2.
     """
 
-    #First check for BH with sufficiently damped orbital eccentricity (e<=e_crit (usually 0.01)). 
-    #This population is the sub-set of prograde BH from which we CAN form binaries.
+    # First check for BH with sufficiently damped orbital eccentricity (e<=e_crit (usually 0.01)). 
+    # This population is the sub-set of prograde BH from which we CAN form binaries.
     
-    #Singleton BH with orb ecc < e_crit (candidates for binary formation)
-    prograde_bh_can_form_bins = np.ma.masked_where(prograde_bh_orb_ecc >e_crit, prograde_bh_orb_ecc)    
-    indices_bh_can_form_bins = np.ma.nonzero(prograde_bh_can_form_bins)
-    # Indices of those candidates for binary formation
-    allowed_to_form_bins = np.array(indices_bh_can_form_bins[0])
-    #Sort the location of the candidates
-    sorted_bh_locations = np.sort(prograde_bh_locations[allowed_to_form_bins])
-    #Sort the indices of all singleton BH (the superset)
-    sorted_bh_location_indices_superset = np.argsort(prograde_bh_locations)
-    #Set the condition for membership in candidate array to be searched/tested
-    condition = np.isin(sorted_bh_location_indices_superset, allowed_to_form_bins)
-    #Here is the subset of indices that can be tested for binarity
-    subset = np.extract(condition,sorted_bh_location_indices_superset)
+    subset, sorted_bh_locations = eccentricity_check(prograde_bh_locations, prograde_bh_orb_ecc, e_crit)
     
     # Find the distances between [r1,r2,r3,r4,..] as [r2-r1,r3-r2,r4-r3,..]=[delta1,delta2,delta3..]
     # Note length of separations is 1 less than prograde_bh_locations
@@ -562,4 +598,96 @@ def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde
     
     return all_binary_indices
         
+def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, e_crit):
+    """Form binaries depending on results from scenario 2 outlined in Qian+24 (https://arxiv.org/pdf/2310.12208.pdf).
+    According to figure 10, about 1/3 of encounters that reach separations between 1.4 and 2.3 times their mutual hill
+    sphere with gas dynamical friction timescales: 0.05 < 1/tau < 0.4.
+
+    Parameters
+    ----------
+    rng : _type_
+        Random number generator that is set for this instantiation of McFACTS.
+    prograde_bh_locations : float array
+        Locations of prograde singleton BH at start of timestep in units of 
+        gravitational radii (r_g=GM_SMBH/c^2)
+    prograde_bh_masses : float array
+        Initial masses of bh in prograde orbits around SMBH in units of solar masses
+    mass_smbh : float
+        Mass of supermassive black hole in units of solar masses
+    prograde_bh_orb_ecc : float array
+        Orbital ecc of singleton BH after damping during timestep
+    e_crit : float
+        Critical eccentricity allowing bin formation and migration    
+    Returns
+    -------
+    all_binary_indices : [2,N] int array
+        array of indices corresponding to locations in prograde_bh_locations, prograde_bh_masses,
+        prograde_bh_spins, prograde_bh_spin_angles, prograde_bh_orb_ecc and prograde_bh_generations which corresponds
+        to binaries that form in this timestep. it has a length of the number of binaries to form (N)
+        and a width of 2.
+    """
+
+    # First check for BH with sufficiently damped orbital eccentricity (e<=e_crit (usually 0.01)). 
+    # This population is the sub-set of prograde BH from which we CAN form binaries.
     
+    subset, sorted_bh_locations = eccentricity_check(prograde_bh_locations, prograde_bh_orb_ecc, e_crit)
+
+    # This is the set of separations between the sorted candidate BHs
+    separations = np.diff(sorted_bh_locations)
+ 
+    # Now compute the selection critera based on QianLiLai24 figure 11
+    if len(separations) > 0:
+
+        # Separation criteria: 1.4 < K < 2.2 , where K = a1-a2/R_Hill  (factors of Hill radius R_Hill)
+
+        # Mutual Hill sphere of objects
+        R_Hill_possible_binaries = (sorted_bh_locations[:-1] + separations/2.0) * \
+            pow(((prograde_bh_masses[subset[:-1]] + \
+                  prograde_bh_masses[subset[1:]]) / \
+                    (mass_smbh * 3.0)), (1./3))
+
+        num_R_Hill = separations / R_Hill_possible_binaries
+        pass_R_Hill_indices = np.where((num_R_Hill > 1.4) & (num_R_Hill < 2.3))[0]
+
+        if len(pass_R_Hill_indices) == 0:
+            # no circularized objects pass the Hill radius test this timestep
+            all_binary_indices = []
+
+        else: # apply the friction timescale test
+            # Get indices of each pair of objects that pass the Hill radius test
+            pass_R_Hill_index_pairs = np.zeros((len(pass_R_Hill_indices), 2), dtype=int)
+            for i, ind in enumerate(pass_R_Hill_indices):
+                # Indices of the two objects with the relevant separation
+                pass_R_Hill_index_pairs[i] = subset[ind], subset[ind+1]
+
+            # Gas drag friction timescales (tau) criteria: 0.05 < 1/tau < 0.40
+            # Chose values from SG03 model at ~700 Rg around 1e8 Msun SMBH
+            sound_speed = 1e7
+            gas_density = 1e-10
+
+            pass_friction_pairs_indices = []
+            for j, ind_pairs in enumerate(pass_R_Hill_index_pairs):
+                larger_bh_index = prograde_bh_masses[ind_pairs].argmax()
+                larger_bh_mass = prograde_bh_masses[ind_pairs][larger_bh_index]
+                larger_bh_location = prograde_bh_locations[ind_pairs[larger_bh_index]]
+
+                # Use Eq. (7) from Model 2 to calculate the constant timescale used in Model 1 for the larger mass
+                friction_timescale = 1 / (4 * np.pi * G**2) * sound_speed**3 / (gas_density * larger_bh_mass)
+                keplerian_velocity = pow(G * mass_smbh, 1./2) * pow(larger_bh_location, -3./2)
+
+                friction_time = friction_timescale * keplerian_velocity
+
+                # Apply friction timescale criteria
+                if (0.05 < 1/friction_time) & (1/friction_time < 0.40):
+                    pass_friction_pairs_indices.append(ind_pairs)
+            
+            all_binary_indices = np.asarray(pass_friction_pairs_indices, dtype=int)
+            if len(all_binary_indices) > 0:
+                import ipdb; ipdb.set_trace()
+
+            # Need to check whether a given black hole is present in two or more new binaries...
+    else:
+        all_binary_indices = []
+
+
+    return all_binary_indices
