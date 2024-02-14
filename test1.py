@@ -402,7 +402,11 @@ def main():
             #If a close encounter within mutual Hill sphere add a new Binary
 
             # check which binaries should get made
-            close_encounters2 = hillsphere.binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, crit_ecc)
+            # close_encounters2 = hillsphere.binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, crit_ecc)
+                    
+            # apply qian24 test
+            close_encounters2 = hillsphere.qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, crit_ecc)
+            
             #print("Output of close encounters", close_encounters2)
             # print(close_encounters)
             if np.size(close_encounters2) > 0:
