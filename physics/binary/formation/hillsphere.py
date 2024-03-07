@@ -4,6 +4,8 @@ import numpy as np
 import astropy.constants as const
 
 G = const.G.cgs.value # gravitational constant
+solar_mass = const.M_sun.cgs.value # mass of sun
+light_speed = const.c.cgs.value
 
 
 def calculate_hill_sphere(prograde_bh_locations, prograde_bh_masses, mass_smbh):
@@ -15,6 +17,25 @@ def calculate_hill_sphere(prograde_bh_locations, prograde_bh_masses, mass_smbh):
     bh_hill_sphere = prograde_bh_locations*mass_ratio_factor
     #Return the BH Hill sphere radii for all orbiters. Prograde should have much larger Hill sphere
     return bh_hill_sphere
+
+def calculate_mutual_hill_sphere(bh_locations, bh_masses, bh_separations, mass_smbh):
+    """Calculate the mutual hill sphere for two objects.
+
+    Parameters
+    ----------
+    bh_locations : float array
+        Locations of prograde singleton BH at start of timestep in units of 
+        gravitational radii (r_g=GM_SMBH/c^2).
+    bh_masses : float array
+        Initial masses of bh in prograde orbits around SMBH in units of solar masses.
+    bh_separations : float array
+        Separations between adjacent black holes.
+    mass_smbh : float
+        Mass of supermassive black hole in units of solar masses.
+    """
+    return (bh_locations[:-1] + bh_separations/2.0) * \
+            pow(((bh_masses[:-1] + bh_masses[1:]) / \
+            (mass_smbh * 3.0)), (1./3))
 
 def encounter_test(prograde_bh_locations, bh_hill_sphere):
     #Using Hill sphere size and BH locations see if there are encounters within the Hill sphere
@@ -641,11 +662,8 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
         # Separation criteria: 1.4 < K < 2.2 , where K = a1-a2/R_Hill  (factors of Hill radius R_Hill)
 
         # Mutual Hill sphere of objects
-        R_Hill_possible_binaries = (sorted_bh_locations[:-1] + separations/2.0) * \
-            pow(((prograde_bh_masses[subset[:-1]] + \
-                  prograde_bh_masses[subset[1:]]) / \
-                    (mass_smbh * 3.0)), (1./3))
-
+        R_Hill_possible_binaries = calculate_mutual_hill_sphere(sorted_bh_locations, prograde_bh_masses[subset], separations, mass_smbh)
+        # apply separation filter
         num_R_Hill = separations / R_Hill_possible_binaries
         pass_R_Hill_indices = np.where((num_R_Hill > 1.4) & (num_R_Hill < 2.3))[0]
 
@@ -662,6 +680,7 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
 
             # Gas drag friction timescales (tau) criteria: 0.05 < 1/tau < 0.40
             # Chose values from SG03 model at ~700 Rg around 1e8 Msun SMBH
+                # needs to be sampled from the model choice
             sound_speed = 1e7
             gas_density = 1e-10
 
@@ -672,18 +691,23 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
                 larger_bh_location = prograde_bh_locations[ind_pairs[larger_bh_index]]
 
                 # Use Eq. (7) from Model 2 to calculate the constant timescale used in Model 1 for the larger mass
-                friction_timescale = 1 / (4 * np.pi * G**2) * sound_speed**3 / (gas_density * larger_bh_mass)
-                keplerian_velocity = pow(G * mass_smbh, 1./2) * pow(larger_bh_location, -3./2)
+                friction_timescale = 1 / (4 * np.pi * G**2) * sound_speed**3 / (gas_density * larger_bh_mass * solar_mass)
+                gravitational_lengthscale = 2 * G * mass_smbh * solar_mass / light_speed**2
+                keplerian_frequency = pow(G * mass_smbh * solar_mass, 1./2) * pow(larger_bh_location * gravitational_lengthscale, -3./2)
 
-                friction_time = friction_timescale * keplerian_velocity
+                friction_time = friction_timescale * keplerian_frequency
 
                 # Apply friction timescale criteria
                 if (0.05 < 1/friction_time) & (1/friction_time < 0.40):
-                    pass_friction_pairs_indices.append(ind_pairs)
+                    # import ipdb; ipdb.set_trace()
+                    # ~1/3 form binaries when passing both of these tests (fig. 11 Qian+24)
+                    if rng.uniform(low=0.0, high=1.0) > 0.667:
+                        pass_friction_pairs_indices.append(ind_pairs)
             
+
             all_binary_indices = np.asarray(pass_friction_pairs_indices, dtype=int)
-            if len(all_binary_indices) > 0:
-                import ipdb; ipdb.set_trace()
+            # if len(all_binary_indices) > 0:
+                # pass
 
             # Need to check whether a given black hole is present in two or more new binaries...
     else:
