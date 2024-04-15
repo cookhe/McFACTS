@@ -564,7 +564,7 @@ def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde
             bin_indices = np.array([subset[test_idx[0]],subset[test_idx[0]+1]])
             #If only 1 binary this timestep, return this binary!
             all_binary_indices = np.array([subset[test_idx],subset[test_idx+1]])
-            
+            import ipdb; ipdb.set_trace()
             for i in range(len(test_idx)):
                 #If more than 1 binary
                 if i >0:
@@ -658,7 +658,6 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
  
     # Now compute the selection critera based on QianLiLai24 figure 11
     if len(separations) > 0:
-
         # Separation criteria: 1.4 < K < 2.2 , where K = a1-a2/R_Hill  (factors of Hill radius R_Hill)
 
         # Mutual Hill sphere of objects
@@ -673,10 +672,10 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
 
         else: # apply the friction timescale test
             # Get indices of each pair of objects that pass the Hill radius test
-            pass_R_Hill_index_pairs = np.zeros((len(pass_R_Hill_indices), 2), dtype=int)
+            pass_R_Hill_index_pairs = np.zeros((2, len(pass_R_Hill_indices)), dtype=int)
             for i, ind in enumerate(pass_R_Hill_indices):
                 # Indices of the two objects with the relevant separation
-                pass_R_Hill_index_pairs[i] = subset[ind], subset[ind+1]
+                pass_R_Hill_index_pairs[:,i] = subset[ind], subset[ind+1]
 
             # Gas drag friction timescales (tau) criteria: 0.05 < 1/tau < 0.40
             # Chose values from SG03 model at ~700 Rg around 1e8 Msun SMBH
@@ -684,28 +683,32 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
             sound_speed = 1e7
             gas_density = 1e-10
 
-            pass_friction_pairs_indices = []
-            for j, ind_pairs in enumerate(pass_R_Hill_index_pairs):
-                larger_bh_index = prograde_bh_masses[ind_pairs].argmax()
-                larger_bh_mass = prograde_bh_masses[ind_pairs][larger_bh_index]
-                larger_bh_location = prograde_bh_locations[ind_pairs[larger_bh_index]]
+            pass_friction_pair_indices = np.zeros_like(pass_R_Hill_index_pairs)
+            for j in range(pass_R_Hill_index_pairs.shape[1]):
+                import ipdb; ipdb.set_trace()
+                ind_pair = pass_R_Hill_index_pairs[:,j]
+                bh_masses = prograde_bh_masses[ind_pair]
+                bh_locations = prograde_bh_locations[ind_pair]
 
                 # Use Eq. (7) from Model 2 to calculate the constant timescale used in Model 1 for the larger mass
-                friction_timescale = 1 / (4 * np.pi * G**2) * sound_speed**3 / (gas_density * larger_bh_mass * solar_mass)
+                friction_timescales = 1 / (4 * np.pi * G**2) * sound_speed**3 / (gas_density * bh_masses * solar_mass)
                 gravitational_lengthscale = 2 * G * mass_smbh * solar_mass / light_speed**2
-                keplerian_frequency = pow(G * mass_smbh * solar_mass, 1./2) * pow(larger_bh_location * gravitational_lengthscale, -3./2)
+                keplerian_frequencies = pow(G * mass_smbh * solar_mass, 1./2) * pow(bh_locations * gravitational_lengthscale, -3./2)
 
-                friction_time = friction_timescale * keplerian_frequency
+                friction_times = friction_timescales * keplerian_frequencies
 
                 # Apply friction timescale criteria
-                if (0.05 < 1/friction_time) & (1/friction_time < 0.40):
+                if np.all((0.05 < 1/friction_times) & (1/friction_times < 0.40)): # check that both black holes pass
+                    import ipdb; ipdb.set_trace()
+                    pass_friction_pair_indices[:,j] = ind_pair
                     # import ipdb; ipdb.set_trace()
                     # ~1/3 form binaries when passing both of these tests (fig. 11 Qian+24)
-                    if rng.uniform(low=0.0, high=1.0) > 0.667:
-                        pass_friction_pairs_indices.append(ind_pairs)
+                    # if rng.uniform(low=0.0, high=1.0) > 0.667:
             
-
-            all_binary_indices = np.asarray(pass_friction_pairs_indices, dtype=int)
+            # Remove columns that were not filled with values
+            remove_idx = np.argwhere(np.all(pass_friction_pair_indices[..., :] == 0, axis=0))
+            all_binary_indices = np.delete(pass_friction_pair_indices, remove_idx, axis=1)
+            
             # if len(all_binary_indices) > 0:
                 # pass
 
