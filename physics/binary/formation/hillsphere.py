@@ -3,9 +3,9 @@ import sys
 import numpy as np
 import astropy.constants as const
 
-G = const.G.cgs.value # gravitational constant
-solar_mass = const.M_sun.cgs.value # mass of sun
-light_speed = const.c.cgs.value
+G = const.G.value # gravitational constant
+solar_mass = const.M_sun.value # mass of sun
+light_speed = const.c.value
 
 
 def calculate_hill_sphere(prograde_bh_locations, prograde_bh_masses, mass_smbh):
@@ -564,7 +564,7 @@ def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde
             bin_indices = np.array([subset[test_idx[0]],subset[test_idx[0]+1]])
             #If only 1 binary this timestep, return this binary!
             all_binary_indices = np.array([subset[test_idx],subset[test_idx+1]])
-            import ipdb; ipdb.set_trace()
+            
             for i in range(len(test_idx)):
                 #If more than 1 binary
                 if i >0:
@@ -619,15 +619,13 @@ def binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde
     
     return all_binary_indices
         
-def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, e_crit):
+def qian24_test(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, e_crit, disk_surf_density_model, disk_aspect_ratio_model):
     """Form binaries depending on results from scenario 2 outlined in Qian+24 (https://arxiv.org/pdf/2310.12208.pdf).
     According to figure 10, about 1/3 of encounters that reach separations between 1.4 and 2.3 times their mutual hill
     sphere with gas dynamical friction timescales: 0.05 < 1/tau < 0.4.
 
     Parameters
     ----------
-    rng : _type_
-        Random number generator that is set for this instantiation of McFACTS.
     prograde_bh_locations : float array
         Locations of prograde singleton BH at start of timestep in units of 
         gravitational radii (r_g=GM_SMBH/c^2)
@@ -638,7 +636,12 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
     prograde_bh_orb_ecc : float array
         Orbital ecc of singleton BH after damping during timestep
     e_crit : float
-        Critical eccentricity allowing bin formation and migration    
+        Critical eccentricity allowing bin formation and migration
+    disk_surf_model : function
+        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
+    disk_aspect_ratio_model : function
+        returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
+
     Returns
     -------
     all_binary_indices : [2,N] int array
@@ -648,6 +651,14 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
         and a width of 2.
     """
 
+    # get surface density function, or deal with it if only a float
+    disk_surface_density = disk_surf_density_model(prograde_bh_locations)
+    disk_aspect_ratio = disk_aspect_ratio_model(prograde_bh_locations)
+
+    # Unit length R_g in meters
+    gravitational_lengthscale = 2 * G * mass_smbh * solar_mass / light_speed**2
+
+    
     # First check for BH with sufficiently damped orbital eccentricity (e<=e_crit (usually 0.01)). 
     # This population is the sub-set of prograde BH from which we CAN form binaries.
     
@@ -677,33 +688,25 @@ def qian24_test(rng, prograde_bh_locations, prograde_bh_masses, mass_smbh, progr
                 # Indices of the two objects with the relevant separation
                 pass_R_Hill_index_pairs[:,i] = subset[ind], subset[ind+1]
 
-            # Gas drag friction timescales (tau) criteria: 0.05 < 1/tau < 0.40
-            # Chose values from SG03 model at ~700 Rg around 1e8 Msun SMBH
-                # needs to be sampled from the model choice
-            sound_speed = 1e7
-            gas_density = 1e-10
-
             pass_friction_pair_indices = np.zeros_like(pass_R_Hill_index_pairs)
             for j in range(pass_R_Hill_index_pairs.shape[1]):
-                import ipdb; ipdb.set_trace()
                 ind_pair = pass_R_Hill_index_pairs[:,j]
-                bh_masses = prograde_bh_masses[ind_pair]
-                bh_locations = prograde_bh_locations[ind_pair]
+                bh_masses = prograde_bh_masses[ind_pair] * solar_mass
+                bh_locations = prograde_bh_locations[ind_pair] * gravitational_lengthscale
+                # Disk volume density calculation: divide surface density by scale height (or, aspect ratio * radius)
+                disk_volume_density = disk_surface_density[ind_pair] / (2 * disk_aspect_ratio[ind_pair] * bh_locations)
+                # Disk sound speed: scale height * Keplerian frequency (or, aspect ratio * radius * keplerian_frequency)
+                keplerian_frequency = pow(G * mass_smbh * solar_mass, 1./2) * pow(bh_locations, -3./2)
+                disk_sound_speed = disk_aspect_ratio[ind_pair] * bh_locations * keplerian_frequency
 
                 # Use Eq. (7) from Model 2 to calculate the constant timescale used in Model 1 for the larger mass
-                friction_timescales = 1 / (4 * np.pi * G**2) * sound_speed**3 / (gas_density * bh_masses * solar_mass)
-                gravitational_lengthscale = 2 * G * mass_smbh * solar_mass / light_speed**2
-                keplerian_frequencies = pow(G * mass_smbh * solar_mass, 1./2) * pow(bh_locations * gravitational_lengthscale, -3./2)
+                friction_timescales = 1 / (4 * np.pi * G**2) * disk_sound_speed**3 / (disk_volume_density * bh_masses)
 
-                friction_times = friction_timescales * keplerian_frequencies
+                friction_times = friction_timescales * keplerian_frequency
 
                 # Apply friction timescale criteria
                 if np.all((0.05 < 1/friction_times) & (1/friction_times < 0.40)): # check that both black holes pass
-                    import ipdb; ipdb.set_trace()
                     pass_friction_pair_indices[:,j] = ind_pair
-                    # import ipdb; ipdb.set_trace()
-                    # ~1/3 form binaries when passing both of these tests (fig. 11 Qian+24)
-                    # if rng.uniform(low=0.0, high=1.0) > 0.667:
             
             # Remove columns that were not filled with values
             remove_idx = np.argwhere(np.all(pass_friction_pair_indices[..., :] == 0, axis=0))
