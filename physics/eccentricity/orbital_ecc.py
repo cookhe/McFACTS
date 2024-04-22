@@ -102,6 +102,114 @@ def orbital_ecc_damping(mass_smbh, prograde_bh_locations, prograde_bh_masses, di
     #print("Old ecc, New ecc",bh_orb_ecc,new_bh_orb_ecc)
     return new_bh_orb_ecc
 
+def orbital_bin_ecc_damping(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model, timestep, crit_ecc):
+    """"Return bin_array orbital eccentricities damped according to a prescription
+    Use same mechanisms as for prograde singleton BH. 
+    E.g. Tanaka & Ward (2004)  t_damp = M^3/2 h^4 / (2^1/2 m Sigma a^1/2 G )
+     where M is the central mass, h is the disk aspect ratio (H/a), m is the orbiter mass, 
+     Sigma is the disk surface density, a is the semi-major axis, G is the universal gravitational constant.
+     From McKernan & Ford (2023) eqn 4. we can parameterize t_damp as 
+        t_damp ~ 0.1Myr (q/10^-7)^-1 (h/0.03)^4 (Sigma/10^5 kg m^-2)^-1 (a/10^4r_g)^-1/2
+
+     For eccentricity e<2h
+        e(t)=e0*exp(-t/t_damp)......(1)
+        So 
+            in 0.1 damping time, e(t_damp)=0.90*e0
+            in 1 damping time,  e(t_damp)=0.37*e0
+            in 2 damping times, e(t_damp)=0.135*e0
+            in 3 damping times, e(t_damp)=0.05*e0
+
+    For now assume e<2h condition. To do: Add condition below (if ecc>2h..)
+
+     For eccentricity e>2h eqn. 9 in McKernan & Ford (2023), based on Horn et al. (2012) the scaling time is now t_ecc.
+        t_ecc = (t_damp/0.78)*[1 - (0.14*(e/h)^2) + (0.06*(e/h)^3)] ......(2)
+        which in the limit of e>0.1 for most disk models becomes
+        t_ecc ~ (t_damp/0.78)*[1 + (0.06*(e/h)^3)] 
+
+        Parameters
+    ----------
+    mass_smbh : float
+        mass of supermassive black hole in units of solar masses
+    bin_array : float array
+        binary array. Including bin_array[18,:]= bin orb ecc, bin_array[9,:] = bin center of mass etc.
+    disk_surf_model : function
+        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
+        can accept a simple float (constant), but this is deprecated
+    disk_aspect_ratio_model : function
+        returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
+        can accept a simple float (constant), but this is deprecated   
+    timestep : float
+        size of timestep in years
+        
+        Returns
+    -------
+    bin_array : float array
+        updated binary orbital eccentricities damped by AGN gas
+        """
+    #First find num of bins by counting non zero M_1s.
+    num_of_bins = np.count_nonzero(bin_array[2,:])
+    bin_coms = np.zeros(num_of_bins)
+    bin_orb_ecc = np.zeros(num_of_bins)
+    bin_total_mass = np.zeros(num_of_bins)
+
+    #Read in binary center of mass location, binary orb. ecc around SMBH and binary total mass:
+    for i in range(num_of_bins):
+        bin_coms[i] = bin_array[9,i]
+        bin_orb_ecc[i] = bin_array[18,i]
+        bin_total_mass[i] = bin_array[2,i] + bin_array[3,i]
+
+    # get surface density function, or deal with it if only a float
+    if isinstance(disk_surf_model, float):
+        disk_surface_density = disk_surf_model
+    else:
+        disk_surface_density = disk_surf_model(bin_coms)
+    # ditto for aspect ratio
+    if isinstance(disk_aspect_ratio_model, float):
+        disk_aspect_ratio = disk_aspect_ratio_model
+    else:
+        disk_aspect_ratio = disk_aspect_ratio_model(bin_coms)
+    #Set up new_bin_orb_ecc
+    new_bin_orb_ecc=np.empty_like(bin_orb_ecc)
+    
+    #Calculate & normalize all the parameters above in t_damp
+    # E.g. normalize q=bh_mass/smbh_mass to 10^-7 
+    mass_ratio = bin_total_mass/mass_smbh
+    
+    normalized_mass_ratio = mass_ratio/10**(-7)
+    normalized_bh_locations = bin_coms/1.e4
+    normalized_disk_surf_model = disk_surface_density/1.e5
+    normalized_aspect_ratio = disk_aspect_ratio/0.03
+    #Calculate the damping time for all bins
+    t_damp =1.e5*(1.0/normalized_mass_ratio)*(normalized_aspect_ratio**4)*(1.0/normalized_disk_surf_model)*(1.0/np.sqrt(normalized_bh_locations))
+       
+    #Calculate (e/h) ratio for all prograde BH for use in eqn. 2 above
+    e_h_ratio = bin_orb_ecc/disk_aspect_ratio
+    #Calculate damping time for large orbital eccentricity binaries
+    t_ecc = (t_damp/0.78)*(1 - (0.14*(e_h_ratio)**(2.0)) + (0.06*(e_h_ratio)**(3.0)))
+
+    for i in range(num_of_bins):
+        #If bin orb ecc <= crit_ecc, do nothing (no damping needed)
+        if bin_orb_ecc[i] <= crit_ecc:
+            new_bin_orb_ecc[i] = bin_orb_ecc[i]
+        #If bin orb ecc > crit_ecc, but <2*h then damp modest orb eccentricity
+        if bin_orb_ecc[i] > crit_ecc and bin_orb_ecc[i] <2.0*disk_aspect_ratio[i]:
+            modest_timescale_ratio = timestep/t_damp[i]
+            new_bin_orb_ecc[i] = bin_orb_ecc[i]*np.exp(-modest_timescale_ratio)
+            #print("NEW modest bin orb ecc old, new ",bin_orb_ecc[i], new_bin_orb_ecc[i])
+        #If bin orb ecc > 2*h then damp large orb eccentricity    
+        if bin_orb_ecc[i] > crit_ecc and bin_orb_ecc[i]> 2.0*disk_aspect_ratio[i]:            
+            large_timescale_ratio = timestep/t_ecc[i]
+            new_bin_orb_ecc[i] = bin_orb_ecc[i]*np.exp(-large_timescale_ratio)
+            #print("NEW large bin orb ecc old,new", bin_orb_ecc[i],new_bin_orb_ecc[i])
+
+    #Write new values of bin orbital eccentricity to bin_array
+    for j in range(num_of_bins):
+        if new_bin_orb_ecc[j] < crit_ecc:
+            new_bin_orb_ecc[j] = crit_ecc
+        bin_array[18,j] = new_bin_orb_ecc[j]
+
+    return bin_array
+
 def bin_ecc_damping(mass_smbh, prograde_bh_locations, prograde_bh_masses, disk_surf_model, disk_aspect_ratio_model, bh_orb_ecc, timestep, crit_ecc):
     """"Return bin array with modified eccentricities according to a prescription
     from Calcino et al. (2023), arXiv:2312.13727

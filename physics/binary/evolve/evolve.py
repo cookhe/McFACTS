@@ -80,7 +80,7 @@ def change_bin_spin_magnitudes(bin_array, frac_Eddington_ratio, spin_torque_cond
                 #Update new bh masses in bin_array
                 bin_array[4,j] = new_bh_spin_1
                 bin_array[5,j] = new_bh_spin_2
-
+                #print("EVOLVE SPINS",temp_bh_spin_1,temp_bh_spin_2,new_bh_spin_1,new_bh_spin_2)
     return bin_array
 
 
@@ -112,7 +112,7 @@ def change_bin_spin_angles(bin_array, frac_Eddington_ratio, spin_torque_conditio
                     new_bh_spin_angle_2 = 0.0
                 bin_array[6,j] = new_bh_spin_angle_1
                 bin_array[7,j] = new_bh_spin_angle_2
-
+                #print("SPIN ANGLE EVOLVES, old1,old2, new1,new2",temp_bh_spin_angle_1,temp_bh_spin_angle_2,new_bh_spin_angle_1,new_bh_spin_angle_2)
     return bin_array
 
 def com_feedback_hankla(bin_array, disk_surf_model, frac_Eddington_ratio, alpha):
@@ -292,7 +292,7 @@ def com_migration(bin_array, disk_surf_model, disk_aspect_ratio_model, timestep,
 
     return bin_array
 
-def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model, timestep, feedback_ratio, trap_radius):
+def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model, timestep, feedback_ratio, trap_radius, crit_ecc):
     """This function calculates how far the center of mass of a binary migrates in an AGN gas disk in a time
     of length timestep, assuming a gas disk surface density and aspect ratio profile, for
     objects of specified masses and starting locations, and returns their new locations
@@ -314,7 +314,10 @@ def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model
         can accept a simple float (constant), but this is deprecated
     timestep : float
         size of timestep in years
-
+    feedback_ratio : float
+        effect of feedback on Type I migration torque if feedback switch on
+    trap_radius : float
+        location of migration trap in units of r_g    
 
     Returns
     -------
@@ -326,6 +329,8 @@ def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model
     bin_com = bin_array[9,:]
     # get masses of each binary by adding their component masses
     bin_mass = bin_array[2,:] + bin_array[3,:]
+    # get orbital eccentricity of binary center of mass around SMBH
+    bin_orb_ecc = bin_array[18,:]
     # get surface density function, or deal with it if only a float
     if isinstance(disk_surf_model, float):
         disk_surface_density = disk_surf_model
@@ -344,7 +349,7 @@ def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model
     #   and Omega is the Keplerian orbital frequency around the SMBH
     # here mass_smbh/prograde_bh_masses are both in M_sun, so units cancel
     # c, G and disk_surface_density in SI units
-    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(2.0*scipy.constants.G) * (mass_smbh/bin_mass) / disk_surface_density) / np.sqrt(bin_com)
+    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (mass_smbh/bin_mass) / disk_surface_density) / np.sqrt(bin_com)
     # ratio of timestep to tau_mig (timestep in years so convert)
     dt = timestep * scipy.constants.year / tau_mig
     # migration distance is original locations times fraction of tau_mig elapsed
@@ -400,18 +405,20 @@ def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model
     index_unchanged = np.where(feedback_ratio == 1)[0]
     if index_unchanged.size > 0:
     # If BH location > trap radius, migrate inwards
-        if bin_com[index_unchanged] > trap_radius:    
-            bh_new_locations[index_unchanged] = bin_com[index_unchanged] - migration_distance[index_unchanged]
+        for i in range(0,index_unchanged.size):
+            locn_index = index_unchanged[i]
+            if bin_com[locn_index] > trap_radius:    
+                bh_new_locations[locn_index] = bin_com[locn_index] - migration_distance[locn_index]
             # if new location is <= trap radius, set location to trap radius
-            if bh_new_locations[index_unchanged] <= trap_radius:
-                bh_new_locations[index_unchanged] = trap_radius
+                if bh_new_locations[locn_index] <= trap_radius:
+                    bh_new_locations[locn_index] = trap_radius
 
-    # If BH location < trap radius, migrate outwards
-        if bin_com[index_unchanged] < trap_radius:
-            bh_new_locations[index_unchanged] = bin_com[index_unchanged] + migration_distance[index_unchanged]
-            #if new location is >= trap radius, set location to trap radius
-            if bh_new_locations[index_unchanged] >= trap_radius:
-                bh_new_locations[index_unchanged] = trap_radius
+        # If BH location < trap radius, migrate outwards
+            if bin_com[locn_index] < trap_radius:
+                bh_new_locations[locn_index] = bin_com[locn_index] + migration_distance[locn_index]
+                #if new location is >= trap radius, set location to trap radius
+                if bh_new_locations[locn_index] >= trap_radius:
+                    bh_new_locations[locn_index] = trap_radius
     #print("bh new locations",np.sort(bh_new_locations))
 
     # new locations are original ones - distance traveled
@@ -424,11 +431,238 @@ def bin_migration(mass_smbh, bin_array, disk_surf_model, disk_aspect_ratio_model
    
     #Distance travelled per binary is old location of com minus new location of com. Is +ive(-ive) if migrating in(out)
     dist_travelled = bin_array[9,:] - bh_new_locations
-    #print("dist travelled", np.where(dist_travelled !=0))
-    # Update the binary center of mass in bin_array
-    bin_array[9,:] = bh_new_locations
+    idx_nonzero_travel = np.where(dist_travelled !=0)
+    num_of_bins = np.count_nonzero(bin_array[2,:])
+    #for i in range(num_of_bins):
+    #    print("dist travelled", bin_array[9,i], bh_new_locations[i], dist_travelled[i],bin_mass[i])
+    
+    # Update the binary center of mass in bin_array only if bin ecc is <= e_crit
+    #First find num of bins by counting non zero M_1s.
+    
+    for i in range(num_of_bins):
+        # If bin orb ecc < crit_ecc (circularized) then migrate
+        if bin_array[18,i] <= crit_ecc:
+            bin_array[9,i] = bh_new_locations[i]
+        #If bin orb ecc not circularized, no migration    
+        if bin_array[18,i] > crit_ecc:
+            print()
+
     #Update location of BH 1 and BH 2
     #bin_array[0,:] = bin_array[0,:] - dist_travelled
     #bin_array[1,:] = bin_array[1,:] - dist_travelled
     #print("Loc 1",bin_array[0,:]," loc 2", bin_array[1,:])
     return bin_array
+
+def evolve_gw(bin_array,bin_index,mass_smbh):
+    """This function evaluates the binary gravitational wave frequency and strain at the end of each timestep
+    Assume binary is located at z=0.1=422Mpc for now.
+    """
+    # Set up binary GW frequency
+    # nu_gw = 1/pi *sqrt(GM_bin/a_bin^3)
+    
+    for j in range(0,bin_index):
+        temp_mass_1 = bin_array[2,j]
+        temp_mass_2 = bin_array[3,j]
+        temp_bin_mass = temp_mass_1 + temp_mass_2
+        temp_bin_separation = bin_array[8,j]
+        #1rg =1AU=1.5e11m for 1e8Msun
+        rg = 1.5e11*(mass_smbh/1.e8)
+        m_sun = 2.0e30
+        temp_mass_1_kg = m_sun*temp_mass_1
+        temp_mass_2_kg = m_sun*temp_mass_2
+        temp_bin_mass_kg = m_sun*temp_bin_mass
+        temp_bin_separation_meters = temp_bin_separation*rg
+        
+        # Set up binary strain of GW
+        # h = (4/d_obs) *(GM_chirp/c^2)*(pi*nu_gw*GM_chirp/c^3)^(2/3)
+        # where m_chirp =(M_1 M_2)^(3/5) /(M_bin)^(1/5)
+        
+        m_chirp = ((temp_mass_1_kg*temp_mass_2_kg)**(3/5))/(temp_bin_mass_kg**(1/5))
+        rg_chirp = (scipy.constants.G * m_chirp)/(scipy.constants.c**(2.0))
+        # If separation is less than rg_chirp then cap separation at rg_chirp.
+        if temp_bin_separation_meters < rg_chirp:
+            temp_bin_separation_meters = rg_chirp
+
+        nu_gw = (1.0/scipy.constants.pi)*np.sqrt(temp_bin_mass_kg*scipy.constants.G/(temp_bin_separation_meters**(3.0)))
+        bin_array[19,j] = nu_gw
+
+        # For local distances, approx d=cz/H0 = 3e8m/s(z)/70km/s/Mpc =3.e8 (z)/7e4 Mpc =428 Mpc 
+        # 1Mpc = 3.1e22m. 
+        Mpc = 3.1e22
+        # From Ned Wright's calculator https://www.astro.ucla.edu/~wright/CosmoCalc.html
+        # (z=0.1)=421Mpc. (z=0.5)=1909 Mpc
+        d_obs = 421*Mpc
+        strain = (4/d_obs)*rg_chirp*(np.pi*nu_gw*rg_chirp/scipy.constants.c)**(2/3)
+        # But power builds up in band over multiple cycles! 
+        # So characteristic strain amplitude measured by e.g. LISA is given by h_char^2 = N/8*h_0^2 where N is number of cycles per year & divide by 8 to average over viewing angles
+        strain_factor = 1
+        if nu_gw < 10**(-6):
+            strain_factor = np.sqrt(nu_gw*np.pi*(10**7)/8)
+
+        if nu_gw > 10**(-6):
+            strain_factor = 4.e3    
+        # char amplitude = sqrt(N/8)h_0 and N=freq*1yr for approx const. freq. sources over ~~yr.
+        # So in LISA band
+        #For a source changing rapidly over 1 yr, N~freq^2/ (dfreq/dt)
+        bin_array[20,j] = strain_factor*strain
+        #print("mbin(kg),sep(m),m_chirp(kg),rg_chirp,d_obs,nu,strain",temp_bin_mass_kg,temp_bin_separation_meters,m_chirp,rg_chirp,d_obs,nu_gw,strain)
+    return bin_array
+
+def ionization_check(bin_array, bin_index, mass_smbh):
+    """This function tests whether a binary has been softened beyond some limit.
+        Returns index of binary to be ionized. Otherwise returns -1.
+        The limit is set to some fraction of the binary Hill sphere, frac_R_hill
+
+        Default is frac_R_hill =1.0 (ie binary is ionized at the Hill sphere). 
+        Change frac_R_hill if you're testing binary formation at >R_hill.
+        
+        R_hill = a_com*(M_bin/3M_smbh)^1/3
+
+        where a_com is the radial disk location of the binary center of mass (given by bin_array[9,*]),
+        M_bin = M_1 + M_2 = bin_array[2,*]+bin_array[3,*] is the binary mass
+        M_smbh is the SMBH mass (given by mass_smbh) 
+        
+        and binary separation is in bin_array[8,*].
+        Condition is 
+        if bin_separation > frac_R_hill*R_hill:
+            Ionize binary. Return flag valued at index of binary in bin_array.
+            Then in test1.py remove binary from bin_array! decrease bin_index by 1.
+            Add two new singletons to the singleton arrays.
+
+
+    """
+    #Define Ionization threshold as fraction of Hill sphere radius
+    #Default is 1.0. Change only if condition for binary formation is set for separation > R_hill
+    frac_rhill = 1.0
+
+    #Default return for the function is -1
+    ionization_flag = -1.0
+    for j in range(0,bin_index):
+        # Read in binary masses (units of M_sun)
+        temp_mass_1 = bin_array[2,j]
+        temp_mass_2 = bin_array[3,j]
+        # Set up binary mass (units of M_sun)
+        temp_bin_mass = temp_mass_1 + temp_mass_2
+        # Mass ratio of binary to SMBH (unitless)
+        temp_mass_ratio = temp_bin_mass/mass_smbh
+        # Read in binary separation (units of r_g of the SMBH =GM_smbh/c^2)
+        temp_bin_separation = bin_array[8,j]
+        # Read in binary com disk location ( units of r_g of the SMBH = GM_smbh/c^2)
+        temp_bin_com_radius = bin_array[9,j]
+        #Define binary Hill sphere (units of r_g of SMBH where 1r_g = GM_smbh/c^2 = 1AU for 10**8Msun SMBH
+        temp_hill_sphere = temp_bin_com_radius*((temp_mass_ratio/3)**(1/3))
+
+        if temp_bin_separation > frac_rhill*temp_hill_sphere:
+            #Commented out for now
+            # print("Ionize binary!", temp_bin_separation, frac_rhill*temp_hill_sphere)
+            #Ionize binary!!!
+            # print("Bin_array index",j)
+            ionization_flag = j
+            
+    return ionization_flag
+
+def contact_check(bin_array, bin_index, mass_smbh):
+    """ This function tests to see if the binary separation has shrunk so that the binary is touching!
+        Touching condition is where binary separation is <= R_g(M_chirp).
+        Since binary separation is in units of r_g (GM_smbh/c^2) then condition is simply:
+            binary_separation < M_chirp/M_smbh
+        """
+    for j in range(0,bin_index):
+        #Read in mass 1, mass 2 (units of M_sun)
+        temp_mass_1 = bin_array[2,j]
+        temp_mass_2 = bin_array[3,j]
+        #Total binary mass
+        temp_bin_mass = temp_mass_1 + temp_mass_2
+        #Binary separation in units of r_g=GM_smbh/c^2
+        temp_bin_separation = bin_array[8,j]
+        
+        #Condition is if binary separation < R_g(M_chirp). 
+        # Binary separation is in units of r_g(M_smbh) so 
+        # condition is separation < R_g(M_chirp)/R_g(M_smbh) =M_chirp/M_smbh
+        # where m_chirp =(M_1 M_2)^(3/5) /(M_bin)^(1/5)
+        # M1,M2, M_smbh are all in units of M_sun
+        m_chirp = ((temp_mass_1*temp_mass_2)**(3/5))/(temp_bin_mass**(1/5))
+        condition = m_chirp/mass_smbh
+        # If binary separation < merge condition, set binary separation to merge condition
+        if temp_bin_separation < condition:
+            bin_array[8,j] = condition
+            bin_array[11,j] = -2
+    return bin_array    
+
+def ionization_check(bin_array, bin_index, mass_smbh):
+    """This function tests whether a binary has been softened beyond some limit.
+        Returns index of binary to be ionized. Otherwise returns -1.
+        The limit is set to some fraction of the binary Hill sphere, frac_R_hill
+
+        Default is frac_R_hill =1.0 (ie binary is ionized at the Hill sphere). 
+        Change frac_R_hill if you're testing binary formation at >R_hill.
+        
+        R_hill = a_com*(M_bin/3M_smbh)^1/3
+
+        where a_com is the radial disk location of the binary center of mass (given by bin_array[9,*]),
+        M_bin = M_1 + M_2 = bin_array[2,*]+bin_array[3,*] is the binary mass
+        M_smbh is the SMBH mass (given by mass_smbh) 
+        
+        and binary separation is in bin_array[8,*].
+        Condition is 
+        if bin_separation > frac_R_hill*R_hill:
+            Ionize binary. Return flag valued at index of binary in bin_array.
+            Then in test1.py remove binary from bin_array! decrease bin_index by 1.
+            Add two new singletons to the singleton arrays.
+
+
+    """
+    #Define Ionization threshold as fraction of Hill sphere radius
+    #Default is 1.0. Change only if condition for binary formation is set for separation > R_hill
+    frac_rhill = 1.0
+
+    #Default return for the function is -1
+    ionization_flag = -1.0
+    for j in range(0,bin_index):
+        # Read in binary masses (units of M_sun)
+        temp_mass_1 = bin_array[2,j]
+        temp_mass_2 = bin_array[3,j]
+        # Set up binary mass (units of M_sun)
+        temp_bin_mass = temp_mass_1 + temp_mass_2
+        # Mass ratio of binary to SMBH (unitless)
+        temp_mass_ratio = temp_bin_mass/mass_smbh
+        # Read in binary separation (units of r_g of the SMBH =GM_smbh/c^2)
+        temp_bin_separation = bin_array[8,j]
+        # Read in binary com disk location ( units of r_g of the SMBH = GM_smbh/c^2)
+        temp_bin_com_radius = bin_array[9,j]
+        #Define binary Hill sphere (units of r_g of SMBH where 1r_g = GM_smbh/c^2 = 1AU for 10**8Msun SMBH
+        temp_hill_sphere = temp_bin_com_radius*((temp_mass_ratio/3)**(1/3))
+
+        if temp_bin_separation > frac_rhill*temp_hill_sphere:
+            #Comment out for now
+            # print("Ionize binary!", temp_bin_separation, frac_rhill*temp_hill_sphere)
+            #Ionize binary!!!
+            # print("Bin_array index",j)
+            ionization_flag = j
+            
+    return ionization_flag
+
+def reality_check(bin_array, bin_index, nbin_properties):
+    """ This function tests to see if the binary is real. If location = 0 or mass = 0 *and* any other element is NON-ZERO then discard this binary element.
+        Returns flag, negative for default, if positive it is the index of the binary column to be deleted.
+        """
+    reality_flag = -2
+
+    for j in range(0,bin_index):
+        
+        #Check other elements in bin_array are NON-ZERO
+        for i in range(0,nbin_properties):
+            #Read in mass 1, mass 2 (units of M_sun)
+            temp_mass_1 = bin_array[2,j]
+            temp_mass_2 = bin_array[3,j]
+            #Read in location 1, location 2 (units of R_g (M_smbh))
+            temp_location_1 = bin_array[0,j]
+            temp_location_2 = bin_array[1,j]
+            #If any element in binary other than the location or mass is non-zero
+            if bin_array[i,j] > 0:
+                #Check if any of locations or masses is zero
+                if temp_mass_1 == 0 or temp_mass_2 == 0 or temp_location_1 == 0 or temp_location_2 == 0:
+                    #Flag this binary    
+                    reality_flag = j    
+        
+    return reality_flag        

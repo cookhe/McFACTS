@@ -1,6 +1,9 @@
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
+import LISA as li
+import PhenomA as pa
+import pandas as pd
 
 #plt.style.use('seaborn-v0_8-poster')
 
@@ -38,14 +41,18 @@ plt.close()
 trap_radius = 700
 plt.figure()
 plt.title('Migration Trap influence')
+for i in range(len(mergers[:,1])):
+    if mergers[i,1] < 10.0:
+        mergers[i,1] = 10.0
+
 plt.scatter(mergers[:,1], mergers[:,2], color='teal')
 plt.axvline(trap_radius, color='grey', linewidth=20, zorder=0, alpha=0.6, label=f'Radius = {trap_radius} '+r'$R_g$')
-plt.text(670, 102, 'Migration Trap', rotation='vertical', size=18, fontweight='bold')
+plt.text(650, 602, 'Migration Trap', rotation='vertical', size=18, fontweight='bold')
 plt.ylabel(r'Mass ($M_\odot$)')
 plt.xlabel(r'Radius ($R_g$)')
 plt.xscale('log')
 plt.legend(frameon=False)
-plt.ylim(16,140)
+plt.ylim(10,1000)
 
 ax = plt.gca()
 ax.set_axisbelow(True)
@@ -126,3 +133,54 @@ ax.set_axisbelow(True)
 plt.grid(True, color='gray', ls='dashed')
 plt.tight_layout()
 plt.savefig('./m1m2.png', format='png')
+
+#GW strain figure: 
+#make sure LISA.py and PhenomA.py in /vis directory
+#Using https://github.com/eXtremeGravityInstitute/LISA_Sensitivity/blob/master/LISA.py 
+# and same location for PhenomA.py
+#Also make sure LIGO sensitivity curves are in /vis directory
+
+# READ LIGO O3 Sensitivity data (from https://git.ligo.org/sensitivity-curves/o3-sensitivity-curves)
+H1 = 'O3-H1-C01_CLEAN_SUB60HZ-1262197260.0_sensitivity_strain_asd.txt'  
+L1 = 'O3-L1-C01_CLEAN_SUB60HZ-1262141640.0_sensitivity_strain_asd.txt'
+# Adjust sep according to your delimiter (e.g., '\t' for tab-delimited files)
+dfh1 = pd.read_csv(H1, sep='\t', header=None)  # Use header=None if the file doesn't contain header row
+dfl1 = pd.read_csv(L1, sep='\t', header=None)
+
+# Access columns as df[0], df[1], ...
+f_H1 = dfh1[0]
+h_H1 = dfh1[1]
+#f_L1 = dfl1[0]
+#h_L1 = dfl1[1]
+
+#f_H1 = dfh1[0].to_numpy()
+#h_H1 = dfh1[1].to_numpy()
+#f_L1 = dfl1[0].to_numpy()
+#h_L1 = dfl1[1].to_numpy()
+
+# create LISA object
+lisa = li.LISA() 
+
+# Plot LISA's sensitivity curve
+f  = np.logspace(np.log10(1.0e-5), np.log10(1.0e0), 1000)
+Sn = lisa.Sn(f)
+
+
+fig, ax = plt.subplots(1, figsize=(8,6))
+plt.tight_layout()
+
+ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
+ax.set_ylabel(r'h', fontsize=20, labelpad=10)
+ax.tick_params(axis='both', which='major', labelsize=20)
+
+ax.set_xlim(1.0e-5, 1e4)
+ax.set_ylim(1.0e-24, 1.0e-15)
+
+ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
+ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
+#ax.loglog(f_L1, h_L1,label = 'LIGO O3, L1 Sensitivity') # plot the characteristic strain
+
+#ax.loglog(f_gw,h,color ='black', label='GW150914')
+
+ax.legend()
+plt.savefig('./gw_strain.png', format='png')

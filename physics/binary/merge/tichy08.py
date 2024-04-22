@@ -23,7 +23,13 @@ def merged_mass(mass_1,mass_2,spin_1,spin_2):
     primary = np.max(np.c_[mass_1, mass_2])
     secondary = np.min(np.c_[mass_1, mass_2])
 
-    mass_ratio = secondary/primary
+    #If issue with primary mass, print!
+    if primary < 1.0:
+        print("primary,secondary=", primary, secondary)
+        mass_ratio = 1.0
+    if primary > 1.0:    
+        mass_ratio = secondary/primary
+    
     total_mass = primary + secondary
     total_spin = spin_1 + spin_2
     inv_mass_ratio = (1.0/mass_ratio)
@@ -79,5 +85,6 @@ def merged_spin(mass_1, mass_2, spin_1, spin_2, bin_ang_mom):
     spin1_factor = (0.632+inv_mass_ratio)**(2.0)
     spin2_factor = (0.632+mass_ratio)**2.0
     merged_spin = 0.686*((5.04*nu)-(4.16*nusq))+(0.4*((spin_1/spin1_factor)+(spin_2/spin2_factor)))
+    #print("MERGER props",primary,secondary,spin_1,spin_2,bin_ang_mom, merged_spin)
     return merged_spin
 

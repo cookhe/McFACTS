@@ -74,7 +74,7 @@ def type1_migration(mass_smbh, prograde_bh_locations, prograde_bh_masses, disk_s
     #   and Omega is the Keplerian orbital frequency around the SMBH
     # here mass_smbh/prograde_bh_masses are both in M_sun, so units cancel
     # c, G and disk_surface_density in SI units
-    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(2.0*scipy.constants.G) * (mass_smbh/prograde_bh_masses) / disk_surface_density) / np.sqrt(prograde_bh_locations)
+    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (mass_smbh/prograde_bh_masses) / disk_surface_density) / np.sqrt(prograde_bh_locations)
     # ratio of timestep to tau_mig (timestep in years so convert)
     dt = timestep * scipy.constants.year / tau_mig
     # migration distance is original locations times fraction of tau_mig elapsed
@@ -82,7 +82,7 @@ def type1_migration(mass_smbh, prograde_bh_locations, prograde_bh_masses, disk_s
     #print('migration distance',migration_distance)
     #Mask migration distance with zeros if orb ecc >= e_crit.
     migration_distance[indices_not_mig_BH] = 0.
-    #print('migration distance2',migration_distance)
+    
     #    print('Tests',prograde_bh_locations[crit_ecc_prograde_indices],prograde_bh_orb_ecc[crit_ecc_prograde_indices])
     #    print('migration distance', migration_distance)
     #    print(migration_distance[crit_ecc_prograde_indices])
@@ -139,20 +139,22 @@ def type1_migration(mass_smbh, prograde_bh_locations, prograde_bh_masses, disk_s
     index_unchanged = np.where(feedback_ratio == 1)[0]
     if index_unchanged.size > 0:
     # If BH location > trap radius, migrate inwards
-        if prograde_bh_locations[index_unchanged] > trap_radius:    
-            bh_new_locations[index_unchanged] = prograde_bh_locations[index_unchanged] - migration_distance[index_unchanged]
+        for i in range(0,index_unchanged.size):
+            locn_index = index_unchanged[i]
+            if prograde_bh_locations[locn_index] > trap_radius:    
+                bh_new_locations[locn_index] = prograde_bh_locations[locn_index] - migration_distance[locn_index]
             # if new location is <= trap radius, set location to trap radius
-            if bh_new_locations[index_unchanged] <= trap_radius:
-                bh_new_locations[index_unchanged] = trap_radius
+                if bh_new_locations[locn_index] <= trap_radius:
+                    bh_new_locations[locn_index] = trap_radius
 
-    # If BH location < trap radius, migrate outwards
-        if prograde_bh_locations[index_unchanged] < trap_radius:
-            bh_new_locations[index_unchanged] = prograde_bh_locations[index_unchanged] + migration_distance[index_unchanged]
-            #if new location is >= trap radius, set location to trap radius
-            if bh_new_locations[index_unchanged] >= trap_radius:
-                bh_new_locations[index_unchanged] = trap_radius
+            # If BH location < trap radius, migrate outwards
+            if prograde_bh_locations[locn_index] < trap_radius:
+                bh_new_locations[locn_index] = prograde_bh_locations[locn_index] + migration_distance[locn_index]
+                #if new location is >= trap radius, set location to trap radius
+                if bh_new_locations[locn_index] >= trap_radius:
+                    bh_new_locations[locn_index] = trap_radius
     #print("bh new locations",np.sort(bh_new_locations))
-
+    #print('migration distance2',migration_distance, prograde_bh_orb_ecc)
     # new locations are original ones - distance traveled
     #bh_new_locations = prograde_bh_locations - migration_distance
     

@@ -91,7 +91,9 @@ def setup_disk_blackholes_circularized(rng, n_bh,crit_ecc):
     # Then damp (i,e) as appropriate
     integer_nbh = int(n_bh)
     # For now, inclinations are zeros
-    bh_initial_orb_ecc = crit_ecc*np.ones((integer_nbh,),dtype = float)
+    #bh_initial_orb_ecc = crit_ecc*np.ones((integer_nbh,),dtype = float)
+    #Try zero eccentricities
+    bh_initial_orb_ecc = crit_ecc*np.zeros((integer_nbh,),dtype = float)
     return bh_initial_orb_ecc
 
 def setup_disk_nbh(M_nsc,nbh_nstar_ratio,mbh_mstar_ratio,r_nsc_out,nsc_index_outer,mass_smbh,disk_outer_radius,h_disk_average,r_nsc_crit,nsc_index_inner):
@@ -133,5 +135,5 @@ def setup_disk_nbh(M_nsc,nbh_nstar_ratio,mbh_mstar_ratio,r_nsc_out,nsc_index_out
     # Total number of BH in disk
     Nbh_disk_total = np.rint(Nbh_disk_volume * h_disk_average)
     #print("Nbh_disk_total",Nbh_disk_total)  
-    return np.int(Nbh_disk_total)
+    return np.int64(Nbh_disk_total)
 

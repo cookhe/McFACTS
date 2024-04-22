@@ -1,6 +1,8 @@
 import numpy as np
 
-def add_to_binary_array2(rng, bin_array, bh_locations, bh_masses, bh_spins, bh_spin_angles, bh_gens, close_encounters, bindex, retro, verbose=False,):
+import scipy
+
+def add_to_binary_array2(rng, bin_array, bh_locations, bh_masses, bh_spins, bh_spin_angles, bh_gens, close_encounters, bindex, retro, mass_smbh, verbose=False,):
     """This is where we add new binaries. We take the locations, masses, spins, spin angles and generations
     from the relevant singletons, found in hillsphere.binary_check, and sort those parameters into bin_array. 
     We then ADD additional parameters relevant only for binaries, including semi-major axis of the binary,
@@ -48,6 +50,8 @@ def add_to_binary_array2(rng, bin_array, bh_locations, bh_masses, bh_spins, bh_s
             binary angular momentum switch +1/-1 for pro/retrograde
             [17,j]: float
             binary orbital inclination
+            [18,j]: float
+            binary orbital eccentricity of binary center of mass around SMBH
     bh_locations : float array
         locations of prograde singleton BH at start of timestep in units of gravitational radii (r_g=GM_SMBH/c^2)
     bh_masses : float array
@@ -128,12 +132,39 @@ def add_to_binary_array2(rng, bin_array, bh_locations, bh_masses, bh_spins, bh_s
                 # If retro switch is zero, turn all retro BBH at formation into prograde.
                 if retro == 0:
                     bh_initial_orb_ang_mom = np.fabs(bh_initial_orb_ang_mom)
-                bin_array[16,j] = bh_initial_orb_ang_mom
-                #print("Random uniform number =", random_uniform_number )
-                #print("New orb ang mom =", bh_initial_orb_ang_mom)
+                bin_array[16,j] = bh_initial_orb_ang_mom                
                 #Set up binary inclination. Will want this to be pi radians if retrograde.
                 bin_array[17,j] = 0
-                #print("bin element",bin_array[:,j])
+                # Set up binary orbital eccentricity of com around SMBH. Assume initially v.small (e~0.01)
+                bin_array[18,j] = 0.01
+                # Set up binary GW frequency
+                # nu_gw = 1/pi *sqrt(GM_bin/a_bin^3)
+                #1rg =1AU=1.5e11m for 1e8Msun
+                rg = 1.5e11*(mass_smbh/1.e8)
+                temp_bin_separation_meters = temp_bin_separation*rg
+                temp_mass_1_kg = 2.e30*temp_mass_1
+                temp_mass_2_kg = 2.e30*temp_mass_2
+                temp_bin_mass_kg = 2.e30*temp_bin_mass
+                m_chirp = ((temp_mass_1_kg*temp_mass_2_kg)**(3/5))/(temp_bin_mass_kg**(1/5))
+                rg_chirp = (scipy.constants.G * m_chirp)/(scipy.constants.c**(2.0))
+                if temp_bin_separation_meters < rg_chirp:
+                    temp_bin_separation_meters = rg_chirp
+                    
+                nu_gw = (1.0/scipy.constants.pi)*np.sqrt(temp_bin_mass_kg*scipy.constants.G/(temp_bin_separation_meters**(3.0)))
+                bin_array[19,j] = nu_gw
+                # Set up binary strain of GW
+                # h = (4/d_obs) *(GM_chirp/c^2)*(pi*nu_gw*GM_chirp/c^3)^(2/3)
+                # where m_chirp =(M_1 M_2)^(3/5) /(M_bin)^(1/5)
+                
+                
+                # For local distances, approx d=cz/H0 = 3e8m/s(z)/70km/s/Mpc =3.e8 (z)/7e4 Mpc =428 Mpc 
+                # 1Mpc = 3.1e22m. 
+                Mpc = 3.1e22
+                # From Ned Wright's calculator https://www.astro.ucla.edu/~wright/CosmoCalc.html
+                # (z=0.1)=421Mpc. (z=0.5)=1909 Mpc
+                d_obs = 421*Mpc
+                strain = (4/d_obs)*rg_chirp*(np.pi*nu_gw*rg_chirp/scipy.constants.c)**(2/3)
+                bin_array[20,j] = strain
             bincount = bincount + 1
             #print("new binary",bin_array[:,j])
         if verbose:

@@ -1,10 +1,10 @@
 import numpy as np
 
-names_rec = ['CM', 'M', 'chi_eff', 'a_tot', 'spin_angle', 'm1', 'm2', 'a1', 'a2', 'theta1', 'theta2', 'gen1', 'gen2', 't_merge']
+names_rec = ['CM', 'M', 'chi_eff', 'a_tot', 'spin_angle', 'm1', 'm2', 'a1', 'a2', 'theta1', 'theta2', 'gen1', 'gen2', 't_merge', 'chi_p']
 dtype_rec = np.dtype( [(x, float) for x in names_rec])
 
 
-def extend_rec_merged_bh(merged_rec_array, n_mergers_so_far, merger_indices,chi,mass,spin,nprops_mergers,num_mergers):
+def extend_rec_merged_bh(merged_rec_array, n_mergers_so_far, merger_indices,chi,mass,spin,nprops_mergers,num_mergers,chi_p):
     number_of_mergers = int(num_mergers)
 
     # Reallocate record array in larger size.  Note
@@ -36,11 +36,11 @@ def extend_rec_merged_bh(merged_rec_array, n_mergers_so_far, merger_indices,chi,
     merged_rec_array['gen1'][indx_start:indx_end] = bin_array[14,merger_indices]
     merged_rec_array['gen2'][indx_start:indx_end] = bin_array[15,merger_indices]
     merged_rec_array['t_merge'][indx_start:indx_end] = bin_array[12,merger_indices]
-
+    merged_rec_array['chi_p'][indx_start:indx_end] = chi_p
     return merged_rec_array
 
 
-def merged_bh(merged_array,bin_array,merger_indices,i,chi_here,mass_here,spin_here,nprops_mergers,n_mergers_so_far):
+def merged_bh(merged_array,bin_array,merger_indices,i,chi_here,mass_here,spin_here,nprops_mergers,n_mergers_so_far,chi_p):
     """
     Recording merger event.  Designed only to handle one event at a time, with hardcoded labels
     """
@@ -93,5 +93,5 @@ def merged_bh(merged_array,bin_array,merger_indices,i,chi_here,mass_here,spin_he
     merged_array[11,n_mergers_so_far + i] = bin_array[14,merger_indices[i]]
     merged_array[12,n_mergers_so_far + i] = bin_array[15,merger_indices[i]]
     merged_array[13,n_mergers_so_far + i] = bin_array[12,merger_indices[i]]
-    
+    merged_array[14,n_mergers_so_far + i] = chi_p
     return merged_array[:,n_mergers_so_far + i]

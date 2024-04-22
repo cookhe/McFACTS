@@ -40,9 +40,10 @@ def change_spin_magnitudes(prograde_bh_spins, frac_Eddington_ratio, spin_torque_
    
     #I think this should be 1.e-3! See argument above.
     spin_iteration = (1.e-3*normalized_Eddington_ratio*normalized_spin_torque_condition*normalized_timestep)
+    #print("Spin Iteration", spin_iteration)
     #spin_iteration = (4.4e-3*normalized_Eddington_ratio*normalized_spin_torque_condition*normalized_timestep)
 
-    bh_new_spins = np.empty_like(prograde_bh_spins)
+    bh_new_spins = prograde_bh_spins
     #Singleton BH with orb ecc > e_crit will spin down b/c accrete retrograde
     prograde_bh_spin_down = np.ma.masked_where(prograde_bh_orb_ecc <= e_crit, prograde_bh_orb_ecc)
     #Singleton BH with orb ecc < e_crit will spin up b/c accrete prograde
@@ -54,16 +55,23 @@ def change_spin_magnitudes(prograde_bh_spins, frac_Eddington_ratio, spin_torque_
     indices_bh_spin_up = np.ma.nonzero(prograde_bh_spin_up)
     #bh_new_spins[prograde_orb_ang_mom_indices]=bh_new_spins[prograde_orb_ang_mom_indices]+(4.4e-3*normalized_Eddington_ratio*normalized_spin_torque_condition*normalized_timestep)
     bh_new_spins[indices_bh_spin_up] = prograde_bh_spins[indices_bh_spin_up] + spin_iteration
-    #print('BH spin up',bh_new_spins[indices_bh_spin_up])
+    #print('BH spin up', bh_new_spins[indices_bh_spin_up])
     #Spin down BH with orb ecc > e_crit
     bh_new_spins[indices_bh_spin_down] = prograde_bh_spins[indices_bh_spin_down] - spin_iteration
-    #print(bh_new_spins[indices_bh_spin_down])
+    #print('BH spin down', bh_new_spins[indices_bh_spin_down])
     # TO DO: Include a condition to keep a maximal (a=+0.98) spin BH at that value once it reaches it
     #Housekeeping:
     bh_max_spin = 0.98
     bh_min_spin = -0.98
-    bh_new_spins = np.where(bh_new_spins < bh_max_spin, bh_new_spins, bh_max_spin)
-    bh_new_spins = np.where(bh_new_spins > bh_min_spin, bh_new_spins, bh_min_spin)
+    #print("OLD/NEW SPINs",prograde_bh_spins,bh_new_spins)
+    #for i in range(len(prograde_bh_spins)):
+    #    if bh_new_spins[i] < bh_min_spin:
+    #        bh_new_spins[i] = bh_min_spin
+
+    #    if bh_new_spins[i] > bh_max_spin:
+    #        bh_new_spins[i] = bh_max_spin      
+    #bh_new_spins = np.where(bh_new_spins < bh_min_spin, bh_new_spins, bh_min_spin)
+    #bh_new_spins = np.where(bh_new_spins > bh_max_spin, bh_new_spins, bh_max_spin)
     #Return updated new spins    
     return bh_new_spins
 
@@ -99,7 +107,9 @@ def change_spin_angles(prograde_bh_spin_angles, frac_Eddington_ratio, spin_torqu
 
     spin_torque_iteration = (6.98e-3*normalized_Eddington_ratio*normalized_spin_torque_condition*normalized_timestep)
     
-    bh_new_spin_angles = np.empty_like(prograde_bh_spin_angles)
+    #print("Initital spin angles",prograde_bh_spin_angles)
+    #Assume same angles as before to start
+    bh_new_spin_angles = prograde_bh_spin_angles
     #Singleton BH with orb ecc > e_crit will spin down b/c accrete retrograde
     prograde_bh_spin_down = np.ma.masked_where(prograde_bh_orb_ecc <= e_crit, prograde_bh_orb_ecc)
     #Singleton BH with orb ecc < e_crit will spin up b/c accrete prograde
@@ -123,7 +133,7 @@ def change_spin_angles(prograde_bh_spin_angles, frac_Eddington_ratio, spin_torqu
     bh_max_spin_angle = 3.10
     bh_new_spin_angles[bh_new_spin_angles<spin_minimum_resolution] = 0.0
     bh_new_spin_angles[bh_new_spin_angles > bh_max_spin_angle] = bh_max_spin_angle
-    
+    #print("Final spin angles",bh_new_spin_angles)
     return bh_new_spin_angles
 
 

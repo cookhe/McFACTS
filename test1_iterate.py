@@ -37,7 +37,7 @@ n_bins_max = 1000
 n_bins_max_out = 100
 number_of_iterations = 100
 
-binary_field_names="R1 R2 M1 M2 a1 a2 theta1 theta2 sep com t_gw merger_flag t_mgr  gen_1 gen_2  bin_ang_mom"
+binary_field_names="R1 R2 M1 M2 a1 a2 theta1 theta2 sep com t_gw merger_flag t_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc"
 merger_field_names=' '.join(mergerfile.names_rec)
 
 # parse command line arguments
@@ -82,9 +82,10 @@ def main():
         fname = opts.use_ini
     mass_smbh, trap_radius, disk_outer_radius, alpha, n_bh, mode_mbh_init, max_initial_bh_mass, \
          mbh_powerlaw_index, mu_spin_distribution, sigma_spin_distribution, \
-             spin_torque_condition, frac_Eddington_ratio, max_initial_eccentricity, \
+             spin_torque_condition, frac_Eddington_ratio, max_initial_eccentricity, orb_ecc_damping, \
                  timestep, number_of_timesteps, disk_model_radius_array, disk_inner_radius,\
-                     disk_outer_radius, surface_density_array, aspect_ratio_array, retro, feedback, capture_time, outer_capture_radius, crit_ecc\
+                     disk_outer_radius, surface_density_array, aspect_ratio_array, retro, feedback, capture_time, outer_capture_radius, crit_ecc, \
+                        r_nsc_out, M_nsc, r_nsc_crit, nbh_nstar_ratio, mbh_mstar_ratio, nsc_index_inner, nsc_index_outer, h_disk_average, dynamic_enc, de\
                      = ReadInputs.ReadInputs_ini(fname)
 
     # create surface density & aspect ratio functions from input arrays
@@ -217,14 +218,14 @@ def main():
             else:
                 ratio_heat_mig_torques = np.ones(len(prograde_bh_locations))   
             # then migrate as usual
-            prograde_bh_locations = type1.type1_migration(mass_smbh , prograde_bh_locations, prograde_bh_masses, disk_surface_density, disk_aspect_ratio, timestep, ratio_heat_mig_torques, trap_radius)
+            prograde_bh_locations = type1.type1_migration(mass_smbh , prograde_bh_locations, prograde_bh_masses, disk_surface_density, disk_aspect_ratio, timestep, ratio_heat_mig_torques, trap_radius, prograde_bh_orb_ecc, crit_ecc)
             
             # Accrete
             prograde_bh_masses = changebhmass.change_mass(prograde_bh_masses, frac_Eddington_ratio, mass_growth_Edd_rate, timestep)
             # Spin up
-            prograde_bh_spins = changebh.change_spin_magnitudes(prograde_bh_spins, frac_Eddington_ratio, spin_torque_condition, timestep)
+            prograde_bh_spins = changebh.change_spin_magnitudes(prograde_bh_spins, frac_Eddington_ratio, spin_torque_condition, timestep, prograde_bh_orb_ecc, crit_ecc)
             # Torque spin angle
-            prograde_bh_spin_angles = changebh.change_spin_angles(prograde_bh_spin_angles, frac_Eddington_ratio, spin_torque_condition, spin_minimum_resolution, timestep)
+            prograde_bh_spin_angles = changebh.change_spin_angles(prograde_bh_spin_angles, frac_Eddington_ratio, spin_torque_condition, spin_minimum_resolution, timestep, prograde_bh_orb_ecc, crit_ecc)
 
             # Damp BH orbital eccentricity
             prograde_bh_orb_ecc = orbital_ecc.orbital_ecc_damping(mass_smbh, prograde_bh_locations, prograde_bh_masses, surf_dens_func, aspect_ratio_func, prograde_bh_orb_ecc, timestep, crit_ecc)
@@ -252,7 +253,7 @@ def main():
                     ratio_heat_mig_torques_bin_com = np.ones(len(binary_bh_array[9,:]))   
 
                 # Migrate binaries center of mass
-                binary_bh_array = evolve.bin_migration(mass_smbh, binary_bh_array, disk_surface_density, disk_aspect_ratio, timestep,ratio_heat_mig_torques_bin_com,trap_radius)
+                binary_bh_array = evolve.bin_migration(mass_smbh, binary_bh_array, disk_surface_density, disk_aspect_ratio, timestep,ratio_heat_mig_torques_bin_com,trap_radius, crit_ecc)
                 
                 #Check and see if merger flagged during hardening (row 11, if negative)
                 merger_flags = binary_bh_array[11,:]
@@ -280,7 +281,9 @@ def main():
                     merged_mass = tichy08.merged_mass(mass_1, mass_2, spin_1, spin_2)
                     merged_spin = tichy08.merged_spin(mass_1, mass_2, spin_1, spin_2, bin_ang_mom)
                     merged_chi_eff = chieff.chi_effective(mass_1, mass_2, spin_1, spin_2, angle_1, angle_2, bin_ang_mom)
-                    merged_bh_array = mergerfile.merged_bh(merged_bh_array,binary_bh_array, merger_indices,merged_chi_eff,merged_mass,merged_spin,nprop_mergers,number_of_mergers)
+                    merged_chi_p = chieff.chi_p(mass_1, mass_2, spin_1, spin_2, angle_1, angle_2, bin_ang_mom)
+                    for i in range(any_merger):
+                        merged_bh_array[i] = mergerfile.merged_bh(merged_bh_array,binary_bh_array, merger_indices,i, merged_chi_eff,merged_mass,merged_spin,nprop_mergers,number_of_mergers, merged_chi_p)
                     # do another thing
                     merger_array[:,merger_indices] = binary_bh_array[:,merger_indices]
                     #Reset merger marker to zero
@@ -338,7 +341,7 @@ def main():
             #If a close encounter within mutual Hill sphere add a new Binary
 
                 # check which binaries should get made
-                close_encounters2 = hillsphere.binary_check(prograde_bh_locations, prograde_bh_masses, mass_smbh)
+                close_encounters2 = hillsphere.binary_check2(prograde_bh_locations, prograde_bh_masses, mass_smbh, prograde_bh_orb_ecc, crit_ecc)
                 print(close_encounters2)
                 # print(close_encounters)
                 if len(close_encounters2) > 0:
