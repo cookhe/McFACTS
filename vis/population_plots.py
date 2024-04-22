@@ -1,10 +1,11 @@
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
 #plt.style.use('seaborn-v0_8-poster')
 
-# need section for loading data
-fname = '../output_mergers_population.dat'
+# load data
+fname = sys.argv[1] # McFACTS populations output file.
 mergers = np.loadtxt(fname, skiprows=2)
 column_names = "iter CM M chi_eff a_tot spin_angle m1 m2 a1 a2 theta1 theta2 gen1 gen2 t_merge"
 
