@@ -25,9 +25,16 @@ def arg():
     parser.add_argument("--fname-mergers",
         default="output_mergers_population.dat",
         type=str, help="output_mergers file")
+    parser.add_argument("--work-directory",
+        default='./',
+        type=str, help="directory containing the *.dat files.")
     opts = parser.parse_args()
+    # add working directory to filenames.
+    opts.fname_mergers = os.path.join(opts.work_directory, opts.fname_mergers)
+    # opts.fname_emris = os.path.join(opts.work_directory, opts.fname_emris)
+    print(opts.fname_mergers)
     assert os.path.isfile(opts.fname_mergers)
-    assert os.path.isfile(opts.fname_emris)
+    # assert os.path.isfile(opts.fname_emris)
     return opts
 
 ######## Main ########
@@ -37,7 +44,7 @@ def main():
     # need section for loading data
     opts = arg()
     mergers = np.loadtxt(opts.fname_mergers, skiprows=2)
-    emris = np.loadtxt(opts.fname_emris, skiprows=2)
+    # emris = np.loadtxt(opts.fname_emris, skiprows=2)
 
     mask = np.isfinite(mergers[:,2])
     mergers = mergers[mask]
@@ -61,14 +68,15 @@ def main():
     ax = plt.gca()
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
-    plt.savefig("./merger_remnant_mass.png", format='png')
+    plt.savefig(os.path.join(opts.work_directory, "./merger_remnant_mass.png"), format='png')
     plt.tight_layout()
     plt.close()
 
 
-    # TQM has a trap at 245r_g, SG has a trap radius at 700r_g.
+    # TQM has a trap at 245r_g, SG has a trap radius at 700r_g. WHY 700? Bellovary+16 says 331 Rg
+
     #trap_radius = 245
-    trap_radius = 700
+    trap_radius = 331
     plt.figure()
     #plt.title('Migration Trap influence')
     for i in range(len(mergers[:,1])):
@@ -88,7 +96,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig("./merger_mass_v_radius.png", format='png')
+    plt.savefig(os.path.join(opts.work_directory, "./merger_mass_v_radius.png"), format='png')
     plt.close()
 
 
@@ -137,7 +145,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig("./q_chi_eff.png", format='png')
+    plt.savefig(os.path.join(opts.work_directory, "./q_chi_eff.png"), format='png')
     plt.close()
 
     #Figure of Disk radius vs Chi_p follows.
@@ -170,7 +178,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig("./r_chi_p.png", format='png')
+    plt.savefig(os.path.join(opts.work_directory, "./r_chi_p.png"), format='png')
     plt.close()
 
 
@@ -198,7 +206,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig('./time_of_merger.png', format='png')
+    plt.savefig(os.path.join(opts.work_directory, './time_of_merger.png'), format='png')
     plt.close()
 
 
@@ -213,7 +221,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig('./m1m2.png', format='png')
+    plt.savefig(os.path.join(opts.work_directory, './m1m2.png'), format='png')
 
     #GW strain figure: 
     #make sure LISA.py and PhenomA.py in /vis directory
@@ -254,7 +262,7 @@ def main():
 
     ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
     ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
-    ax.scatter(emris[:,6],emris[:,5])
+    # ax.scatter(emris[:,6],emris[:,5])
     ax.set_yscale('log')
     ax.set_xscale('log')
     #ax.loglog(f_L1, h_L1,label = 'LIGO O3, L1 Sensitivity') # plot the characteristic strain
@@ -264,7 +272,7 @@ def main():
     ax.legend()
     ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
     ax.set_ylabel(r'h', fontsize=20, labelpad=10)
-    plt.savefig('./gw_strain.png', format='png')
+    plt.savefig(os.path.join(opts.work_directory, './gw_strain.png'), format='png')
     plt.close()
 
 ######## Execution ########
