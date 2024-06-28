@@ -34,11 +34,10 @@ from mcfacts.outputs import mergerfile
 
 binary_field_names="R1 R2 M1 M2 a1 a2 theta1 theta2 sep com t_gw merger_flag t_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
 merger_field_names=' '.join(mergerfile.names_rec)
-#DEFAULT_INI = Path(__file__).parent.resolve() / ".." / "recipes" / "model_choice.ini"
-DEFAULT_INI = Path(__file__).parent.resolve() / ".." / "recipes" / "paper1_fig_dyn_on.ini"
+DEFAULT_INI = Path(__file__).parent.resolve() / ".." / "recipes" / "model_choice.ini"
 DEFAULT_PRIOR_POP = Path(__file__).parent.resolve() / ".." / "recipes" / "prior_mergers_population.dat"
 assert DEFAULT_INI.is_file()
-assert DEFAULT_PRIOR_POP.is_file()
+# assert DEFAULT_PRIOR_POP.is_file()
 
 def arg():
     import argparse
@@ -966,10 +965,10 @@ def main():
                     temp_emri_array[4] = inner_disk_orb_ecc[i]
                     temp_emri_array[5] = emri_gw_strain[i]
                     temp_emri_array[6] = emri_gw_freq[i]
-                    #print("temp_emri_array",temp_emri_array)
-                    #print("emri_array",emri_array)
+                    # print("temp_emri_array",temp_emri_array)
+                    # print("emri_array",emri_array)
                     emri_array = np.vstack((emri_array,temp_emri_array))
-                
+                    # print("emri_array",emri_array)
             # if inner_disk_locations[i] <1R_g then merger!
             inner_disk_index = -2
             num_in_inner_disk = np.size(inner_disk_locations)
@@ -1009,8 +1008,9 @@ def main():
         print("Mergers", merged_bh_array.shape)
         print("Nbh_disk",n_bh)
     
+        print("emri_array.shape = ", emri_array.shape)
         total_emris = emri_array.shape[0]
-        #print("Total emris =",total_emris)
+        print("Total emris =",total_emris)
         #with open('emri.dat','wb') as f:
         #    np.savetxt(f,emri_array) 
             
@@ -1075,8 +1075,16 @@ def main():
         surviving_bh_array[:,3] = prograde_bh_spin_angles
         surviving_bh_array[:,4] = prograde_bh_generations
 
-        total_emri_array = emri_array
-        if True and number_of_mergers > 0: #verbose:
+        print('shapes before if condition:')
+        print('total_emri_array.shape = ', total_emri_array.shape)
+        print('emri_array.shape = ', emri_array.shape)
+        print('len(emri_array.shape) = ',len(emri_array.shape))
+        if len(emri_array.shape) > 1:
+            total_emri_array = emri_array
+        # else
+        #     total_emri_array = []
+        print('total_emri_array.shape after if= ', total_emri_array.shape)
+        if opts.verbose == True and number_of_mergers > 0: #verbose:
                 print(merged_bh_array[:,:number_of_mergers].T)
 
         iteration_save_name = f"run{iteration_zfilled_str}/{opts.fname_output_mergers}"
@@ -1089,16 +1097,20 @@ def main():
         merged_bh_array_pop.append(np.concatenate((iteration_row[np.newaxis], merged_bh_array[:,:number_of_mergers])).T)
         #surviving_bh_array_pop.append(np.concatenate((survivor_row[np.newaxis], surviving_bh_array[:,:total_bh_survived])).T)
         surviving_bh_array_pop.append(np.concatenate((survivor_row[np.newaxis], surviving_bh_array[:total_bh_survived,:])))
-        emris_array_pop.append(np.concatenate((emri_row[np.newaxis],total_emri_array[:,:total_emris])))
+        print('total_emris =', total_emris)
+        print('shapes @ end:')
+        print('emri_row[np.newaxis] =', emri_row[np.newaxis].shape)
+        print('total_emri_array =', total_emri_array.shape)
+        # emris_array_pop.append(np.concatenate((emri_row[np.newaxis],total_emri_array[:,:total_emris])))
      # save all mergers from Monte Carlo
     merger_pop_field_names = "iter " + merger_field_names # Add "Iter" to field names
     population_header = f"Initial seed: {opts.seed}\n{merger_pop_field_names}" # Include initial seed
     basename, extension = os.path.splitext(opts.fname_output_mergers)
     population_save_name = f"{basename}_population{extension}"
     survivors_save_name = f"{basename}_survivors{extension}"
-    emris_save_name = f"{basename}_emris{extension}"
+    # emris_save_name = f"{basename}_emris{extension}"
     np.savetxt(os.path.join(opts.work_directory, population_save_name), np.vstack(merged_bh_array_pop), header=population_header)
     np.savetxt(os.path.join(opts.work_directory, survivors_save_name), np.vstack(surviving_bh_array_pop))
-    np.savetxt(os.path.join(opts.work_directory,emris_save_name),np.vstack(emris_array_pop))
+    # np.savetxt(os.path.join(opts.work_directory,emris_save_name),np.vstack(emris_array_pop))
 if __name__ == "__main__":
     main()
