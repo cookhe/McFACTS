@@ -26,6 +26,10 @@ MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
+HC_EXP_NAME = spin_distribution
+HC_RUN_NAME = tqm_sigma0p2
+HC_WKDIR = ${HERE}/../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
+HC_INPUT_FILE = ${HERE}recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # NAL files might not exist unless you download them from
 # https://gitlab.com/xevra/nal-data
@@ -74,17 +78,26 @@ mstar_runs:
 	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/early
 	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/late
 		
+qxeff:
+	python3 ${MCFACTS_SIM_EXE} \
+		--fname-log out.log \
+		--fname-ini=${HC_INPUT_FILE}  \
+		--work-directory=${HC_WKDIR}
+	python3 ${POPULATION_PLOTS_EXE} \
+	    --work-directory=${HC_WKDIR}
 
 #### CLEAN ####
 clean:
 	rm -rf run*
 	rm -rf output_mergers_population.dat
+	rm -rf output_mergers_emris.dat
 	rm -rf m1m2.png
 	rm -rf merger_mass_v_radius.png
 	rm -rf q_chi_eff.png
 	rm -rf time_of_merger.png
 	rm -rf merger_remnant_mass.png
 	rm -rf gw_strain.png
+	rm -rf r_chi_p.png
 	rm -rf out.log
 	rm -rf mergers_cdf*.png
 	rm -rf mergers_nal*.png
