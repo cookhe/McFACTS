@@ -90,6 +90,7 @@ qxeff:
 clean:
 	rm -rf run*
 	rm -rf output_mergers_population.dat
+	rm -rf output_mergers_survivors.dat
 	rm -rf output_mergers_emris.dat
 	rm -rf m1m2.png
 	rm -rf merger_mass_v_radius.png
