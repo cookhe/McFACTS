@@ -26,8 +26,8 @@ MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
-HC_EXP_NAME = spin_distribution
-HC_RUN_NAME = tqm_sigma0p2
+HC_EXP_NAME = disk_radius
+HC_RUN_NAME = sg_r1e5
 HC_WKDIR = ${HERE}/../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
 HC_INPUT_FILE = ${HERE}recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
@@ -90,7 +90,6 @@ qxeff:
 clean:
 	rm -rf run*
 	rm -rf output_mergers_population.dat
-	rm -rf output_mergers_survivors.dat
 	rm -rf output_mergers_emris.dat
 	rm -rf m1m2.png
 	rm -rf merger_mass_v_radius.png
