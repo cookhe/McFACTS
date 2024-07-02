@@ -36,7 +36,7 @@ binary_field_names="R1 R2 M1 M2 a1 a2 theta1 theta2 sep com t_gw merger_flag t_m
 merger_field_names=' '.join(mergerfile.names_rec)
 DEFAULT_INI = Path(__file__).parent.resolve() / ".." / "recipes" / "model_choice.ini"
 DEFAULT_PRIOR_POP = Path(__file__).parent.resolve() / ".." / "recipes" / "prior_mergers_population.dat"
-assert DEFAULT_INI.is_file()
+assert DEFAULT_INI.is_file(), f"The DEFAULT_INI file \'{DEFAULT_INI}\' does not exist."
 # assert DEFAULT_PRIOR_POP.is_file()
 
 def arg():
@@ -336,6 +336,7 @@ def main():
         # and in your .ini file set switch prior_agn = 1.0.
         # Initial orb ecc is prior_ecc_factor*uniform[0,0.99]=[0,0.33] for prior_ecc_factor=0.3 (default)
         if opts.prior_agn == 1.0:
+            assert DEFAULT_PRIOR_POP.is_file(), f"Cannot import prior population. The DEFAULT_PRIOR_POP file \'{DEFAULT_PRIOR_POP}\' does not exist."
             
             prior_radii, prior_masses, prior_spins, prior_spin_angles, prior_gens \
                 = ReadInputs.ReadInputs_prior_mergers()
