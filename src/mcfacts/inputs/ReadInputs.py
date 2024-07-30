@@ -26,7 +26,7 @@ INPUT_TYPES = {
     'max_initial_eccentricity' : float,
     'timestep' : float,
     'number_of_timesteps' : int,
-    'retro' : int,
+    'retro' : float,
     'feedback' : int,
     'capture_time' : float,
     'outer_capture_radius' : float,
@@ -118,8 +118,8 @@ def ReadInputs_ini(fname='inputs/model_choice.txt', verbose=False):
     aspect_ratio_array : float array
         Aspect ratio corresponding to radii in disk_model_radius_array
         drawn from modelname_aspect_ratio.txt
-    retro : int
-        Switch (0) turns retrograde BBH into prograde BBH at formation to test (q,X_eff) relation 
+    retro : float
+        Fraction of BBH that form retrograde to test (q,X_eff) relation. Default retro=0.1 
     feedback : int
         Switch (1) turns feedback from embedded BH on.
     orb_ecc_damping : int
@@ -325,7 +325,7 @@ def ReadInputs_ini(fname='inputs/model_choice.txt', verbose=False):
 
     return input_variables, disk_model_radius_array, surface_density_array, aspect_ratio_array
 
-def ReadInputs_prior_mergers(fname='recipes/postagn_bh_pop1.dat', verbose=False):
+def ReadInputs_prior_mergers(fname='recipes/sg1Myrx2_survivors.dat', verbose=False):
     """This function reads your prior mergers from a file user specifies or
     default (recipies/prior_mergers_population.dat), and returns the chosen variables for 
     manipulation by main.    
@@ -360,9 +360,11 @@ def ReadInputs_prior_mergers(fname='recipes/postagn_bh_pop1.dat', verbose=False)
     )                
     """
 
+    #with open('../recipes/prior_mergers_x2_population.dat') as filedata:
+    #    prior_mergers_file = np.genfromtxt('../recipes/prior_mergers_x2_population.dat', unpack = True)
     
-    with open('../recipes/postagn_bh_pop1.dat') as filedata:
-        prior_mergers_file = np.genfromtxt('../recipes/postagn_bh_pop1.dat', unpack = True)
+    with open('../recipes/sg1Myrx2_survivors.dat') as filedata:
+        prior_mergers_file = np.genfromtxt('../recipes/sg1Myrx2_survivors.dat', unpack = True)
     
     
     #Clean the file of iteration lines (of form 3.0 3.0 3.0 3.0 3.0 etc for it=3.0, same value across each column)

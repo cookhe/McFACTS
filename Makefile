@@ -51,9 +51,9 @@ install: clean version
 
 mcfacts_sim: clean
 	python3 ${MCFACTS_SIM_EXE} \
-		--n_iterations 100 \
+		--n_iterations 10 \
 		--fname-log out.log \
-		--seed 3456789012
+		--seed 4567890123
 
 plots:  mcfacts_sim
 	python3 ${POPULATION_PLOTS_EXE} 
