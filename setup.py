@@ -145,8 +145,9 @@ metadata = dict(
 
     classifiers=CLASSIFIERS,
 
-    package_dir ={"": "src"},
     packages=find_packages("src"),
+    package_dir={"": "src"},
+    package_data={"": ['inputs/data/*.txt', 'vis/data/*.txt']},
 
     install_requires=REQUIREMENTS["install"],
     setup_requires=REQUIREMENTS["setup"],

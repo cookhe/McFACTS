@@ -25,6 +25,9 @@ def arg():
     parser.add_argument("--fname-mergers",
         default="output_mergers_population.dat",
         type=str, help="output_mergers file")
+    parser.add_argument("--plots-directory",
+        default=".",
+        type=str, help="directory to save plots")
     parser.add_argument("--work-directory",
         default='./',
         type=str, help="directory containing the *.dat files.")
@@ -74,7 +77,7 @@ def main():
     ax = plt.gca()
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
-    plt.savefig(os.path.join(opts.work_directory, "./merger_remnant_mass.png"), format='png')
+    plt.savefig(opts.plots_directory+"/merger_remnant_mass.png", format='png')
     plt.tight_layout()
     plt.close()
 
@@ -102,7 +105,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(os.path.join(opts.work_directory, "./merger_mass_v_radius.png"), format='png')
+    plt.savefig(opts.plots_directory+"/merger_mass_v_radius.png", format='png')
     plt.close()
 
 
@@ -212,7 +215,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(os.path.join(opts.work_directory, './time_of_merger.png'), format='png')
+    plt.savefig(opts.plots_directory+'/time_of_merger.png', format='png')
     plt.close()
 
 
@@ -227,7 +230,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(os.path.join(opts.work_directory, './m1m2.png'), format='png')
+    plt.savefig(opts.plots_directory+'/m1m2.png', format='png')
 
     #GW strain figure: 
     #make sure LISA.py and PhenomA.py in /vis directory

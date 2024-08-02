@@ -82,6 +82,12 @@ def ReadInputs_ini(fname='inputs/model_choice.txt', verbose=False):
     mbh_powerlaw_index : float
         Initial mass distribution for stellar bh is assumed to be Pareto
         with high mass cutoff--powerlaw index for Pareto dist
+    min_initial_star_mass : float
+        Initial mass distribution for stars is assumed Salpeter
+    max_initial_star_mass : float
+        Initial mass distribution for stars is assumed Salpeter
+    star_mass_powerlaw_index : float
+        Initial mass distribution for stars is assumed Salpeter, alpha = 2.35
     mu_spin_distribution : float
         Initial spin distribution for stellar bh is assumed to be Gaussian
         --mean of spin dist
@@ -98,6 +104,27 @@ def ReadInputs_ini(fname='inputs/model_choice.txt', verbose=False):
     max_initial_eccentricity : float
         assuming initially flat eccentricity distribution among single orbiters around SMBH
         out to max_initial_eccentricity. Eventually this will become smarter.
+    mu_star_spin_distribution : float
+        Initial spin distribution for stars is assumed to be Gaussian
+    sigma_star_spin_distribution : float
+        Initial spin distribution for stars is assumed to be Gaussian
+        --standard deviation of spin dist
+    spin_star_torque_condition : float
+        fraction of initial mass required to be accreted before star spin is torqued 
+        fully into alignment with the AGN disk. We don't know for sure but 
+        Bogdanovic et al. says between 0.01=1% and 0.1=10% is what is required.
+    frac_star_Eddington_ratio : float
+        assumed accretion rate onto stars from disk gas, in units of Eddington
+        accretion rate
+    max_initial_star_eccentricity : float
+        assuming initially flat eccentricity distribution among single orbiters around SMBH
+        out to max_initial_eccentricity. Eventually this will become smarter.
+    stars_initial_X  : float
+        Stellar initial hydrogen mass fraction
+    stars_initial_Y : float
+        Stellar initial helium mass fraction
+    stars_initial_Z : float
+        Stellar initial metallicity mass fraction
     timestep : float
         How long is your timestep in years?
     number_of_timesteps : int
@@ -172,11 +199,22 @@ def ReadInputs_ini(fname='inputs/model_choice.txt', verbose=False):
         'mode_mbh_init' : float,
         'max_initial_bh_mass' : float,
         'mbh_powerlaw_index' : float,
+        'min_initial_star_mass' : float,
+        'max_initial_star_mass' : float,
+        'star_mass_powerlaw_index' : float,
         'mu_spin_distribution' : float,
         'sigma_spin_distribution' : float,
         'spin_torque_condition' : float,
         'frac_Eddington_ratio' : float,
         'max_initial_eccentricity' : float,
+        'mu_star_spin_distribution' : float,
+        'sigma_star_spin_distribution' : float,
+        'spin_star_torque_condition' : float,
+        'frac_star_Eddington_ratio' : float,
+        'max_initial_star_eccentricity' : float,
+        'stars_initial_X' : float,
+        'stars_initial_Y' : float,
+        'stars_initial_Z' : float,
         'timestep' : float,
         'number_of_timesteps' : int,
         'retro' : int,
