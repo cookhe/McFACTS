@@ -26,9 +26,9 @@ MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
-HC_EXP_NAME = disk_radius
-HC_RUN_NAME = sg_r1e5
-HC_WKDIR = ${HERE}/../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
+HC_EXP_NAME = retrograde_on
+HC_RUN_NAME = sg_fret0p1
+HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
 HC_INPUT_FILE = ${HERE}recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # NAL files might not exist unless you download them from
@@ -49,14 +49,14 @@ install: clean version
 
 #### Test one thing at a time ####
 
-wd=$(shell pwd)/test_output
+wd=${HC_WKDIR} #$(shell pwd)/test_output
 
 mcfacts_sim: clean
 	python ${MCFACTS_SIM_EXE} \
 		--fname-log out.log --work-directory ${wd} \
 		--seed 3456789012
 
-plots:  mcfacts_sim
+plots:  #mcfacts_sim
 	python ${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
 
 vera_plots: mcfacts_sim
@@ -83,9 +83,10 @@ qxeff:
 	python3 ${MCFACTS_SIM_EXE} \
 		--fname-log out.log \
 		--fname-ini=${HC_INPUT_FILE}  \
-		--work-directory=${HC_WKDIR}
+		--work-directory=${wd}
 	python3 ${POPULATION_PLOTS_EXE} \
-	    --work-directory=${HC_WKDIR}
+	    --plots-directory=${wd} \
+		--fname-mergers=${wd}/output_mergers_population.dat
 
 #### CLEAN ####
 clean:
@@ -100,3 +101,5 @@ clean:
 	rm -rf ${wd}/gw_strain.png
 	rm -rf ${wd}/r_chi_p.png
 	rm -rf ${wd}/out.log
+	rm -rf ${wd}/output_mergers_lvk.dat
+	rm -rf ${wd}/output_mergers_survivors.dat
