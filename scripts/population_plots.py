@@ -82,7 +82,9 @@ def main():
     plt.close()
 
 
-    # TQM has a trap at 245r_g, SG has a trap radius at 700r_g. WHY 700? Bellovary+16 says 331 Rg
+    # TQM has a trap at 245r_g, SG has a trap radius at 700r_g. WHY 700? Bellovary+16 says 331 Rg.
+    # Answer: it's because Bellovary+16 uses the equation for Schwarschild Radius for Rg rather than
+    #         gravitational radius: Rs = 2*Rg
 
     #trap_radius = 245
     trap_radius = 331
@@ -137,13 +139,20 @@ def main():
     ax2 = fig.add_subplot(111)
 
     # Pipe operator (|) = logical OR. (&)= logical AND.
+    low_gen_chi_eff = np.where((gen1 == 1 ) & (gen2 == 1), chi_eff, np.nan)
     high_gen_chi_eff = np.where((gen1 > 1.0) | (gen2 > 1.0), chi_eff, np.nan)
     extreme_gen_chi_eff = np.where((gen1 > 2.0) | (gen2 > 2.0), chi_eff, np.nan)
 
 
-    ax2.scatter(chi_eff,mass_ratio, color='darkgoldenrod')
-    ax2.scatter(high_gen_chi_eff,mass_ratio, color='rebeccapurple',marker='+')
-    ax2.scatter(extreme_gen_chi_eff,mass_ratio,color='red',marker='o')
+    slope, intercept, r_value, p_value, std_err = stats.linregress(chi_eff, mass_ratio)
+    print(len(low_gen_chi_eff), len(high_gen_chi_eff), len(mass_ratio))
+    # sys.exit()
+    x = np.linspace(-1,1, num=10)
+    y = slope * x + intercept
+    ax2.plot(x, y, c='grey', lw=5, alpha=0.5, label=f'm = {round(slope,3)}', zorder=0)
+    ax2.scatter(chi_eff,mass_ratio, color='darkgoldenrod', label='1g-1g')
+    ax2.scatter(high_gen_chi_eff,mass_ratio, color='rebeccapurple', marker='+', label='2g-1g, 2g-2g')
+    ax2.scatter(extreme_gen_chi_eff,mass_ratio,color='red',marker='o', label='at least one 3g')
     #plt.scatter(chi_eff, mass_ratio, color='darkgoldenrod')
     #plt.title("Mass Ratio vs. Effective Spin")
     plt.ylabel(r'$q = M_2 / M_1$ ($M_1 > M_2$)')
@@ -152,9 +161,10 @@ def main():
     plt.xlim(-1,1)
     ax = plt.gca()
     ax.set_axisbelow(True)
+    plt.legend()
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(os.path.join(opts.work_directory, "./q_chi_eff.png"), format='png')
+    plt.savefig(os.path.join(opts.plots_directory, "./q_chi_eff.png"), format='png')
     plt.close()
 
     #Figure of Disk radius vs Chi_p follows.
@@ -187,7 +197,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(os.path.join(opts.work_directory, "./r_chi_p.png"), format='png')
+    plt.savefig(os.path.join(opts.plots_directory, "./r_chi_p.png"), format='png')
     plt.close()
 
 
@@ -308,7 +318,7 @@ def main():
     ax.legend()
     ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
     ax.set_ylabel(r'h', fontsize=20, labelpad=10)
-    plt.savefig(os.path.join(opts.work_directory, './gw_strain.png'), format='png')
+    plt.savefig(os.path.join(opts.plots_directory, './gw_strain.png'), format='png')
     plt.close()
 
 ######## Execution ########
