@@ -10,9 +10,11 @@ import mcfacts.vis.LISA as li
 import mcfacts.vis.PhenomA as pa
 import pandas as pd
 import os
+from scipy import stats
 # Grab those txt files
 from importlib import resources as impresources
 from mcfacts.vis import data
+import sys
 
 
 ######## Arg ########
@@ -28,20 +30,19 @@ def arg():
     parser.add_argument("--plots-directory",
         default=".",
         type=str, help="directory to save plots")
-    parser.add_argument("--work-directory",
-        default='./',
-        type=str, help="directory containing the *.dat files.")
     parser.add_argument("--fname-lvk",
         default="output_mergers_lvk.dat",
         type=str, help="output_lvk file")
     opts = parser.parse_args()
     # add working directory to filenames.
-    opts.fname_mergers = os.path.join(opts.work_directory, opts.fname_mergers)
-    # opts.fname_emris = os.path.join(opts.work_directory, opts.fname_emris)
-    print(opts.fname_mergers)
+    opts.fname_mergers = os.path.join(opts.fname_mergers)
+    # opts.fname_emris = os.path.join(opts.plots_directory, opts.fname_emris)
+    print("plots dir", opts.plots_directory)
+    print("merger file", opts.fname_mergers)
     assert os.path.isfile(opts.fname_mergers)
-    assert os.path.isfile(opts.fname_emris)
-    assert os.path.isfile(opts.fname_lvk)
+    # assert os.path.isfile(opts.fname_emris)
+    # assert os.path.isfile(opts.fname_lvk)
+    # sys.exit()
     return opts
 
 ######## Main ########
@@ -51,13 +52,12 @@ def main():
     # need section for loading data
     opts = arg()
     mergers = np.loadtxt(opts.fname_mergers, skiprows=2)
-    emris = np.loadtxt(opts.fname_emris, skiprows=2)
-    lvk = np.loadtxt(opts.fname_lvk,skiprows=2)
+    # emris = np.loadtxt(opts.fname_emris, skiprows=2)
+    # lvk = np.loadtxt(opts.fname_lvk,skiprows=2)
 
     mask = np.isfinite(mergers[:,2])
     mergers = mergers[mask]
 
-    
     # plt.figure(figsize=(10,6))
     # plt.figure()
 
@@ -269,30 +269,30 @@ def main():
     Sn = lisa.Sn(f)
 
 
-    fig, ax = plt.subplots(1, figsize=(8,6))
-    #plt.tight_layout()
+    # fig, ax = plt.subplots(1, figsize=(8,6))
+    # #plt.tight_layout()
 
-    ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
-    ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    # ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
+    # ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
+    # ax.tick_params(axis='both', which='major', labelsize=20)
 
-    ax.set_xlim(1.0e-7, 1.0e+4)
-    ax.set_ylim(1.0e-24, 1.0e-15)
+    # ax.set_xlim(1.0e-7, 1.0e+4)
+    # ax.set_ylim(1.0e-24, 1.0e-15)
 
-    identical_rows_emris = np.where( emris[:,5] == emris[:,6])
-    zero_rows_emris = np.where(emris[:,6] == 0)    
-    emris = np.delete(emris,identical_rows_emris,0)
-    #emris = np.delete(emris,zero_rows_emris,0)
-    emris[~np.isfinite(emris)] = 1.e-40
+    # identical_rows_emris = np.where( emris[:,5] == emris[:,6])
+    # zero_rows_emris = np.where(emris[:,6] == 0)    
+    # emris = np.delete(emris,identical_rows_emris,0)
+    # #emris = np.delete(emris,zero_rows_emris,0)
+    # emris[~np.isfinite(emris)] = 1.e-40
 
-    identical_rows_lvk = np.where(lvk[:,5] == lvk[:,6])
-    zero_rows_lvk = np.where(lvk[:,6] == 0)
-    lvk = np.delete(lvk,identical_rows_lvk,0)
-    #lvk = np.delete(lvk,zero_rows_lvk,0)
-    lvk[~np.isfinite(lvk)] = 1.e-40
+    # identical_rows_lvk = np.where(lvk[:,5] == lvk[:,6])
+    # zero_rows_lvk = np.where(lvk[:,6] == 0)
+    # lvk = np.delete(lvk,identical_rows_lvk,0)
+    # #lvk = np.delete(lvk,zero_rows_lvk,0)
+    # lvk[~np.isfinite(lvk)] = 1.e-40
 
-    inv_freq_emris = 1/emris[:,6]
-    inv_freq_lvk = 1/lvk[:,6]
+    # inv_freq_emris = 1/emris[:,6]
+    # inv_freq_lvk = 1/lvk[:,6]
     #ma_freq_emris = np.ma.where(freq_emris == 0)
     #ma_freq_lvk = np.ma.where(freq_lvk == 0)
     #indices_where_zeros_emris = np.where(freq_emris = 0.)
@@ -302,24 +302,24 @@ def main():
     #inv_freq_emris = 1.0/ma_freq_emris
     #inv_freq_lvk = 1.0/ma_freq_lvk
     # timestep =1.e4yr
-    timestep = 1.e4
-    strain_per_freq_emris = emris[:,5]*inv_freq_emris/timestep
-    strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
-    ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
-    ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
-    ax.scatter(emris[:,6],strain_per_freq_emris)
-    ax.scatter(lvk[:,6],strain_per_freq_lvk)
-    ax.set_yscale('log')
-    ax.set_xscale('log')
+    # timestep = 1.e4
+    # strain_per_freq_emris = emris[:,5]*inv_freq_emris/timestep
+    # strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
+    # ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
+    # ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
+    # ax.scatter(emris[:,6],strain_per_freq_emris)
+    # ax.scatter(lvk[:,6],strain_per_freq_lvk)
+    # ax.set_yscale('log')
+    # ax.set_xscale('log')
     #ax.loglog(f_L1, h_L1,label = 'LIGO O3, L1 Sensitivity') # plot the characteristic strain
 
     #ax.loglog(f_gw,h,color ='black', label='GW150914')
 
-    ax.legend()
-    ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
-    ax.set_ylabel(r'h', fontsize=20, labelpad=10)
-    plt.savefig(os.path.join(opts.plots_directory, './gw_strain.png'), format='png')
-    plt.close()
+    # ax.legend()
+    # ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
+    # ax.set_ylabel(r'h', fontsize=20, labelpad=10)
+    # plt.savefig(os.path.join(opts.plots_directory, './gw_strain.png'), format='png')
+    # plt.close()
 
 ######## Execution ########
 if __name__ == "__main__":
