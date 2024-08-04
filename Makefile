@@ -29,7 +29,7 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 HC_EXP_NAME = retro_binaries
 HC_RUN_NAME = sg_fret0p1
 HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
-HC_INPUT_FILE = ${HERE}recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
+HC_INPUT_FILE = ${HC_WKDIR}/paper2_${HC_RUN_NAME}.ini
 
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # NAL files might not exist unless you download them from
