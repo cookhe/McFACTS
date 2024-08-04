@@ -27,7 +27,7 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
 HC_EXP_NAME = retro_binaries
-HC_RUN_NAME = sg_fret0p1
+HC_RUN_NAME = sg_fret0p5
 HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
 HC_INPUT_FILE = ${HC_WKDIR}/paper2_${HC_RUN_NAME}.ini
 
@@ -81,9 +81,9 @@ mstar_runs:
 
 qxeff:
 #	python3 ${MCFACTS_SIM_EXE} \
-#		--fname-log out.log \
-#		--fname-ini=${HC_INPUT_FILE}  \
-#		--work-directory=${wd}
+		--fname-log out.log \
+		--fname-ini=${HC_INPUT_FILE}  \
+		--work-directory=${wd}
 	python3 ${POPULATION_PLOTS_EXE} \
 	    --plots-directory=${wd} \
 		--fname-mergers=${wd}/output_mergers_population.dat
