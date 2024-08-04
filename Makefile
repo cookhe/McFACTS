@@ -65,21 +65,19 @@ vera_plots: mcfacts_sim
 		--verbose
 
 mstar_runs:
-	echo ${MSTAR_RUNS_WKDIR}/early
-	echo ${MSTAR_RUNS_WKDIR}/late
-#	python3 ${MSTAR_RUNS_EXE} \
-#		--number_of_timesteps 100 \
-#		--n_iterations 10 \
-#		--dynamics \
-#		--feedback \
-#		--mstar-min 1e9 \
-#		--mstar-max 1e13 \
-#		--nbins 9 \
-#        --scrub \
-#		--fname-nal ${FNAME_GWTC2_NAL} \
-#		--wkdir ${MSTAR_RUNS_WKDIR}
-#	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/early
-#	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/late
+	python3 ${MSTAR_RUNS_EXE} \
+		--number_of_timesteps 100 \
+		--n_iterations 10 \
+		--dynamics \
+		--feedback \
+		--mstar-min 1e9 \
+		--mstar-max 1e13 \
+		--nbins 9 \
+        --scrub \
+		--fname-nal ${FNAME_GWTC2_NAL} \
+		--wkdir ${MSTAR_RUNS_WKDIR}
+	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/early
+	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/late
 
 qxeff:
 #	python3 ${MCFACTS_SIM_EXE} \
