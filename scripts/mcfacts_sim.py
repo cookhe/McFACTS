@@ -1321,10 +1321,10 @@ def main():
         total_emri_array = emri_array
         total_bbh_gw_array = bbh_gw_array
         if True and number_of_mergers > 0: #verbose:
-        print('shapes before if condition:')
-        print('total_emri_array.shape = ', total_emri_array.shape)
-        print('emri_array.shape = ', emri_array.shape)
-        print('len(emri_array.shape) = ',len(emri_array.shape))
+            print('shapes before if condition:')
+            print('total_emri_array.shape = ', total_emri_array.shape)
+            print('emri_array.shape = ', emri_array.shape)
+            print('len(emri_array.shape) = ',len(emri_array.shape))
         if len(emri_array.shape) > 1:
             total_emri_array = emri_array
         # else
