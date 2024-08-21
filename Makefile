@@ -21,6 +21,7 @@ HERE=./
 #### Scripts ####
 MCFACTS_SIM_EXE = ${HERE}/scripts/mcfacts_sim.py
 POPULATION_PLOTS_EXE = ${HERE}/scripts/population_plots.py
+POPULATION_STATS_EXE = ${HERE}scripts/merger_stats.py
 VERA_PLOTS_EXE = ${HERE}/scripts/vera_plots.py
 MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
@@ -28,8 +29,9 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 #### Setup ####
 HC_EXP_NAME = retro_binaries
 HC_RUN_NAME = sg_fret0p5
+# SEED = 890214866854543065
 HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
-HC_INPUT_FILE = ${HC_WKDIR}/paper2_${HC_RUN_NAME}.ini
+HC_INPUT_FILE = ${HERE}/recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # NAL files might not exist unless you download them from
@@ -56,7 +58,7 @@ mcfacts_sim: clean
 		--fname-log out.log --work-directory ${wd} \
 		--seed 3456789012
 
-plots:  #mcfacts_sim
+plots: #mcfacts_sim
 	python ${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
 
 vera_plots: mcfacts_sim
@@ -80,13 +82,29 @@ mstar_runs:
 	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/late
 
 qxeff:
-#	python3 ${MCFACTS_SIM_EXE} \
+	python3 ${MCFACTS_SIM_EXE} \
 		--fname-log out.log \
 		--fname-ini=${HC_INPUT_FILE}  \
-		--work-directory=${wd}
+		--work-directory=${wd} \
+#		--seed=${SEED}
 	python3 ${POPULATION_PLOTS_EXE} \
 	    --plots-directory=${wd} \
 		--fname-mergers=${wd}/output_mergers_population.dat
+	python3 ${POPULATION_STATS_EXE} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+	rm -rf ${wd}/run*
+
+hcplots:
+	python3 ${POPULATION_PLOTS_EXE} \
+	    --plots-directory=${wd} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+#	python3 ${POPULATION_STATS_EXE} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+
+stats:
+	python3 ${POPULATION_STATS_EXE} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+
 
 #### CLEAN ####
 clean:
