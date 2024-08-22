@@ -1,6 +1,6 @@
 import numpy as np
 
-names_rec = ['CM', 'M', 'chi_eff', 'a_tot', 'spin_angle', 'm1', 'm2', 'a1', 'a2', 'theta1', 'theta2', 'gen1', 'gen2', 't_merge', 'chi_p']
+names_rec = ['CM', 'M', 'chi_eff', 'a_tot', 'spin_angle', 'm1', 'm2', 'a1', 'a2', 'theta1', 'theta2', 'gen1', 'gen2', 't_merge', 'time_passed', 'chi_p']
 dtype_rec = np.dtype( [(x, float) for x in names_rec])
 
 

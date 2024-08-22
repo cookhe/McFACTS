@@ -27,9 +27,10 @@ MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
+SEED=3456789012
+FNAME_INI= ${HERE}/recipes/pAGN_test.ini
 HC_EXP_NAME = retro_binaries
 HC_RUN_NAME = sg_fret0p5
-# SEED = 890214866854543065
 HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
 HC_INPUT_FILE = ${HERE}/recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 
@@ -39,7 +40,8 @@ MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # scripts that use NAL files might not work unless you install
 # gwalk (pip3 install gwalk)
 FNAME_GWTC2_NAL = ${HOME}/Repos/nal-data/GWTC-2.nal.hdf5
-wd=${HC_WKDIR}#$(shell pwd)/test_output
+#Set this to change your working directory
+wd=${HC_WKDIR}
 
 ######## Instructions ########
 #### Install ####
@@ -53,10 +55,14 @@ install: clean version
 
 #### Test one thing at a time ####
 
+
 mcfacts_sim: clean
-	python ${MCFACTS_SIM_EXE} \
-		--fname-log out.log --work-directory ${wd} \
-		--seed 3456789012
+	python3 ${MCFACTS_SIM_EXE} \
+		--n_iterations 10 \
+		--fname-ini ${FNAME_INI} \
+		--fname-log out.log \
+		--seed ${SEED}
+
 
 plots: #mcfacts_sim
 	python ${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
@@ -68,19 +74,20 @@ vera_plots: mcfacts_sim
 
 mstar_runs:
 	python3 ${MSTAR_RUNS_EXE} \
-		--number_of_timesteps 100 \
-		--n_iterations 10 \
+		--fname-ini ${FNAME_INI} \
+		--number_of_timesteps 1000 \
+        --n_bins_max 10000 \
+		--n_iterations 100 \
 		--dynamics \
 		--feedback \
 		--mstar-min 1e9 \
 		--mstar-max 1e13 \
-		--nbins 9 \
-        --scrub \
+		--nbins 33 \
+		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
 		--wkdir ${MSTAR_RUNS_WKDIR}
-	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/early
-	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}/late
-
+	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
+		
 qxeff:
 	python3 ${MCFACTS_SIM_EXE} \
 		--fname-log out.log \
@@ -109,8 +116,7 @@ stats:
 #### CLEAN ####
 clean:
 	rm -rf ${wd}/run*
-	rm -rf ${wd}/output_mergers_population.dat
-	rm -rf ${wd}/output_mergers_emris.dat
+	rm -rf ${wd}/output_mergers*.dat
 	rm -rf ${wd}/m1m2.png
 	rm -rf ${wd}/merger_mass_v_radius.png
 	rm -rf ${wd}/q_chi_eff.png
@@ -119,5 +125,6 @@ clean:
 	rm -rf ${wd}/gw_strain.png
 	rm -rf ${wd}/r_chi_p.png
 	rm -rf ${wd}/out.log
-	rm -rf ${wd}/output_mergers_lvk.dat
-	rm -rf ${wd}/output_mergers_survivors.dat
+  rm -rf ${wd}/mergers_cdf*.png
+	rm -rf ${wd}/mergers_nal*.png
+	rm -rf ${wd}/r_chi_p.png

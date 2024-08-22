@@ -56,6 +56,7 @@ def main():
     mask = np.isfinite(mergers[:,2])
     mergers = mergers[mask]
 
+    
     # plt.figure(figsize=(10,6))
     # plt.figure()
 
@@ -329,30 +330,30 @@ def main():
     Sn = lisa.Sn(f)
 
 
-    # fig, ax = plt.subplots(1, figsize=(8,6))
-    # #plt.tight_layout()
+    fig, ax = plt.subplots(1, figsize=(8,6))
+    #plt.tight_layout()
 
-    # ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
-    # ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
-    # ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
+    ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
-    # ax.set_xlim(1.0e-7, 1.0e+4)
-    # ax.set_ylim(1.0e-24, 1.0e-15)
+    ax.set_xlim(1.0e-7, 1.0e+4)
+    ax.set_ylim(1.0e-24, 1.0e-15)
 
-    # identical_rows_emris = np.where( emris[:,5] == emris[:,6])
-    # zero_rows_emris = np.where(emris[:,6] == 0)    
-    # emris = np.delete(emris,identical_rows_emris,0)
-    # #emris = np.delete(emris,zero_rows_emris,0)
-    # emris[~np.isfinite(emris)] = 1.e-40
+    identical_rows_emris = np.where( emris[:,5] == emris[:,6])
+    zero_rows_emris = np.where(emris[:,6] == 0)    
+    emris = np.delete(emris,identical_rows_emris,0)
+    #emris = np.delete(emris,zero_rows_emris,0)
+    emris[~np.isfinite(emris)] = 1.e-40
 
-    # identical_rows_lvk = np.where(lvk[:,5] == lvk[:,6])
-    # zero_rows_lvk = np.where(lvk[:,6] == 0)
-    # lvk = np.delete(lvk,identical_rows_lvk,0)
-    # #lvk = np.delete(lvk,zero_rows_lvk,0)
-    # lvk[~np.isfinite(lvk)] = 1.e-40
+    identical_rows_lvk = np.where(lvk[:,5] == lvk[:,6])
+    zero_rows_lvk = np.where(lvk[:,6] == 0)
+    lvk = np.delete(lvk,identical_rows_lvk,0)
+    #lvk = np.delete(lvk,zero_rows_lvk,0)
+    lvk[~np.isfinite(lvk)] = 1.e-40
 
-    # inv_freq_emris = 1/emris[:,6]
-    # inv_freq_lvk = 1/lvk[:,6]
+    inv_freq_emris = 1/emris[:,6]
+    inv_freq_lvk = 1/lvk[:,6]
     #ma_freq_emris = np.ma.where(freq_emris == 0)
     #ma_freq_lvk = np.ma.where(freq_lvk == 0)
     #indices_where_zeros_emris = np.where(freq_emris = 0.)
@@ -362,15 +363,15 @@ def main():
     #inv_freq_emris = 1.0/ma_freq_emris
     #inv_freq_lvk = 1.0/ma_freq_lvk
     # timestep =1.e4yr
-    # timestep = 1.e4
-    # strain_per_freq_emris = emris[:,5]*inv_freq_emris/timestep
-    # strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
-    # ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
-    # ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
-    # ax.scatter(emris[:,6],strain_per_freq_emris, s=1)
-    # ax.scatter(lvk[:,6],strain_per_freq_lvk, s=1)
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
+    timestep = 1.e4
+    strain_per_freq_emris = emris[:,5]*inv_freq_emris/timestep
+    strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
+    ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
+    ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
+    ax.scatter(emris[:,6],strain_per_freq_emris)
+    ax.scatter(lvk[:,6],strain_per_freq_lvk)
+    ax.set_yscale('log')
+    ax.set_xscale('log')
     #ax.loglog(f_L1, h_L1,label = 'LIGO O3, L1 Sensitivity') # plot the characteristic strain
 
     #ax.loglog(f_gw,h,color ='black', label='GW150914')

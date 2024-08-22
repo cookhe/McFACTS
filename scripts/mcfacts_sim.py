@@ -14,6 +14,8 @@ import sys
 import argparse
 
 from mcfacts.inputs import ReadInputs
+from importlib import resources as impresources
+from mcfacts.inputs import data as input_data
 
 from mcfacts.objects.agnobject import AGNStar
 
@@ -40,11 +42,23 @@ from mcfacts.outputs import mergerfile
 binary_field_names="R1 R2 M1 M2 a1 a2 theta1 theta2 sep com t_gw merger_flag t_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
 binary_stars_field_names="R1 R2 M1 M2 R1_star R2_star a1 a2 theta1 theta2 sep com t_gw merger_flag t_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
 merger_field_names=' '.join(mergerfile.names_rec)
+
+
+# Do not change this line EVER
+DEFAULT_INI = impresources.files(input_data) / "model_choice.ini"
 bh_initial_field_names = "disk_location mass spin spin_angle orb_ang_mom orb_ecc orb_incl"
-DEFAULT_INI = Path(__file__).parent.resolve() / ".." / "recipes" / "model_choice.ini"
-DEFAULT_PRIOR_POP = Path(__file__).parent.resolve() / ".." / "recipes" / "prior_mergers_population.dat"
-assert DEFAULT_INI.is_file(), f"The DEFAULT_INI file \'{DEFAULT_INI}\' does not exist."
-# assert DEFAULT_PRIOR_POP.is_file()
+
+# Feature in testing do not use unless you know what you're doing.
+#DEFAULT_PRIOR_POP = Path(__file__).parent.resolve() / ".." / "recipes" / "prior_mergers_population.dat"
+
+assert DEFAULT_INI.is_file()
+#assert DEFAULT_PRIOR_POP.is_file()
+
+FORBIDDEN_ARGS = [
+    "disk_outer_radius",
+    "max_disk_radius_pc",
+    "disk_inner_radius",
+    ]
 
 def arg():
     import argparse
@@ -69,15 +83,17 @@ def arg():
     )
     parser.add_argument("--seed", type=int, default=None,
         help="Set the random seed. Randomly sets one if not passed. Default: None")
-    parser.add_argument("--fname-log", default=None, type=str,
+    parser.add_argument("--fname-log", default="mcfacts_sim.log", type=str,
         help="Specify a file to save the arguments for mcfacts")
     
     ## Add inifile arguments
     # Read default inifile
-    _variable_inputs, _disk_model_radius_array, _surface_density_array, _aspect_ratio_array \
-        = ReadInputs.ReadInputs_ini(DEFAULT_INI,False)
+    _variable_inputs = ReadInputs.ReadInputs_ini(DEFAULT_INI,False)
     # Loop the arguments
     for name in _variable_inputs:
+        # Skip CL read of forbidden arguments
+        if name in FORBIDDEN_ARGS:
+            continue
         _metavar    = name
         _opt        = "--%s"%(name)
         _default    = _variable_inputs[name]
@@ -101,14 +117,16 @@ def arg():
 
     ## Parse inifile
     # Read inifile
-    variable_inputs, disk_model_radius_array, surface_density_array, aspect_ratio_array \
-        = ReadInputs.ReadInputs_ini(opts.fname_ini, opts.verbose)
+    variable_inputs = ReadInputs.ReadInputs_ini(opts.fname_ini, opts.verbose)
     # Okay, this is important. The priority of input arguments is:
     # command line > specified inifile > default inifile
     for name in variable_inputs:
-        print(name, hasattr(opts, name), getattr(opts, name), _variable_inputs[name], variable_inputs[name])
+        # Check for args not in parser. These were generated or changed in ReadInputs.py
+        if not hasattr(opts, name):
+            setattr(opts, name, variable_inputs[name])
+            continue
+        # Check for args not in the default_ini file
         if getattr(opts, name) != _variable_inputs[name]:
-            print(name)
             # This is the case where the user has set the value of an argument
             # from the command line. We don't want to argue with the user.
             pass
@@ -121,10 +139,6 @@ def arg():
     #   and not the specified inifile,
     #   it remains unaltered.
 
-    # Update opts with variable inputs
-    opts.disk_model_radius_array = disk_model_radius_array
-    opts.surface_density_array = surface_density_array
-    opts.aspect_ratio_array = aspect_ratio_array
     if opts.verbose:
         for item in opts.__dict__:
             print(item, getattr(opts, item))
@@ -152,11 +166,10 @@ def arg():
 
 
     # Write parameters to log file
-    if not opts.fname_log is None:
-        with open(opts.work_directory / opts.fname_log, 'w') as F:
-            for item in opts.__dict__:
-                line = "%s = %s\n"%(item, str(opts.__dict__[item]))
-                F.write(line)
+    with open(opts.work_directory / opts.fname_log, 'w') as F:
+        for item in opts.__dict__:
+            line = "%s = %s\n"%(item, str(opts.__dict__[item]))
+            F.write(line)
     return opts
 
 
@@ -166,16 +179,18 @@ def main():
     # Setting up automated input parameters
     # see IOdocumentation.txt for documentation of variable names/types/etc.
     opts = arg()
-
-    # create surface density & aspect ratio functions from input arrays
-    surf_dens_func_log = scipy.interpolate.UnivariateSpline(
-        opts.disk_model_radius_array, np.log(opts.surface_density_array))
-    surf_dens_func = lambda x, f=surf_dens_func_log: np.exp(f(x))
-
-    aspect_ratio_func_log = scipy.interpolate.UnivariateSpline(
-        opts.disk_model_radius_array, np.log(opts.aspect_ratio_array))
-    aspect_ratio_func = lambda x, f=aspect_ratio_func_log: np.exp(f(x))
-    
+    surf_dens_func, aspect_ratio_func = \
+        ReadInputs.construct_disk_interp(
+        opts.mass_smbh,
+        opts.disk_outer_radius,
+        opts.disk_model_name,
+        opts.alpha,
+        opts.frac_Eddington_ratio,
+        max_disk_radius_pc      = opts.max_disk_radius_pc,
+        disk_model_use_pagn     = opts.disk_model_use_pagn,
+        verbose                 = opts.verbose
+        )
+        
     merged_bh_array_pop = []
 
     surviving_bh_array_pop = []
@@ -1201,8 +1216,6 @@ def main():
                     temp_emri_array[4] = inner_disk_orb_ecc[i]
                     temp_emri_array[5] = emri_gw_strain[i]
                     temp_emri_array[6] = emri_gw_freq[i]
-                    # print("temp_emri_array",temp_emri_array)
-                    # print("emri_array",emri_array)
                     emri_array = np.vstack((emri_array,temp_emri_array))
                     # print("emri_array",emri_array)
             # if inner_disk_locations[i] <1R_g then merger!
@@ -1376,11 +1389,6 @@ def main():
             #gw_array_pop.append(np.concatenate((gw_row[np.newaxis],total_bbh_gw_array[:total_bbh_gws,:])).T)
         #if n_its == 1:
         #    print("emris_array_pop",emris_array_pop)
-        print('total_emris =', total_emris)
-        print('shapes @ end:')
-        print('emri_row[np.newaxis] =', emri_row[np.newaxis].shape)
-        print('total_emri_array =', total_emri_array.shape)
-        # emris_array_pop.append(np.concatenate((emri_row[np.newaxis],total_emri_array[:,:total_emris])))
      # save all mergers from Monte Carlo
     merger_pop_field_names = "iter " + merger_field_names # Add "Iter" to field names
     population_header = f"Initial seed: {opts.seed}\n{merger_pop_field_names}" # Include initial seed

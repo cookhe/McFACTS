@@ -16,8 +16,10 @@ def arg():
     parser.add_argument("--mstar-max", default=1e13, type=float,
         help="Maximum galactic stellar mass")
     parser.add_argument("--nbins", default=9, type=int, help="Number of stellar mass bins")
+    parser.add_argument("--n_bins_max", default=1000, help="Number of binaries allowed at once")
     parser.add_argument("--wkdir", default='./run_many', help="top level working directory")
     parser.add_argument("--mcfacts-exe", default="./scripts/mcfacts_sim.py", help="Path to mcfacts exe")
+    parser.add_argument("--fname-ini", required=True, help="Path to mcfacts inifile")
     parser.add_argument("--vera-plots-exe", default="./scripts/vera_plots.py", help="Path to Vera plots script")
     parser.add_argument("--fname-nal", default=join(expanduser("~"), "Repos", "nal-data", "GWTC-2.nal.hdf5" ),
         help="Path to Vera's data from https://gitlab.com/xevra/nal-data")
@@ -91,8 +93,8 @@ def make_batch(opts, wkdir, mcfacts_args, mass_smbh, mass_nsc):
         pass
 
     # Make all iterations
-    cmd = "python3 %s --mass_smbh %f --M_nsc %f --work-directory %s %s"%(
-        opts.mcfacts_exe, mass_smbh, mass_nsc, wkdir, mcfacts_args)
+    cmd = "python3 %s --fname-ini %s --mass_smbh %f --M_nsc %f --work-directory %s %s"%(
+        opts.mcfacts_exe, opts.fname_ini, mass_smbh, mass_nsc, wkdir, mcfacts_args)
     print(cmd)
     if not opts.print_only:
         os.system(cmd)
@@ -136,6 +138,7 @@ def main():
                         "--n_iterations"        : opts.n_iterations,
                         "--n_bins_max"          : 10_000,
                         "--fname-log"           : "out.log",
+                        "--n_bins_max"          : opts.n_bins_max,
                        }
     mcfacts_args = ""
     for item in mcfacts_arg_dict:
