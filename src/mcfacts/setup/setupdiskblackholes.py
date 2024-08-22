@@ -62,16 +62,17 @@ def setup_disk_blackholes_eccentricity_thermal(rng, n_bh):
     bh_initial_orb_ecc = np.sqrt(random_uniform_number)
     return bh_initial_orb_ecc
 
-def setup_disk_blackholes_eccentricity_uniform(rng, n_bh):
+def setup_disk_blackholes_eccentricity_uniform(rng, n_bh, max_initial_eccentricity):
     # Return an array of BH orbital eccentricities
     # For a uniform initial distribution of eccentricities, select from a uniform distribution in e.
     # Thus half the eccentricities are <0.5
     # And about 1/10th eccentricities are >0.9
     # So rnd = draw from a uniform [0,1] distribution, allows ecc = rnd for uniform distribution
     # Most real clusters/binaries lie between thermal & uniform (e.g. Geller et al. 2019, ApJ, 872, 165)
+    # Cap of max_initial_eccentricity allows for previous recent episode of AGN where some relaxation has happened.
     integer_nbh = int(n_bh)
     random_uniform_number = rng.random((integer_nbh,))
-    bh_initial_orb_ecc = random_uniform_number
+    bh_initial_orb_ecc = random_uniform_number*max_initial_eccentricity
     return bh_initial_orb_ecc
 
 def setup_disk_blackholes_eccentricity_uniform_modified(rng, mod_factor, n_bh):

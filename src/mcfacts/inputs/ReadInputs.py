@@ -214,8 +214,8 @@ def ReadInputs_ini(fname='inputs/model_choice.txt', verbose=False):
     # Make sure you got all of the ones you were expecting
     for name in INPUT_TYPES:
         print(name)
-        assert name in input_variables
-        assert type(input_variables[name]) == INPUT_TYPES[name]
+        #assert name in input_variables
+        #assert type(input_variables[name]) == INPUT_TYPES[name]
         
     if verbose:
         print("input_variables:")

@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Data files that are packaged must be included in the MANIFEST.in file
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+"Homepage" = "https://github.com/bmckernan/test_mcfacts"
+"Bug Reports" = "https://github.com/bmckernan/test_mcfacts/issues"
+"Source" = "https://github.com/bmckernan/test_mcfacts"
+
+[project]
+name = "mcfacts"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+keywords = [
+    "astronomy",
+    "information analysis",
+    "machine learning",
+    "physics"
+]
+
+# How do we want to do author ordering, if at all?
+authors = [
+    {name = "Barry McKernan", email = "enter@email.com"},
+    {name = "Saavik Ford"},
+    {name = "Harry Cook"},
+    {name = "Vera Delfavero"},
+    {name = "Richard O'Shaughnessy"},
+    {name = "Jake Postiglione"},
+    {name = "Kaila Nathaniel"}
+]
+
+# In the future, the people actively developing / maintaining the project may be different!
+maintainers = [
+    {name = "Barry McKernan", email = "enter@email.com"},
+    {name = "Saavik Ford"},
+    {name = "Harry Cook"},
+    {name = "Vera Delfavero"},
+    {name = "Richard O'Shaughnessy"},
+    {name = "Jake Postiglione"},
+    {name = "Kaila Nathaniel"}
+]
+
+classifiers = [
+"Development Status :: 3 - Alpha",
+"Programming Language :: Python :: 3",
+"Operating System :: OS Independent",
+"Intended Audience :: Science/Research",
+"Topic :: Scientific/Engineering :: Astronomy",
+"Topic :: Scientific/Engineering :: Physics",
+"Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+requires-python = ">= 3.10"
+
+dependencies = [
+    "numpy>=1.23.1,<2.0.0",
+    "matplotlib>=3.5.2",
+    "scipy>=1.11.2",
+    "pandas",
+    "pagn",
+]
+
+#TODO: Add description and other dynamically defined variables created in setup.py
+dynamic = [ "version" ]

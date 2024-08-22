@@ -1,0 +1,3 @@
+include src/mcfacts/inputs/data/*.txt
+include src/mcfacts/inputs/data/*.ini
+include src/mcfacts/vis/data/*.txt

@@ -36,6 +36,8 @@ from mcfacts.physics.binary.harden import baruteau11
 from mcfacts.physics.binary.merge import tichy08
 from mcfacts.physics.binary.merge import chieff
 from mcfacts.physics.binary.merge import tgw
+#from mcfacts.physics.disk_capture.orb_inc_damping import orb_inc_damping
+
 #from mcfacts.tests import tests
 from mcfacts.outputs import mergerfile
 
@@ -296,7 +298,7 @@ def main():
             n_bh
         )
         if opts.orb_ecc_damping == 1:
-            bh_initial_orb_ecc = setupdiskblackholes.setup_disk_blackholes_eccentricity_uniform(rng,n_bh)
+            bh_initial_orb_ecc = setupdiskblackholes.setup_disk_blackholes_eccentricity_uniform(rng,n_bh,opts.max_initial_eccentricity)
         else:
             bh_initial_orb_ecc = setupdiskblackholes.setup_disk_blackholes_circularized(rng,n_bh,opts.crit_ecc)
 
@@ -791,7 +793,17 @@ def main():
                             bin_index,
                             binary_bh_array,
                             opts.timestep
-                        )    
+                        )
+                        #binary_bh_array = disk_capture.orb_inc_damping.orb_inc_damping(
+                        #    opts.mass_smbh,
+                        #    retrograde_bh_locations,
+                        #    retrograde_bh_masses,
+                        #    retrograde_bh_orb_ecc,
+                        #    retrograde_bh_orb_inc,
+                        #    retro_arg_periapse,
+                        #    timestep,disk_surf_model
+                        #)    
+                    
                     #Migrate binaries
                     # First if feedback present, find ratio of feedback heating torque to migration torque
                     #print("feedback",feedback)
