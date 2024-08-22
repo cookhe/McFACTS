@@ -47,6 +47,7 @@ merger_field_names=' '.join(mergerfile.names_rec)
 # Do not change this line EVER
 DEFAULT_INI = impresources.files(input_data) / "model_choice.ini"
 bh_initial_field_names = "disk_location mass spin spin_angle orb_ang_mom orb_ecc orb_incl"
+
 # Feature in testing do not use unless you know what you're doing.
 #DEFAULT_PRIOR_POP = Path(__file__).parent.resolve() / ".." / "recipes" / "prior_mergers_population.dat"
 
@@ -516,6 +517,7 @@ def main():
         # and in your .ini file set switch prior_agn = 1.0.
         # Initial orb ecc is prior_ecc_factor*uniform[0,0.99]=[0,0.33] for prior_ecc_factor=0.3 (default)
         if opts.prior_agn == 1.0:
+            assert DEFAULT_PRIOR_POP.is_file(), f"Cannot import prior population. The DEFAULT_PRIOR_POP file \'{DEFAULT_PRIOR_POP}\' does not exist."
             
             prior_radii, prior_masses, prior_spins, prior_spin_angles, prior_gens \
                 = ReadInputs.ReadInputs_prior_mergers()
@@ -1214,10 +1216,8 @@ def main():
                     temp_emri_array[4] = inner_disk_orb_ecc[i]
                     temp_emri_array[5] = emri_gw_strain[i]
                     temp_emri_array[6] = emri_gw_freq[i]
-                    
-                    
                     emri_array = np.vstack((emri_array,temp_emri_array))
-                
+                    # print("emri_array",emri_array)
             # if inner_disk_locations[i] <1R_g then merger!
             inner_disk_index = -2
             num_in_inner_disk = np.size(inner_disk_locations)
@@ -1334,6 +1334,16 @@ def main():
         total_emri_array = emri_array
         total_bbh_gw_array = bbh_gw_array
         if True and number_of_mergers > 0: #verbose:
+            print('shapes before if condition:')
+            print('total_emri_array.shape = ', total_emri_array.shape)
+            print('emri_array.shape = ', emri_array.shape)
+            print('len(emri_array.shape) = ',len(emri_array.shape))
+        if len(emri_array.shape) > 1:
+            total_emri_array = emri_array
+        # else
+        #     total_emri_array = []
+        print('total_emri_array.shape after if= ', total_emri_array.shape)
+        if opts.verbose == True and number_of_mergers > 0: #verbose:
                 print(merged_bh_array[:,:number_of_mergers].T)
 
         iteration_save_name = f"run{iteration_zfilled_str}/{opts.fname_output_mergers}"

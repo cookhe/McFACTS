@@ -21,6 +21,7 @@ HERE=./
 #### Scripts ####
 MCFACTS_SIM_EXE = ${HERE}/scripts/mcfacts_sim.py
 POPULATION_PLOTS_EXE = ${HERE}/scripts/population_plots.py
+POPULATION_STATS_EXE = ${HERE}scripts/merger_stats.py
 VERA_PLOTS_EXE = ${HERE}/scripts/vera_plots.py
 MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
@@ -28,7 +29,11 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 #### Setup ####
 SEED=3456789012
 FNAME_INI= ${HERE}/recipes/pAGN_test.ini
-#FNAME_INI= ${HERE}/recipes/model_choice.ini
+HC_EXP_NAME = retro_binaries
+HC_RUN_NAME = sg_fret0p5
+HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
+HC_INPUT_FILE = ${HERE}/recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
+
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # NAL files might not exist unless you download them from
 # https://gitlab.com/xevra/nal-data
@@ -36,7 +41,7 @@ MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # gwalk (pip3 install gwalk)
 FNAME_GWTC2_NAL = ${HOME}/Repos/nal-data/GWTC-2.nal.hdf5
 #Set this to change your working directory
-wd=${HERE}
+wd=${HC_WKDIR}
 
 ######## Instructions ########
 #### Install ####
@@ -59,7 +64,7 @@ mcfacts_sim: clean
 		--seed ${SEED}
 
 
-plots:  mcfacts_sim
+plots: #mcfacts_sim
 	python ${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
 
 vera_plots: mcfacts_sim
@@ -83,6 +88,30 @@ mstar_runs:
 		--wkdir ${MSTAR_RUNS_WKDIR}
 	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
 		
+qxeff:
+	python3 ${MCFACTS_SIM_EXE} \
+		--fname-log out.log \
+		--fname-ini=${HC_INPUT_FILE}  \
+		--work-directory=${wd} \
+#		--seed=${SEED}
+	python3 ${POPULATION_PLOTS_EXE} \
+	    --plots-directory=${wd} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+	python3 ${POPULATION_STATS_EXE} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+	rm -rf ${wd}/run*
+
+hcplots:
+	python3 ${POPULATION_PLOTS_EXE} \
+	    --plots-directory=${wd} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+#	python3 ${POPULATION_STATS_EXE} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+
+stats:
+	python3 ${POPULATION_STATS_EXE} \
+		--fname-mergers=${wd}/output_mergers_population.dat
+
 
 #### CLEAN ####
 clean:
@@ -94,6 +123,7 @@ clean:
 	rm -rf ${wd}/time_of_merger.png
 	rm -rf ${wd}/merger_remnant_mass.png
 	rm -rf ${wd}/gw_strain.png
+	rm -rf ${wd}/r_chi_p.png
 	rm -rf ${wd}/out.log
   rm -rf ${wd}/mergers_cdf*.png
 	rm -rf ${wd}/mergers_nal*.png
