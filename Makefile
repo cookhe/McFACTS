@@ -146,7 +146,7 @@ clean_unix:
 	rm -rf ${wd}/merger_remnant_mass.png
 	rm -rf ${wd}/gw_strain.png
 	rm -rf ${wd}/r_chi_p.png
-	rm -rf ${wd}/out.log
+	rm -rf ${wd}/mcfacts_sim.log
 	rm -rf ${wd}/mergers_cdf*.png
 	rm -rf ${wd}/mergers_nal*.png
 	rm -rf ${wd}/r_chi_p.png
