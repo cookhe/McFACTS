@@ -262,7 +262,39 @@ def main():
     plt.savefig(os.path.join(opts.plots_directory, "./r_chi_p.png"), format='png')
     plt.close()
 
+<<<<<<< HEAD
 
+=======
+    #Figure of Disk radius vs Chi_p follows.
+    # Can break out higher mass Chi_p events as test/illustration.
+    #Set up default arrays for high mass BBH (>40Msun say) to overplot vs chi_p. 
+    all_masses = mergers[:,2]
+    all_locations = mergers[:,1]
+    mass_bound = 40.0
+    #print("All BBH merger masses:",all_masses)
+    #print("All BBH merger locations:",all_locations)
+    high_masses = np.where(all_masses > mass_bound, all_masses, np.nan)
+    #print("High masses", high_masses)
+    high_masses_locations = np.where(np.isfinite(high_masses),all_locations, np.nan )
+    #print("High masses locations",high_masses_locations)
+    plt.ylim(0,1)
+    plt.xlim(0.,5.e4)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    ax1.scatter(all_locations,chi_p, color='darkgoldenrod')
+    ax1.scatter(high_masses_locations,chi_p, color='rebeccapurple',marker='+')
+    #plt.title("In-plane effective Spin vs. Merger radius")
+    plt.ylabel(r'$\chi_{\rm p}$')
+    plt.xlabel(r'Radius ($R_g$)')
+    plt.xlim(0.,5.e4)
+    ax = plt.gca()
+    ax.set_axisbelow(True)
+    plt.grid(True, color='gray', ls='dashed')
+    plt.tight_layout()
+    plt.savefig("./r_chi_p.png", format='png')
+    plt.close()
+    
+>>>>>>> main-dev
     # plt.figure()
     # index = 2
     # mode = 10
