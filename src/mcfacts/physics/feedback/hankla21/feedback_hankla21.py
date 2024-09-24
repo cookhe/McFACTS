@@ -1,11 +1,12 @@
 import numpy as np
 
-def feedback_hankla(prograde_bh_locations, disk_surf_model, frac_Eddington_ratio, alpha):
-    """_summary_
+def feedback_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_func, disk_bh_eddington_ratio, disk_alpha_viscosity, disk_radius_outer):
+    """Calculate the ratio of radiative feedback torque to migration torque.
+
     This feedback model uses Eqn. 28 in Hankla, Jiang & Armitage (2020)
     which yields the ratio of heating torque to migration torque.
     Heating torque is directed outwards. 
-    So, Ratio <1, slows the inward migration of an object. Ratio>1 sends the object migrating outwards.
+    So, Ratio < 1, slows the inward migration of an object. Ratio > 1 sends the object migrating outwards.
     The direction & magnitude of migration (effected by feedback) will be executed in type1.py.
 
     The ratio of torque due to heating to Type 1 migration torque is calculated as
@@ -25,41 +26,41 @@ def feedback_hankla(prograde_bh_locations, disk_surf_model, frac_Eddington_ratio
         >1 (a/2x10^4r_g)^(1/2)(Sigma/) migration is *outward* at >=20,000r_g in SG03
         >10 (a/7x10^4r_g)^(1/2)(Sigma/) migration outwards starts to runaway in SG03
 
-    TO DO: Need alpha as an input for disk model (alpha=0.01 is SG03 default)
-    TO (MAYBE) DO: kappa default as an input? Or kappa table? Or kappa user set?
+    TO-DO : kappa needs to be returned from pAGN model or set by user. Currently hardcoded below.
     
     Parameters
     ----------
     
-    prograde_bh_locations : float array
-        locations of prograde singleton BH at start of timestep in units of gravitational radii (r_g=GM_SMBH/c^2)
-    disk_surf_model : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
+    disk_bh_pro_orbs_a : float array
+        Prograde singleton BH semi-major axes
+    disk_surf_density_func : function
+        AGN gas disk surface density interpolator function
+    disk_opacity_model : lambda
+        Opacity as a function of radius
+    disk_bh_eddington_ratio : float
+        The accretion rate Eddington ratio for black holes in the disk
+    disk_alpha_viscosity : float
+        Disk gas viscocity alpha parameter
+    disk_radius_outer : float
+            final element of disk_model_radius_array (units of r_g)
 
     Returns
     -------
-    ratio_feedback_to_mig : float array
+    ratio_feedback_migration_torque : float array
         ratio of feedback torque to migration torque for each entry in prograde_bh_locations
     """
-    # get surface density function, or deal with it if only a float
-    if isinstance(disk_surf_model, float):
-        disk_surface_density = disk_surf_model
-    else:
-        disk_surface_density = disk_surf_model(prograde_bh_locations)
 
-    #Calculate ratio
-    #
-    #Define kappa (or set up a function to call). 
+    # get disk surface density at black hole orbital semi-major axes
+    disk_surface_density = disk_surf_density_func(disk_bh_pro_orbs_a)
+
+    #Define kappa (or set up a function to call).
     #kappa = 10^0.76 cm^2/g = 10^(0.76) (10^-2m)^2/10^-3kg=10^(0.76-1)=10^(-0.24) m^2/kg to match units of Sigma
-    kappa = 10**(-0.24)
-    #Define alpha parameter for disk in Readinputs.py
-    #alpha = 0.01
+    disk_opacity = disk_opacity_func(disk_bh_pro_orbs_a)
+    
+    ratio_feedback_migration_torque = 0.07 * (1/disk_opacity) * (disk_alpha_viscosity)**(-1.5) * \
+                                      disk_bh_eddington_ratio * np.sqrt(disk_bh_pro_orbs_a) / disk_surface_density
 
-    Ratio_feedback_migration_torque = 0.07 *(1/kappa)* ((alpha)**(-1.5))*frac_Eddington_ratio*np.sqrt(prograde_bh_locations)/disk_surface_density
+    # set ratio = 1 (no migration) for black holes beyond the disk outer radius
+    ratio_feedback_migration_torque[np.where(disk_bh_pro_orbs_a > disk_radius_outer)] = 1
 
-    #print((1/kappa),((alpha)**(-1.5)),frac_Eddington_ratio)
-    #print("Ratio", Ratio_feedback_migration_torque) 
-    #print("BH locations", prograde_bh_locations) 
-
-    return Ratio_feedback_migration_torque  
+    return ratio_feedback_migration_torque

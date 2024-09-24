@@ -14,7 +14,7 @@ class AGNGasDiskModel(object):
         if self.disk_type == "Sirko":
             self.disk_model  = Sirko.SirkoAGN(**kwargs)
         else:
-            self.disk_model = Thompson.ThomsonAGN(**kwargs)
+            self.disk_model = Thompson.ThompsonAGN(**kwargs)
         self.disk_model.solve_disk(N=1e4)
 
     def save(self, filename):
@@ -42,34 +42,83 @@ class AGNGasDiskModel(object):
         else:
             np.savetxt(filename, np.vstack((R/ct.pc, Omega, T, rho, h, cs, tauV, Q)).T)
 
-    def return_disk_surf_model(self,no_truncate=True):
+    def return_disk_surf_model(self, flag_truncate_disk=True):
+        """Generate disk surface model functions
+
+        Interpolate and return disk surface model functions as a function of the disk radius.
+          1) surface density (Sigma = 2 rho H) in  kg/m^2 given distance from SMBH in r_g = r_s/2
+          2) aspect ratio (h/r)
+          3) opacity (kappa = 2 * tau / Sigma) in m^2/kg
+          
+        Default pagn internal units are SI.
+        
+        Parameters
+        ----------
+        flag_truncate_disk : bool, optional
+            If `True`, truncate these functions at the radius where star formation starts
+            in the gas disk. If `False`, do not truncate, by default `True`.
+
+        Returns
+        -------
+        surf_dens_func : lambda
+            Surface density (radius)
+        aspect_func : lambda
+            Aspect ratio (radius)
+        opacity_func : lambda
+            Opacity (radius)
+        bonus_structures : dict
+            Other disk model things we may want, which are only available
+            for pAGN models
+            
         """
-        Returns a disk surface function model in \Sigma = 2 rho H  in  kg/m^2 given distance from SMBH in r_g = r_s/2
-        Default pagn internal units are SI
-        """
-        R = self.disk_model.R/(self.disk_model.Rs/2)  # convert to R_g  (=R/( M G/c^2)  explicitly, using internal structures
-        R_agn = self.disk_model.R_AGN /(self.disk_model.Rs/2)
-        Sigma = 2*self.disk_model.h*self.disk_model.rho  # SI density
-        if not(no_truncate):
-            R=R[:self.disk_model.isf] # truncate to gas part of disk (no SFR)
+
+        # convert to R_g (=R/( M G/c^2) explicitly, using internal structures
+        R = self.disk_model.R / (self.disk_model.Rs/2)
+        R_agn = self.disk_model.R_AGN / (self.disk_model.Rs / 2)
+        Sigma = 2 * self.disk_model.h * self.disk_model.rho  # SI density
+        kappa = 2 * self.disk_model.tauV / Sigma # Opacity = 2*tau/Sigma
+        if flag_truncate_disk: # truncate to gas part of disk (no SFR)
+            R=R[:self.disk_model.isf]
             Sigma = Sigma[:self.disk_model.isf]
-        ln_Sigma = np.log(Sigma)   # log of SI density
-        surf_dens_func_log = scipy.interpolate.CubicSpline(            np.log(R), ln_Sigma, extrapolate=False)
+            kappa = kappa[:self.disk_model.isf]
+
+        # Generate surface density (Sigma) interpolator function
+        ln_Sigma = np.log(Sigma) # log of SI density
+        surf_dens_func_log = scipy.interpolate.CubicSpline(
+                                                           np.log(R),
+                                                           ln_Sigma,
+                                                           extrapolate=False
+                                                           )
         surf_dens_func = lambda x, f=surf_dens_func_log: np.exp(f(np.log(x)))
 
+        # Generate aspect ratio (h/r) interpolator function
         ln_aspect_ratio = np.log(self.disk_model.h/self.disk_model.R)
-        if not(no_truncate):
-            ln_aspect_ratio = ln_aspect_ratio[:self.disk_model.isf] # truncate to gas part of disk (no SFR)
-        aspect_func_log = scipy.interpolate.CubicSpline(            np.log(R), ln_aspect_ratio, extrapolate=False)
+        if flag_truncate_disk: # truncate to gas part of disk (no SFR)
+            ln_aspect_ratio = ln_aspect_ratio[:self.disk_model.isf]
+        aspect_func_log = scipy.interpolate.CubicSpline(
+                                                        np.log(R),
+                                                        ln_aspect_ratio,
+                                                        extrapolate=False
+                                                        )
         aspect_func = lambda x, f=aspect_func_log: np.exp(f(np.log(x)))
+
+        # Generate opacity (kappa) interpolator function
+        ln_opacity = np.log(kappa)
+        opacity_func_log = scipy.interpolate.CubicSpline(
+                                                         np.log(R),
+                                                         ln_opacity,
+                                                         extrapolate=False
+                                                         )
+        opacity_func = lambda x, f=opacity_func_log: np.exp(f(np.log(x)))
 
         bonus_structures = {}
         bonus_structures['R_agn'] = R_agn
         bonus_structures['R'] = R
         bonus_structures['Sigma'] = Sigma
         bonus_structures['h_over_R'] = np.exp(ln_aspect_ratio)
-       
-        return surf_dens_func, aspect_func, bonus_structures
+        bonus_structures['kappa'] = kappa
+
+        return surf_dens_func, aspect_func, opacity_func, bonus_structures
 
 
 

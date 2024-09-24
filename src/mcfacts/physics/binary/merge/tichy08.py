@@ -1,90 +1,127 @@
 
 import numpy as np
 
-def merged_mass(mass_1,mass_2,spin_1,spin_2):
-# Calculate the final mass of a merged binary
-# Only depends on M1,M2,a1,a2
-# Using approximations from Tichy \& Maronetti (2008) where
-# m_final=(M1+M2)*[1.0-0.2nu-0.208nu^2(a1+a2)]
-# where nu is the symmetric mass ratio or nu=q/((1+q)^2)
-    # These are arrays
-    #mass_1 = -1
-    #mass_2 = -1
-    #if isinstance(m1, np.ndarray):
-    # if len(m1.shape) >0:
-    #    mass_1 = m1[0]
-    #    mass_2 = m2[0]
-    #    total_spin = spin_1[0] + spin_2[0]
-    #else:
-    #    mass_1 = m1
-    #    mass_2 = m2
-    #    total_spin = spin_1 + spin_2
-    
-    primary = np.max(np.c_[mass_1, mass_2])
-    secondary = np.min(np.c_[mass_1, mass_2])
+def merged_mass_old(masses_1, masses_2, spins_1, spins_2):
+    """Calculate the final mass of a merged binary.
+
+    Using approximations from Tichy \& Maronetti (2008) where
+    m_final=(M1+M2)*[1.0-0.2nu-0.208nu^2(a1+a2)]
+    where nu is the symmetric mass ratio or nu=q/((1+q)^2)
+
+    Parameters
+    ----------
+    masses_1 : float/ndarray
+        Masses of objects 1.
+    masses_2 : float/ndarray
+        Masses of objects 2.
+    spins_1 : float/ndarray
+        Spin magnitudes of objects 1.
+    spins_2 : float/ndarray
+        Spin magnitudes of objects 2.
+
+    Returns
+    -------
+    float/ndarray
+        Final mass of merger remnant.
+    """
+
+    primary_masses = np.max(np.c_[masses_1, masses_2])
+    secondary_masses = np.min(np.c_[masses_1, masses_2])
 
     #If issue with primary mass, print!
-    if primary < 1.0:
-        print("primary,secondary=", primary, secondary)
-        mass_ratio = 1.0
-    if primary > 1.0:    
-        mass_ratio = secondary/primary
-    
-    total_mass = primary + secondary
-    total_spin = spin_1 + spin_2
-    inv_mass_ratio = (1.0/mass_ratio)
-    nu_factor = (1.0+mass_ratio)**2.0
-    nu = mass_ratio/nu_factor
-    nusq = nu*nu
-    #print(" Mass array ",total_mass)
-    nu =  (primary* secondary)/ (total_mass)**2 # mass_ratio/nu_factor
-    nusq = nu*nu
+    if primary_masses < 1.0:
+        print("primary,secondary=", primary_masses, secondary_masses)
+        mass_ratios = 1.0
+    if primary_masses > 1.0:
+        mass_ratios = secondary_masses / primary_masses
 
-    #mass_1 = -1
-    #mass_2 = -1
-    #if isinstance(m1, np.ndarray):
-    # if len(m1.shape) >0:
-    #    mass_1 = m1[0]
-    #    mass_2 = m2[0]
-    #    total_spin = spin_1[0] + spin_2[0]
-    #else:
-    #    mass_1 = m1
-    #    mass_2 = m2
-    #    total_mass = mass_1 + mass_2
-    #    total_spin=spin_1 + spin_2
+    total_masses = primary_masses + secondary_masses
+    total_spins = spins_1 + spins_2
+    nu_factors = (1.0 + mass_ratios)**2
+    nu = mass_ratios / nu_factors
+    nu_square = nu * nu
 
-    #print(" Mass array ",mass_1 + mass_2)
-    #nu =  (mass_1* mass_2)/ (mass_1+mass_2)**2 # mass_ratio/nu_factor
-    #nusq = nu*nu
-
-    mass_factor = 1.0-(0.2*nu)-(0.208*nusq*total_spin)
-    merged_mass = (total_mass)*mass_factor
-    return merged_mass
+    mass_factors = 1.0-(0.2*nu)-(0.208*nu_square*total_spins)
+    merged_masses = (total_masses)*mass_factors
+    return merged_masses
 
 
-def merged_spin(mass_1, mass_2, spin_1, spin_2, bin_ang_mom):
-# Calculate the spin magnitude of a merged binary.
-# Only depends on M1,M2,a1,a2 and the binary ang mom around its center of mass
-# Using approximations from Tichy \& Maronetti(2008) where
-# a_final=0.686(5.04nu-4.16nu^2) +0.4[a1/((0.632+1/q)^2)+ a2/((0.632+q)^2)]
-# where q=m_2/m_1 and nu=q/((1+q)^2)
-    # if mass_1 >= mass_2:
-    #     primary = mass_1
-    #     secondary = mass_2
-    # else:
-    #     primary = mass_2
-    #     secondary = mass_1
-    primary = np.max(np.c_[mass_1, mass_2])
-    secondary = np.min(np.c_[mass_1, mass_2])
+def merged_mass(masses_1, masses_2, spins_1, spins_2):
 
-    mass_ratio = secondary/primary
-    inv_mass_ratio = (1.0/mass_ratio)
-    nu_factor = (1.0+mass_ratio)**2.0
-    nu = mass_ratio/nu_factor
-    nusq = nu*nu
-    spin1_factor = (0.632+inv_mass_ratio)**(2.0)
-    spin2_factor = (0.632+mass_ratio)**2.0
-    merged_spin = 0.686*((5.04*nu)-(4.16*nusq))+(0.4*((spin_1/spin1_factor)+(spin_2/spin2_factor)))
-    #print("MERGER props",primary,secondary,spin_1,spin_2,bin_ang_mom, merged_spin)
-    return merged_spin
+    mass_ratios = np.ones(masses_1.size)
+    mass_ratios[masses_1 > masses_2] = masses_2[masses_1 > masses_2] / masses_1[masses_1 > masses_2]
+    mass_ratios[masses_1 < masses_2] = masses_1[masses_1 < masses_2] / masses_2[masses_1 < masses_2]
 
+    total_masses = masses_1 + masses_2
+    total_spins = spins_1 + spins_2
+    nu_factors = np.power(1.0 + mass_ratios, 2)
+    nu = mass_ratios / nu_factors
+    nu_squared = nu * nu
+
+    mass_factors = 1.0 - (0.2 * nu) - (0.208 * nu_squared * total_spins)
+    merged_masses = total_masses*mass_factors
+
+    return (merged_masses)
+
+
+def merged_spin_old(masses_1, masses_2, spins_1, spins_2):
+    """Calculate the spin magnitude of a merged binary.
+
+    Only depends on M1,M2,a1,a2 and the binary ang mom around its center of mass.
+    Using approximations from Tichy \& Maronetti(2008) where
+    a_final=0.686(5.04nu-4.16nu^2) +0.4[a1/((0.632+1/q)^2)+ a2/((0.632+q)^2)]
+    where q=m_2/m_1 and nu=q/((1+q)^2)
+
+    Parameters
+    ----------
+    masses_1 : float/ndarray
+        Masses of objects 1.
+    masses_2 : float/ndarray
+        Masses of objects 2.
+    spins_1 : float/ndarray
+        Spin magnitudes of objects 1.
+    spins_2 : float/ndarray
+        Spin magnitudes of objects 2.
+
+    Returns
+    -------
+    float/ndarray
+        Final spin magnitude of merger remnant.
+    """
+
+    primary_masses = np.max(np.c_[masses_1, masses_2])
+    secondary_masses = np.min(np.c_[masses_1, masses_2])
+    mass_ratios = secondary_masses / primary_masses
+    mass_ratios_inv = 1.0 / mass_ratios
+
+    nu_factors = (1.0 + mass_ratios)**2.0
+    nu = mass_ratios / nu_factors
+    nu_square = nu * nu
+
+    spin_factors_1 = (0.632 + mass_ratios_inv)**(2.0)
+    spin_factors_2 = (0.632 + mass_ratios)**2.0
+
+    merged_spins = 0.686*((5.04*nu) - (4.16*nu_square)) + \
+                   (0.4*((spins_1/spin_factors_1)+(spins_2/spin_factors_2)))
+
+    return merged_spins
+
+
+def merged_spin(masses_1, masses_2, spins_1, spins_2):
+
+    mass_ratios = np.ones(masses_1.size)
+    mass_ratios[masses_1 > masses_2] = masses_2[masses_1 > masses_2] / masses_1[masses_1 > masses_2]
+    mass_ratios[masses_1 < masses_2] = masses_1[masses_1 < masses_2] / masses_2[masses_1 < masses_2]
+
+    mass_ratios_inv = 1.0 / mass_ratios
+
+    nu_factors = np.power(1.0 + mass_ratios, 2)
+    nu = mass_ratios / nu_factors
+    nu_squared = nu * nu
+
+    spin_factors_1 = np.power(0.632 + mass_ratios_inv, 2)
+    spin_factors_2 = np.power(0.632 + mass_ratios, 2)
+
+    merged_spins = 0.686 * ((5.04 * nu) - (4.16 * nu_squared)) + (0.4 * ((spins_1 / spin_factors_1) + (spins_2 / spin_factors_2)))
+
+    return (merged_spins)

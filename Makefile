@@ -1,14 +1,7 @@
 # Declarations
 .PHONY: all clean
 
-# Windows implementation is hacky, but my desktop is Windows. So please accept my humble apology - Jake
-ifeq ($(OS),Windows_NT)
-    CLEAN_CMD := clean_win
-else
-    CLEAN_CMD := clean_unix
-endif
-
-all: $(CLEAN_CMD) tests plots #vera_plots
+all: clean tests plots #vera_plots
 tests: mcfacts_sim
 
 ######## Definitions ########
@@ -35,8 +28,8 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
 SEED=3456789012
-FNAME_INI= ${HERE}/recipes/pAGN_test.ini
-#FNAME_INI= ${HERE}/recipes/model_choice_old.ini
+#FNAME_INI= ${HERE}/recipes/p1_thompson.ini
+FNAME_INI= ${HERE}/recipes/model_choice_old.ini
 
 HC_EXP_NAME = retro_binaries
 HC_RUN_NAME = sg_fret0p5
@@ -55,54 +48,63 @@ wd=${HC_WKDIR}
 ######## Instructions ########
 #### Install ####
 
-ifeq ($(OS),Windows_NT)
-    VERSION_BASE_CMD := echo __version__ = '${VERSION}' > __version__.py
-    VERSION_SRC_CMD := echo __version__ = '${VERSION}'" > src/mcfacts/__version__.py
-else
-    VERSION_BASE_CMD := echo "__version__ = '${VERSION}'" > __version__.py
-    VERSION_SRC_CMD := echo "__version__ = '${VERSION}'" > src/mcfacts/__version__.py
-endif
+version: clean
+	echo "__version__ = '${VERSION}'" > __version__.py
+	echo "__version__ = '${VERSION}'" > src/mcfacts/__version__.py
 
-version: $(CLEAN_CMD)
-	$(VERSION_BASE_CMD)
-	$(VERSION_SRC_CMD)
-
-install: $(CLEAN_CMD) version
+install: clean version
 	python -m pip install --editable .
+
+setup: clean version
+	source ~/.bash_profile && \
+	conda activate base && \
+	conda remove -n mcfacts-dev --all -y && \
+	conda create --name mcfacts-dev "python>=3.10.4" pip "pytest" -c conda-forge -c defaults -y && \
+	conda activate mcfacts-dev && \
+	python -m pip install --editable .
+
+unit_test: clean version
+	source ~/.bash_profile && \
+	conda activate mcfacts-dev && \
+	pytest
 
 #### Test one thing at a time ####
 
-mcfacts_sim: $(CLEAN_CMD)
-	python ${MCFACTS_SIM_EXE} \
-		--n_iterations 10 \
-		--fname-ini ${FNAME_INI} \
+# do not put linebreaks between any of these lines. Your run will call a different .ini file
+mcfacts_sim: clean
+	mkdir -p runs
+	cd runs; \
+		python ../${MCFACTS_SIM_EXE} \
+		--galaxy_num 100 \
+		--fname-ini ../${FNAME_INI} \
 		--fname-log out.log \
 		--seed ${SEED}
 
 
 plots: mcfacts_sim
-	python ${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
+	cd runs; \
+	python ../${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
 
 vera_plots: mcfacts_sim
 	python ${VERA_PLOTS_EXE} \
-		--cdf chi_eff chi_p M gen1 gen2 t_merge \
+		--cdf-fields chi_eff chi_p final_mass gen1 gen2 time_merge \
 		--verbose
 
 mstar_runs:
 	python ${MSTAR_RUNS_EXE} \
-		--fname-ini ${FNAME_INI} \
-		--number_of_timesteps 1000 \
-        --n_bins_max 10000 \
-		--n_iterations 100 \
-		--dynamics \
-		--feedback \
+		--fname-ini recipes/p3_pAGN_off.ini \
+		--timestep_num 1000 \
+		--bin_num_max 10000 \
+		--nbins 33 \
+		--galaxy_num 100 \
 		--mstar-min 1e9 \
 		--mstar-max 1e13 \
-		--nbins 33 \
 		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
 		--wkdir ${MSTAR_RUNS_WKDIR}
-	python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
+		#--nbins 33 
+		#--timestep_num 1000 \
+	#python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
 		
 qxeff:
 	python3 ${MCFACTS_SIM_EXE} \
@@ -130,14 +132,14 @@ stats:
 
 
 #### CLEAN ####
-clean: $(CLEAN_CMD)
 
 #TODO: Create an IO class that wraps the standard IO. This wrapper will keep a persistent log of all of the
 #instantaneous files created. The wrapper would have a cleanup function, and can also report metrics :^)
 #Plus, if we use a standard python IO library, we don't have to worry about rm / del and wildcards!
 
-clean_unix:
+clean:
 	rm -rf ${wd}/run*
+	rm -rf ${wd}/runs/*
 	rm -rf ${wd}/output_mergers*.dat
 	rm -rf ${wd}/m1m2.png
 	rm -rf ${wd}/merger_mass_v_radius.png
