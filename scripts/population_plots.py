@@ -175,6 +175,8 @@ def main():
     # poptHigh, pcovHigh = curve_fit(linefunc, high_gen_mass_ratio, high_gen_chi_eff)
     poptAll, pcovAll = curve_fit(linefunc, mass_ratio, chi_eff)
     poptHigh, pcovHigh = curve_fit(linefunc, high_gen_mass_ratio, high_gen_chi_eff)
+    errAll = np.sqrt(np.diag(pcovAll))[0]
+    errHigh = np.sqrt(np.diag(pcovHigh))[0]
 
     pointalpha = 0.6
     linealpha = 0.7
@@ -205,16 +207,20 @@ def main():
              lw=1,
              color='gray',
              zorder=0,
-             label=r'$d\chi/dq(\geq$2g)='+f'{poptHigh[0]:.2f}')
+             label=r'$d\chi/dq(\geq$2g)=' +
+                   f'{poptHigh[0]:.2f}' +
+                   r'$\pm$' + f'{errHigh:.2f}')
     #         #  alpha=linealpha,
     ax2.plot(linefunc(x,*poptAll), x,
              ls='solid',
              lw=1,
              color='black',
              zorder=0,
-             label=r'$d\chi/dq$(all)='+f'{poptAll[0]:.2f}')
+             label=r'$d\chi/dq$(all)=' +
+                   f'{poptAll[0]:.2f}' +
+                   r'$\pm$' + f'{errAll:.2f}')
             #  alpha=linealpha,
-    # plt.title("Mass Ratio vs. Effective Spin")    
+    # plt.title("Mass Ratio vs. Effective Spin")
     plt.ylabel(r'$q$') # = M_2 / M_1$  ($M_1 > M_2$)')
     plt.xlabel(r'$\chi_{\rm eff}$')
     plt.ylim(0,1)
@@ -262,9 +268,6 @@ def main():
     plt.savefig(os.path.join(opts.plots_directory, "./r_chi_p.png"), format='png')
     plt.close()
 
-<<<<<<< HEAD
-
-=======
     #Figure of Disk radius vs Chi_p follows.
     # Can break out higher mass Chi_p events as test/illustration.
     #Set up default arrays for high mass BBH (>40Msun say) to overplot vs chi_p. 
@@ -294,7 +297,6 @@ def main():
     plt.savefig("./r_chi_p.png", format='png')
     plt.close()
     
->>>>>>> main-dev
     # plt.figure()
     # index = 2
     # mode = 10
