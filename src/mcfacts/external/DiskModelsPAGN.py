@@ -117,6 +117,9 @@ class AGNGasDiskModel(object):
         bonus_structures['Sigma'] = Sigma
         bonus_structures['h_over_R'] = np.exp(ln_aspect_ratio)
         bonus_structures['kappa'] = kappa
+        bonus_structures["rho"] = self.disk_model.rho
+        bonus_structures["T"] = self.disk_model.T
+        bonus_structures["tauV"] = self.disk_model.tauV
 
         return surf_dens_func, aspect_func, opacity_func, bonus_structures
 

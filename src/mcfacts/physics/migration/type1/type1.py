@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 
 
-def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration, disk_feedback_ratio_func, disk_radius_trap, disk_bh_orb_ecc_pro, disk_bh_pro_orb_ecc_crit,disk_radius_outer):
+def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr, disk_feedback_ratio_func, disk_radius_trap, disk_bh_orb_ecc_pro, disk_bh_pro_orb_ecc_crit,disk_radius_outer):
     """This function calculates how far an object migrates in an AGN gas disk in a time
     of length timestep, assuming a gas disk surface density and aspect ratio profile, for
     objects of specified masses and starting locations, and returns their new locations
@@ -24,7 +24,7 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
     disk_aspect_ratio_func : function
         returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
         can accept a simple float (constant), but this is deprecated
-    timestep_duration : float
+    timestep_duration_yr : float
         size of timestep in years
     disk_feedback_ratio_func : function
         ratio of heating/migration torque. If ratio <1, migration inwards, but slows by factor tau_mig/(1-R)
@@ -73,7 +73,7 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
     # c, G and disk_surface_density in SI units
     tau = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/disk_bh_mass_pro) / disk_surface_density) / np.sqrt(disk_bh_orb_a_pro)
     # ratio of timestep to tau_mig (timestep in years so convert)
-    dt = timestep_duration * scipy.constants.year / tau
+    dt = timestep_duration_yr * scipy.constants.year / tau
     # migration distance is original locations times fraction of tau_mig elapsed
     disk_bh_dist_mig = disk_bh_orb_a_pro * dt
     #Mask migration distance with zeros if orb ecc >= e_crit.
@@ -142,7 +142,7 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
     # new locations are original ones - distance traveled
     #bh_new_locations = prograde_bh_locations - migration_distance
     # Assert that things are not allowed to migrate out of the disk.
-    mask_disk_radius_outer = disk_radius_outer > disk_bh_pro_a_new
+    mask_disk_radius_outer = disk_radius_outer < disk_bh_pro_a_new
     disk_bh_pro_a_new[mask_disk_radius_outer] = disk_radius_outer
     
     return disk_bh_pro_a_new

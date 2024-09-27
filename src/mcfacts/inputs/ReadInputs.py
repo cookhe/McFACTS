@@ -117,8 +117,6 @@ Inifile
     "delta_energy_strong"           : float
         Average energy change per strong interaction.
         de can be 20% in cluster interactions. May be 10% on average (with gas)
-    "agn_redshift"                  : float
-        Redshift of AGN activity
     "inner_disk_outer_radius"       : float
         Outer radius of the inner disk (Rg)
     "disk_inner_stable_circ_orb"    : float
@@ -190,7 +188,6 @@ INPUT_TYPES = {
     "disk_bh_pro_orb_ecc_crit"      : float,
     "flag_dynamic_enc"              : int,
     "delta_energy_strong"           : float,
-    "agn_redshift"                  : float,
     "inner_disk_outer_radius"       : float,
     "disk_inner_stable_circ_orb"    : float,
     "mass_pile_up"                  : float,

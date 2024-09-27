@@ -348,7 +348,7 @@ def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk
     new_disk_bh_pro_orbs_ecc = np.empty_like(disk_bh_pro_orbs_ecc)
 
     # Calculate & normalize all the parameters above in t_damp
-    # E.g. normalize q=bh_mass/smbh_mass to 10^-7 
+    # E.g. normalize q=bh_mass/smbh_mass to 10^-7
     mass_ratio = disk_bh_pro_orbs_masses / smbh_mass
 
     normalized_mass_ratio = mass_ratio / 10 ** (-7)
