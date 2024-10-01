@@ -33,8 +33,8 @@ FNAME_INI= ${HERE}/recipes/model_choice_old.ini
 
 HC_EXP_NAME = retro_binaries
 HC_RUN_NAME = sg_fret0p5
-HC_WKDIR = ${HERE}../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
-HC_INPUT_FILE = ${HERE}/recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
+HC_WKDIR = ../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
+HC_INPUT_FILE = ../recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 
 MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
 # NAL files might not exist unless you download them from
@@ -120,9 +120,11 @@ qxeff:
 	rm -rf ${wd}/run*
 
 hcplots:
-	python3 ${POPULATION_PLOTS_EXE} \
-	    --plots-directory=${wd} \
-		--fname-mergers=${wd}/output_mergers_population.dat
+	python ${POPULATION_PLOTS_EXE} \
+		--fname-mergers ${wd}/output_mergers_population.dat \
+		--fname-emris ${wd}/output_mergers_emris.dat \
+		--fname-lvk ${wd}/output_mergers_lvk.dat \
+		--plots-directory ${wd}
 #	python3 ${POPULATION_STATS_EXE} \
 		--fname-mergers=${wd}/output_mergers_population.dat
 
@@ -138,7 +140,7 @@ stats:
 #Plus, if we use a standard python IO library, we don't have to worry about rm / del and wildcards!
 
 clean:
-	rm -rf ${wd}/run*
+	rm -rf ${wd}/gal*
 	rm -rf ${wd}/runs/*
 	rm -rf ${wd}/output_mergers*.dat
 	rm -rf ${wd}/m1m2.png
