@@ -14,7 +14,6 @@ from scipy.optimize import curve_fit
 # Grab those txt files
 from importlib import resources as impresources
 from mcfacts.vis import data
-import sys
 
 
 ######## Arg ########
@@ -34,13 +33,10 @@ def arg():
         default="output_mergers_lvk.dat",
         type=str, help="output_lvk file")
     opts = parser.parse_args()
-    # add working directory to filenames.
-    opts.fname_mergers = os.path.join(opts.fname_mergers)
-    # opts.fname_emris = os.path.join(opts.plots_directory, opts.fname_emris)
+    print(opts.fname_mergers)
     assert os.path.isfile(opts.fname_mergers)
-    # assert os.path.isfile(opts.fname_emris)
-    # assert os.path.isfile(opts.fname_lvk)
-    # sys.exit()
+    assert os.path.isfile(opts.fname_emris)
+    assert os.path.isfile(opts.fname_lvk)
     return opts
 
 ######## Main ########
@@ -50,8 +46,8 @@ def main():
     # need section for loading data
     opts = arg()
     mergers = np.loadtxt(opts.fname_mergers, skiprows=2)
-    # emris = np.loadtxt(opts.fname_emris, skiprows=2)
-    # lvk = np.loadtxt(opts.fname_lvk,skiprows=2)
+    emris = np.loadtxt(opts.fname_emris, skiprows=2)
+    lvk = np.loadtxt(opts.fname_lvk,skiprows=2)
 
     # exclude all rows with NaNs or zeros in the final mass column
     mask = (np.isfinite(mergers[:,2])) & (mergers[:,2] != 0)
@@ -81,20 +77,19 @@ def main():
     plt.close()
 
 
-    # TQM has a trap at 245r_g, SG has a trap radius at 700r_g. WHY 700? Bellovary+16 says 331 Rg.
-    # Answer: it's because Bellovary+16 uses the equation for Schwarschild Radius for Rg rather than
-    #         gravitational radius: Rs = 2*Rg
-
+    # TQM has a trap at 245r_g, SG has a trap radius at 700r_g.
     #trap_radius = 245
-    trap_radius = 331
+    trap_radius = 700
+    pointsize_mass_radius = 5
     plt.figure()
     #plt.title('Migration Trap influence')
     for i in range(len(mergers[:,1])):
         if mergers[i,1] < 10.0:
             mergers[i,1] = 10.0
 
-    plt.scatter(mergers[:,1], mergers[:,2], color='teal')
-    plt.axvline(trap_radius, color='grey', linewidth=20, zorder=0, alpha=0.6, label=f'Radius = {trap_radius} '+r'$R_g$')
+    plt.scatter(mergers[:,1], mergers[:,2], s=pointsize_mass_radius, color='teal')
+    plt.axvline(trap_radius, color='grey', linewidth=20, zorder=0, alpha=0.6,
+                label=f'Radius = {trap_radius} '+r'$R_g$')
     #plt.text(650, 602, 'Migration Trap', rotation='vertical', size=18, fontweight='bold')
     plt.ylabel(r'Mass ($M_\odot$)')
     plt.xlabel(r'Radius ($R_g$)')
@@ -178,28 +173,28 @@ def main():
     errAll = np.sqrt(np.diag(pcovAll))[0]
     errHigh = np.sqrt(np.diag(pcovHigh))[0]
 
-    pointalpha = 0.6
-    linealpha = 0.7
-    pointsize = 10
+    pointalpha_qchi = 0.6
+    linealpha_qchi = 0.7
+    pointsize_qchi = 10
     # plot the 1g-1g population
     ax2.scatter(first_gen_chi_eff, first_gen_mass_ratio,
-                 s=pointsize,
+                 s=pointsize_qchi,
                  color='darkgoldenrod',
-                 alpha=pointalpha)
+                 alpha=pointalpha_qchi)
                 #  label='1g-1g')
     # plot the 2g+ mergers
     ax2.scatter(second_gen_chi_eff, second_gen_mass_ratio,
-                 s=pointsize,
+                 s=pointsize_qchi,
                  marker='v',
                  color='rebeccapurple',
-                 alpha=pointalpha)
+                 alpha=pointalpha_qchi)
                 #  label='at least one 2g+')
     # plot the 3g+ mergers
     ax2.scatter(extreme_gen_chi_eff, extreme_gen_mass_ratio,
-                 s=pointsize,
+                 s=pointsize_qchi,
                  marker='^',
                  color='red',
-                 alpha=pointalpha)
+                 alpha=pointalpha_qchi)
                 #  label='at least one 3+g')
     # plot the line fitting the hierarchical mergers
     ax2.plot(linefunc(x,*poptHigh), x,
@@ -230,8 +225,7 @@ def main():
     plt.legend(loc='lower left')
     plt.grid('on', color='gray', ls='dotted')
     plt.tight_layout()
-    plt.savefig(os.path.join(opts.plots_directory, "./q_chi_eff.png"),
-                format='png')#,
+    plt.savefig(opts.plots_directory+"./q_chi_eff.png", format='png')#,
                 # dpi=600)
     plt.close()
 
@@ -247,45 +241,13 @@ def main():
     #print("High masses", high_masses)
     high_masses_locations = np.where(np.isfinite(high_masses),all_locations, np.nan )
     #print("High masses locations",high_masses_locations)
-    
-    #chi_p plot vs disk radius
+    pointsize_rchip = 5
     plt.ylim(0,1)
     plt.xlim(0.,5.e4)
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    ax1.scatter(all_locations,chi_p, s=1, color='darkgoldenrod')
-    ax1.scatter(high_masses_locations,chi_p, s=1, color='rebeccapurple',marker='+')
-    
-    #plt.title("In-plane effective Spin vs. Merger radius")
-    plt.ylabel(r'$\chi_{\rm p}$')
-    plt.xlabel(r'Radius ($R_g$)')
-    plt.ylim(0,1)
-    plt.xlim(0.,5.e4)
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-    plt.grid(True, color='gray', ls='dashed')
-    plt.tight_layout()
-    plt.savefig(os.path.join(opts.plots_directory, "./r_chi_p.png"), format='png')
-    plt.close()
-
-    #Figure of Disk radius vs Chi_p follows.
-    # Can break out higher mass Chi_p events as test/illustration.
-    #Set up default arrays for high mass BBH (>40Msun say) to overplot vs chi_p. 
-    all_masses = mergers[:,2]
-    all_locations = mergers[:,1]
-    mass_bound = 40.0
-    #print("All BBH merger masses:",all_masses)
-    #print("All BBH merger locations:",all_locations)
-    high_masses = np.where(all_masses > mass_bound, all_masses, np.nan)
-    #print("High masses", high_masses)
-    high_masses_locations = np.where(np.isfinite(high_masses),all_locations, np.nan )
-    #print("High masses locations",high_masses_locations)
-    plt.ylim(0,1)
-    plt.xlim(0.,5.e4)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    ax1.scatter(all_locations,chi_p, color='darkgoldenrod')
-    ax1.scatter(high_masses_locations,chi_p, color='rebeccapurple',marker='+')
+    ax1.scatter(all_locations, chi_p, s=pointsize_rchip, color='darkgoldenrod')
+    ax1.scatter(high_masses_locations, chi_p, s=pointsize_rchip, color='rebeccapurple',marker='+')
     #plt.title("In-plane effective Spin vs. Merger radius")
     plt.ylabel(r'$\chi_{\rm p}$')
     plt.xlabel(r'Radius ($R_g$)')
@@ -294,7 +256,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig("./r_chi_p.png", format='png')
+    plt.savefig(opts.plots_directory+"./r_chi_p.png", format='png')
     plt.close()
     
     # plt.figure()
@@ -310,10 +272,10 @@ def main():
     # plt.xlim(0,100)
     # plt.show()
 
-
+    pointsize_merge_time = 5
     plt.figure()
     #plt.title("Time of Merger after AGN Onset")
-    plt.scatter(mergers[:,14]/1e6, mergers[:,2], s=1, color='darkolivegreen')
+    plt.scatter(mergers[:,14]/1e6, mergers[:,2], s=pointsize_merge_time, color='darkolivegreen')
     plt.xlabel('Time (Myr)')
     plt.ylabel(r'Mass ($M_\odot$)')
     # plt.xscale("log")
@@ -326,9 +288,9 @@ def main():
 
 
 
-
+    pointsize_m1m2 = 5
     plt.figure()
-    plt.scatter(m1, m2, s=1, color='k')
+    plt.scatter(m1, m2, s=pointsize_m1m2, color='k')
     plt.xlabel(r'$M_1$ ($M_\odot$)')
     plt.ylabel(r'$M_2$ ($M_\odot$)')
     ax = plt.gca()
@@ -371,15 +333,15 @@ def main():
     Sn = lisa.Sn(f)
 
 
-    # fig, ax = plt.subplots(1, figsize=(8,6))
-    # #plt.tight_layout()
+    fig, ax = plt.subplots(1, figsize=(8,6))
+    #plt.tight_layout()
 
-    # ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
-    # ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
-    # ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
+    ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
+    ax.tick_params(axis='both', which='major', labelsize=20)
 
-    # ax.set_xlim(1.0e-7, 1.0e+4)
-    # ax.set_ylim(1.0e-24, 1.0e-15)
+    ax.set_xlim(1.0e-7, 1.0e+4)
+    ax.set_ylim(1.0e-24, 1.0e-15)
 
     #----------Finding the rows in which EMRIs signals are either identical or zeroes and removing them----------
     identical_rows_emris = np.where( emris[:,5] == emris[:,6])
@@ -407,24 +369,26 @@ def main():
     #inv_freq_emris = 1.0/ma_freq_emris
     #inv_freq_lvk = 1.0/ma_freq_lvk
     # timestep =1.e4yr
-    # timestep = 1.e4
-    # strain_per_freq_emris = emris[:,5]*inv_freq_emris/timestep
-    # strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
-    # ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
-    # ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
-    # ax.scatter(emris[:,6],strain_per_freq_emris)
-    # ax.scatter(lvk[:,6],strain_per_freq_lvk)
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
+    timestep = 1.e4
+    pointsize_gwstrain = 5
+    strain_per_freq_emris = emris[:,5]*inv_freq_emris/timestep
+    strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
+    ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
+    ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
+    ax.scatter(emris[:,6],strain_per_freq_emris, s=pointsize_gwstrain)
+    ax.scatter(lvk[:,6],strain_per_freq_lvk, s=pointsize_gwstrain)
+    ax.set_yscale('log')
+    ax.set_xscale('log')
     #ax.loglog(f_L1, h_L1,label = 'LIGO O3, L1 Sensitivity') # plot the characteristic strain
 
     #ax.loglog(f_gw,h,color ='black', label='GW150914')
 
-    # ax.legend()
-    # ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
-    # ax.set_ylabel(r'h', fontsize=20, labelpad=10)
-    # plt.savefig(os.path.join(opts.plots_directory, './gw_strain.png'), format='png')
-    # plt.close()
+    ax.legend()
+    ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
+    ax.set_ylabel(r'h', fontsize=20, labelpad=10)
+    plt.tight_layout()
+    plt.savefig(opts.plots_directory+'./gw_strain.png', format='png')
+    plt.close()
 
 ######## Execution ########
 if __name__ == "__main__":
