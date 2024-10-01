@@ -2,6 +2,8 @@ from mcfacts.setup import setupdiskstars
 from mcfacts.setup import diskstars_hillspheremergers
 from mcfacts.objects.agnobject import AGNStar
 import numpy as np
+from mcfacts.mcfacts_random_state import rng
+
 
 
 def init_single_stars(opts, id_start_val=None):
@@ -29,7 +31,7 @@ def init_single_stars(opts, id_start_val=None):
                                                             nsc_imf_star_powerlaw_index=opts.nsc_imf_star_powerlaw_index)
 
     # Generating star locations in an x^2 distribution
-    x_vals = np.random.uniform(0.002, 1, star_num_initial)
+    x_vals = rng.uniform(low=0.002, high=1, size=star_num_initial)
     r_locations_initial = np.sqrt(x_vals)
     r_locations_initial_scaled = r_locations_initial*opts.disk_radius_trap
 

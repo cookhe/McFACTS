@@ -91,7 +91,6 @@ def change_bin_spin_magnitudes(blackholes_binary, disk_bh_eddington_ratio,
     if (idx_non_mergers[0].shape[0] == 0):
         return (blackholes_binary)
 
-
     spin_change_factor = 4.4e-3 * disk_bh_eddington_ratio_normalized * disk_bh_torque_condition_normalized * timestep_duration_yr_normalized
 
     spin_1_before = blackholes_binary.spin_1[idx_non_mergers]
@@ -147,7 +146,6 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     # If all BH have merged then nothing to do
     if (idx_non_mergers[0].shape[0] == 0):
         return (blackholes_binary)
-
 
     spin_angle_change_factor = 6.98e-3 * disk_bh_eddington_ratio_normalized * disk_bh_torque_condition_normalized * timestep_duration_yr_normalized
 
@@ -292,7 +290,7 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
     # migration distance is original locations times fraction of tau_mig elapsed
     migration_distance = bin_com * dt
 
-    disk_bin_bhbh_pro_orbs_a = np.empty_like(bin_com)
+    disk_bin_bhbh_pro_orbs_a = np.zeros_like(bin_com)
 
     # Find indices of objects where feedback ratio <1; these still migrate inwards, but more slowly
     index_inwards_modified = np.where(feedback_ratio < 1)[0]
@@ -326,7 +324,7 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
     if index_outwards_modified.size > 0:
         disk_bin_bhbh_pro_orbs_a[index_outwards_modified] = bin_com[index_outwards_modified] +(migration_distance[index_outwards_modified]*(feedback_ratio[index_outwards_modified]-1))
         # catch to keep stuff from leaving the outer radius of the disk!
-        disk_bin_bhbh_pro_orbs_a[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)] = disk_radius_outer
+        disk_bin_bhbh_pro_orbs_a[index_outwards_modified[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)]] = disk_radius_outer
     
     #Find indices where feedback ratio is identically 1; shouldn't happen (edge case) if feedback on, but == 1 if feedback off.
     index_unchanged = np.where(feedback_ratio == 1)[0]
@@ -347,6 +345,12 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
                 if disk_bin_bhbh_pro_orbs_a[locn_index] >= disk_radius_trap:
                     disk_bin_bhbh_pro_orbs_a[locn_index] = disk_radius_trap
 
+    # Finite check
+    assert np.isfinite(disk_bin_bhbh_pro_orbs_a).all(),\
+        "Finite check failed for disk_bin_bhbh_pro_orbs_a"
+    # Zero check
+    assert (disk_bin_bhbh_pro_orbs_a != 0.).all(),\
+        "Some disk_bin_bhbh_pro_orbs_a are zero"
     # Distance travelled per binary is old location of com minus new location of com. Is +ive(-ive) if migrating in(out)
     dist_travelled = disk_bin_bhbh_pro_array[9,:] - disk_bin_bhbh_pro_orbs_a
 
@@ -360,6 +364,9 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
         if disk_bin_bhbh_pro_array[18,i] > disk_bh_pro_orb_ecc_crit:
             pass
 
+    # Finite check
+    assert np.isfinite(disk_bin_bhbh_pro_array[18,:]).all(),\
+        "Fintie check failure: disk_bin_bhbh_pro_array"
     # Assert that things are not allowed to migrate out of the disk.
     mask_disk_radius_outer = disk_radius_outer < disk_bin_bhbh_pro_array
     disk_bin_bhbh_pro_array[mask_disk_radius_outer] = disk_radius_outer
@@ -387,6 +394,12 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
     This function takes in two masses, their separation, the previous frequency, and the redshift and
     calculates the new GW strain (unitless) and frequency (Hz).
 
+    Note from Saavik about hardcoding strain_factor to 4e3 if nu_gw > 1e-6:
+        basically we are implicitly assuming if the frequency is low enough the source is monochromatic
+        in LISA over the course of 1yr, so that's where those values come from... and we do need to make
+        a decision about that... and that's an ok decision for now. But if someone were to be considering
+        a different observatory they might not like that decision?
+
     Parameters
     ----------
     mass_1 : numpy array
@@ -405,7 +418,15 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
         redshift of the SMBH
     flag_include_old_gw_freq : boolean
         flag indicating if old_gw_freq should be included in calculations
+        if not, we use the hardcoded value (see note above)
         0 if no, 1 if yes
+
+    Returns
+    -------
+    char_strain : numpy array
+        dimensionless characteristic strain
+    nu_gw : numpy array
+        GW frequency in Hz
     """
 
     redshift_d_obs_dict = {0.1: 421*u.Mpc,
@@ -426,8 +447,7 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
     # If separation is less than rg_chirp then cap separation at rg_chirp.
     bin_sep[bin_sep < rg_chirp] = rg_chirp[bin_sep < rg_chirp]
 
-    nu_gw = (1.0/np.pi)*np.sqrt(mass_total * const.G /
-                               (bin_sep**(3.0)))
+    nu_gw = (1.0/np.pi) * np.sqrt(mass_total * const.G / np.power(bin_sep, 3))
     nu_gw = nu_gw.to(u.Hz)
 
     # For local distances, approx d=cz/H0 = 3e8m/s(z)/70km/s/Mpc =3.e8 (z)/7e4 Mpc =428 Mpc
@@ -620,9 +640,13 @@ def ionization_check(blackholes_binary, smbh_mass):
 def contact_check(blackholes_binary, smbh_mass):
     """
     This function tests to see if the binary separation has shrunk so that the binary is touching!
-    Touching condition is where binary separation is <= R_g(M_chirp).
+
+    Touching condition is where binary separation is <= R_schw(M_1) + R_schw(M_2)
+                                                      = 2(R_g(M_1) + R_g(M_2))
+                                                      = 2G(M_1+M_2) / c^{2}
+
     Since binary separation is in units of r_g (GM_smbh/c^2) then condition is simply:
-        binary_separation < M_chirp/M_smbh
+        binary_separation <= 2M_bin/M_smbh
     
     Parameters
     ---------- 
@@ -638,19 +662,12 @@ def contact_check(blackholes_binary, smbh_mass):
     """
 
     mass_binary = blackholes_binary.mass_1 + blackholes_binary.mass_2
-    mass_chirp = np.power(blackholes_binary.mass_1 * blackholes_binary.mass_2, 3. / 5.) / np.power(mass_binary, 1. / 5.)
 
-    # Condition is if binary separation < R_g(M_chirp). 
-    # Binary separation is in units of r_g(M_smbh) so 
-    # condition is separation < R_g(M_chirp)/R_g(M_smbh) =M_chirp/M_smbh
-    # where m_chirp =(M_1 M_2)^(3/5) /(M_bin)^(1/5)
-    # M1,M2, M_smbh are all in units of M_sun
+    # We assume bh are not spinning when in contact. TODO: Consider spin in future.
+    contact_condition = 2 * (mass_binary / smbh_mass)
+    mask_condition = (blackholes_binary.bin_sep <= contact_condition)
 
-    contact_condition = mass_chirp / smbh_mass
-
-    mask_condition = (blackholes_binary.bin_sep < contact_condition)
-
-    # If binary separation < merge condition, set binary separation to merge condition
+    # If binary separation <= contact condition, set binary separation to contact condition
     blackholes_binary.bin_sep[mask_condition] = contact_condition[mask_condition]
     blackholes_binary.flag_merging[mask_condition] = np.full(np.sum(mask_condition), -2)
 

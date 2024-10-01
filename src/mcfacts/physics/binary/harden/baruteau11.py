@@ -68,16 +68,28 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
 
     # Timescale for binary merger via GW emission alone, scaled to bin parameters
     time_to_merger_gw = time_gw_normalization*((bin_sep)**(4.0))*((mass_binary/10.0)**(-2))*((mass_reduced/2.5)**(-1.0))*ecc_factor
+    # Finite check
+    assert np.isfinite(time_to_merger_gw).all(),\
+        "Finite check failure: time_to_merger_gw"
     blackholes_binary.time_to_merger_gw[idx_non_mergers] = time_to_merger_gw
 
     # Binary will not merge in this timestep
     # new bin_sep according to Baruteu+11 prescription
     bin_sep[time_to_merger_gw > timestep_duration_yr] = bin_sep[time_to_merger_gw > timestep_duration_yr] * np.power(0.5, scaled_num_orbits[time_to_merger_gw > timestep_duration_yr])
     blackholes_binary.bin_sep[idx_non_mergers[time_to_merger_gw > timestep_duration_yr]] = bin_sep[time_to_merger_gw > timestep_duration_yr]
+    # Finite check
+    assert np.isfinite(blackholes_binary.bin_sep).all(),\
+        "Finite check failure: blackholes_binary.bin_sep"
 
     # Otherwise binary will merge in this timestep
     # Update flag_merging to -2 and time_merged to current time
     blackholes_binary.flag_merging[idx_non_mergers[time_to_merger_gw <= timestep_duration_yr]] = np.full(np.sum(time_to_merger_gw <= timestep_duration_yr), -2)
     blackholes_binary.time_merged[idx_non_mergers[time_to_merger_gw <= timestep_duration_yr]] = np.full(np.sum(time_to_merger_gw <= timestep_duration_yr), time_passed)
+    # Finite check
+    assert np.isfinite(blackholes_binary.flag_merging).all(),\
+        "Finite check failure: blackholes_binary.flag_merging"
+    # Finite check
+    assert np.isfinite(blackholes_binary.time_merged).all(),\
+        "Finite check failure: blackholes_binary.time_merged"
 
     return (blackholes_binary)

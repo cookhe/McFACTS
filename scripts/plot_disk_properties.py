@@ -1,7 +1,9 @@
 from importlib import resources as impresources
 from matplotlib import pyplot as plt
 import numpy as np
-from mcfacts.inputs import data as input_data
+from os.path import isfile, isdir, basename, expanduser, join, split
+from mcfacts.inputs import data as mcfacts_input_data
+from mcfacts.inputs.ReadInputs import ReadInputs_ini
 from mcfacts.inputs.ReadInputs import load_disk_arrays, construct_disk_direct, construct_disk_pAGN
 
 
@@ -69,10 +71,11 @@ def pAGN_model_batch(
     disk_radius_outer=50000,
     rad_efficiency=0.1,
     ):
+    
     #disk_alpha_viscositys = np.asarray([0.1, 0.5])
     #edd_ratio = np.asarray([0.5,0.1])
-    disk_alpha_viscositys = np.asarray([0.1,])
-    edd_ratio = np.asarray([0.5])
+    disk_alpha_viscositys = np.asarray([0.01,])
+    edd_ratio = np.asarray([1.0])
     smbh_masses = 10**np.asarray([6,7,8,9])
     # Define dictionaries
     surface_density_dict = {}
@@ -294,13 +297,128 @@ def pAGN_model_batch(
     #plt.show()
     plt.close()
 
+def plot_interpolators(fname_ini=None):
+    ## Load input variables ##
+    # Check if the user provided an  inifile
+    if fname_ini is None:
+        # Check that the data folder exists
+        data_folder = impresources.files(mcfacts_input_data)
+        assert isdir(data_folder), "Cannot find mcfacts.inputs.data folder"
+        # Find model_choice.ini
+        fname_ini = data_folder / "model_choice.ini"
+    assert isfile(fname_ini), "Cannot find %s"%fname_ini
+    # Get input variables
+    input_variables = ReadInputs_ini(fname_ini)
+    # Pull out disk_radius_outer
+    disk_radius_outer = input_variables["disk_radius_outer"]
 
+    # Assume pAGN off, and generate the interpolators
+    direct_surf_dens_func, \
+            direct_aspect_ratio_func, \
+            direct_opacity_func, \
+            direct_model_properties = \
+        construct_disk_direct(
+            input_variables["disk_model_name"],
+            input_variables["disk_radius_outer"]
+        )
 
-    
+    _alpha = input_variables["disk_alpha_viscosity"]
+    _edd = input_variables["disk_bh_eddington_ratio"]
+    #_edd = 0.5
+    _mass = input_variables["smbh_mass"]
+    # Identify pAGN model
+    tag = "%s_%s_%s"%(str(_alpha),str(_edd),str(_mass))
+    print("alpha:", _alpha)
+    print("edd:", _edd)
+    print("mass:",_mass)
+    # Generate pAGN model
+    pagn_surf_dens_func, \
+            pagn_aspect_ratio_func, \
+            pagn_opacity_func, \
+            pAGN_model, \
+            bonus_structures = \
+        construct_disk_pAGN(
+            input_variables["disk_model_name"],
+            _mass,
+            disk_radius_outer,
+            _alpha,
+            _edd,
+        )
+            
+    ### Density plot ###
+    # Setup density plot
+    fig, ax = plt.subplots(
+        figsize=(8,6),
+        )
+    plt.style.use('bmh')
+    # Load pagn radius array
+    pagn_disk_radius_array = bonus_structures['R']
+    # Identify truncation mask for pAGN R
+    pagn_disk_radius_mask = pagn_disk_radius_array < input_variables["disk_radius_outer"]
+    # Identify the number of valid radius entrees
+    pagn_disk_radius_length = np.sum(pagn_disk_radius_mask)
+    # Identify log radius
+    _ln_r = np.log(pagn_disk_radius_array)
+    # Generate a test radius array
+    disk_log_radius_test = np.linspace(
+        _ln_r[pagn_disk_radius_mask][0],
+        _ln_r[pagn_disk_radius_mask][-1],
+        pagn_disk_radius_length * 10
+    )
+    # Generate a linear scale array
+    disk_radius_test = np.exp(disk_log_radius_test)
+
+    # Plot basic data
+    ax.plot(
+            np.log10(disk_radius_test),
+            np.log10(direct_surf_dens_func(disk_radius_test)),
+            label="McFacts disk interp",
+    )
+    # Plot pAGN interp
+    ax.plot(
+            np.log10(disk_radius_test),
+            np.log10(pagn_surf_dens_func(disk_radius_test)),
+            label="pAGN disk interp",
+    )
+    # Plot pAGN raw output
+    ax.plot(
+            np.log10(bonus_structures['R']),
+            np.log10(bonus_structures['Sigma']),
+            label="pAGN raw output",
+            linestyle='dotted',
+           )
+
+    # Vertical line for disk_radius_outer
+    ylims = ax.get_ylim()
+    ax.vlines(
+              np.log10(disk_radius_outer),
+              ylims[0],ylims[1],
+              color='black',
+              label="disk_radius_outer",
+              linestyle='dashed'
+             )
+    ax.set_ylim(ylims)
+
+    # Set a legend
+    ax.legend()
+
+    # Limits
+    ax.set_xlim([1.,6.])
+    ax.set_ylim([2.,7.])
+    # axis labels
+    ax.set_xlabel(r"$\log_{10}(R)$")
+    ax.set_ylabel(r"$\log_{10}(\mathrm{Sigma})$")
+    # show plots
+    #plt.tight_layout()
+    savename = "disk_interp_rho.png"
+    fig.savefig(savename)
+    #plt.show()
+    plt.close()
 
 def main():
     #ROS_plots()
     pAGN_model_batch()
+    plot_interpolators()
 
 if __name__ == "__main__":
     main()

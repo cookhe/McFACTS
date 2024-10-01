@@ -27,7 +27,7 @@ MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 
 #### Setup ####
-SEED=3456789012
+SEED=3456789108
 #FNAME_INI= ${HERE}/recipes/p1_thompson.ini
 FNAME_INI= ${HERE}/recipes/model_choice_old.ini
 
@@ -92,11 +92,11 @@ vera_plots: mcfacts_sim
 
 mstar_runs:
 	python ${MSTAR_RUNS_EXE} \
-		--fname-ini recipes/p3_pAGN_off.ini \
-		--timestep_num 1000 \
+		--fname-ini ${FNAME_INI} \
+		--timestep_num 50 \
 		--bin_num_max 10000 \
 		--nbins 33 \
-		--galaxy_num 100 \
+		--galaxy_num 3 \
 		--mstar-min 1e9 \
 		--mstar-max 1e13 \
 		--scrub \

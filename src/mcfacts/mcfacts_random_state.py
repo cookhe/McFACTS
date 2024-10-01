@@ -2,8 +2,22 @@
 import numpy as np
 
 default_seed = 1
-rng = np.random.default_rng(default_seed)
+# Initialize random number generator
+rng = np.random.RandomState(seed=default_seed)
+
 
 def reset_random(seed):
-	rng = np.random.default_rng(seed)
+    """
+    Set the seed of the random number generator
 
+    Parameters
+    ----------
+    seed : int
+        seed value to set
+
+    Returns
+    -------
+    rng : numpy random number generator
+        rng set with input value seed
+    """
+    rng.seed(seed)

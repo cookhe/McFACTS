@@ -20,7 +20,7 @@ def setup_disk_stars_orb_a(star_num, disk_radius_outer):
     star_orb_a_initial : numpy array
         semi-major axes for stars
     """
-    star_orb_a_initial = disk_radius_outer*rng.random(size=star_num)
+    star_orb_a_initial = disk_radius_outer*rng.uniform(size=star_num)
     return (star_orb_a_initial)
 
 
@@ -167,7 +167,7 @@ def setup_disk_stars_spin_angles(star_num, star_spins_initial):
 
     star_initial_spin_indices = np.array(star_spins_initial)
     negative_spin_indices = np.where(star_initial_spin_indices < 0.)
-    star_spin_angles_initial = rng.uniform(0., 1.57, star_num)
+    star_spin_angles_initial = rng.uniform(low=0., high=1.57, size=star_num)
     star_spin_angles_initial[negative_spin_indices] = star_spin_angles_initial[negative_spin_indices] + 1.57
     return (star_spin_angles_initial)
 
@@ -198,7 +198,7 @@ def setup_disk_stars_orb_ang_mom(star_num,
     star_orb_ang_mom_initial : numpy array
         orbital angular momentum
     """
-    random_uniform_number = rng.random(size=star_num)
+    random_uniform_number = rng.uniform(size=star_num)
     star_orb_ang_mom_initial_sign = (2.0*np.around(random_uniform_number)) - 1.0
     star_orb_ang_mom_initial_value = mass_reduced*np.sqrt(G.to('m^3/(M_sun s^2)').value*mass_total*orb_a*(1-orb_inc**2))
     star_orb_ang_mom_initial = star_orb_ang_mom_initial_sign*star_orb_ang_mom_initial_value
@@ -230,7 +230,7 @@ def setup_disk_stars_arg_periapse(star_num):
         arguments for orbital periapse
     """
 
-    random_uniform_number = rng.random(star_num)
+    random_uniform_number = rng.uniform(size=star_num)
     star_orb_arg_periapse_initial = 0.5 * np.pi * np.around(random_uniform_number)
 
     return (star_orb_arg_periapse_initial)
@@ -259,7 +259,7 @@ def setup_disk_stars_eccentricity_thermal(star_num):
     star_initial_orb_ecc : float array
         orbital eccentricities
     """
-    random_uniform_number = rng.random(size=star_num)
+    random_uniform_number = rng.uniform(size=star_num)
     star_orb_ecc_initial = np.sqrt(random_uniform_number)
     return (star_orb_ecc_initial)
 
@@ -287,7 +287,7 @@ def setup_disk_stars_eccentricity_uniform(star_num):
     star_initial_orb_ecc : float array
         orbital eccentricities
     """
-    random_uniform_number = rng.random(size=star_num)
+    random_uniform_number = rng.uniform(size=star_num)
     star_orb_ecc_initial = random_uniform_number
     return (star_orb_ecc_initial)
 
@@ -331,7 +331,7 @@ def setup_disk_stars_inclination_toinclude(star_num,
     max_height = star_orb_a * disk_aspect_ratio(star_orb_a)
     # reflect that height to get the min
     min_height = -max_height
-    random_uniform_number = rng.random(size=star_num)
+    random_uniform_number = rng.uniform(size=star_num)
     # pick the actual height between the min and max, then reset zero point
     height_range = max_height - min_height
     actual_height_range = height_range * random_uniform_number

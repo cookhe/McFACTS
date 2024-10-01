@@ -249,6 +249,15 @@ def crude_retro_bh(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs_a, disk_b
             if disk_bh_retro_orbs_inc_new[i] <= (0.0): disk_bh_retro_orbs_inc_new[i] = (0.0)
         else:
             print("Warning: retrograde argument of periapse out of range, behavior unreliable")
+    # Check Finite
+    assert np.isfinite(disk_bh_retro_orbs_ecc_new).all(), \
+        "Finite check failed for disk_bh_retro_orbs_ecc_new"
+    # Check Finite
+    assert np.isfinite(disk_bh_retro_orbs_a_new).all(), \
+        "Finite check failed for disk_bh_retro_orbs_a_new"
+    # Check Finite
+    assert np.isfinite(disk_bh_retro_orbs_inc_new).all(), \
+        "Finite check failed for disk_bh_retro_orbs_inc_new"
 
     return disk_bh_retro_orbs_ecc_new, disk_bh_retro_orbs_a_new, disk_bh_retro_orbs_inc_new
 

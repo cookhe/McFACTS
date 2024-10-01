@@ -11,6 +11,10 @@ mergers_nal*.png
 r_chi_p.png
 *nohup.out
 run*
+*disk_interp_rho.png
+*pAGN_*_disk_rho.png
+*pAGN_*_disk_tauV.png
+*pAGN_*_disk_T.png
 
 # Operating System Files
 .DS_Store

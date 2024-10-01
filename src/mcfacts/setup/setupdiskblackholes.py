@@ -21,17 +21,21 @@ def setup_disk_blackholes_location(disk_bh_num, disk_outer_radius,disk_inner_sta
     """
     # ISCO defined here. Need to put this in the .ini file.
     #disk_inner_stable_circ_orbit = 6.0
-    integer_nbh = int(disk_bh_num)
-    bh_initial_locations = disk_outer_radius*rng.random(integer_nbh)
-    sma_too_small = np.where(bh_initial_locations < disk_inner_stable_circ_orb)
-    bh_initial_locations[sma_too_small] = disk_inner_stable_circ_orb
+    #bh_initial_locations = disk_outer_radius * rng.uniform(size=disk_bh_num)
+    #sma_too_small = np.where(bh_initial_locations < disk_inner_stable_circ_orb)
+    #bh_initial_locations[sma_too_small] = disk_inner_stable_circ_orb
+    bh_initial_locations = rng.uniform(
+        low  = disk_inner_stable_circ_orb,
+        high = disk_outer_radius,
+        size = disk_bh_num,
+    )
     return bh_initial_locations
 
 def setup_prior_blackholes_indices(prograde_n_bh, prior_bh_locations):
     #Return an array of indices which allow us to read prior BH properties & replace prograde BH with these.
     integer_nbh = int(prograde_n_bh)
     len_prior_locations = (prior_bh_locations.size)-1
-    bh_indices = np.rint(len_prior_locations*rng.random(integer_nbh))
+    bh_indices = np.rint(len_prior_locations * rng.uniform(size=integer_nbh))
     return bh_indices
 
 def setup_disk_blackholes_masses(disk_bh_num,nsc_bh_imf_mode,nsc_bh_imf_max_mass,nsc_bh_imf_powerlaw_index,mass_pile_up):
@@ -56,13 +60,12 @@ def setup_disk_blackholes_masses(disk_bh_num,nsc_bh_imf_mode,nsc_bh_imf_max_mass
         disk_bh_initial_masses: float array
             Array of disk BH initial masses
     """
-    
-    integer_nbh = int(disk_bh_num)
-    disk_bh_initial_masses = (rng.pareto(nsc_bh_imf_powerlaw_index,integer_nbh)+1)*nsc_bh_imf_mode
+
+    disk_bh_initial_masses = (rng.pareto(nsc_bh_imf_powerlaw_index, size=disk_bh_num) + 1) * nsc_bh_imf_mode
     #impose mass pile up condition (should be set in .ini). Default is 35Msun (for max of 40Msun).
     #critical_bh_mass = 35.0
     mass_diff = nsc_bh_imf_max_mass - mass_pile_up
-    disk_bh_initial_masses[disk_bh_initial_masses > nsc_bh_imf_max_mass] = mass_pile_up + np.rint(mass_diff*rng.random())
+    disk_bh_initial_masses[disk_bh_initial_masses > nsc_bh_imf_max_mass] = mass_pile_up + np.rint(mass_diff*rng.uniform())
     return disk_bh_initial_masses
 
 
@@ -84,9 +87,8 @@ def setup_disk_blackholes_spins(disk_bh_num, nsc_bh_spin_dist_mu, nsc_bh_spin_di
         disk_bh_initial_spins : float array
             Array of initial BH spins of size disk_bh_num
     """
-    
-    integer_nbh = int(disk_bh_num)
-    disk_bh_initial_spins = rng.normal(nsc_bh_spin_dist_mu, nsc_bh_spin_dist_sigma, integer_nbh)
+
+    disk_bh_initial_spins = rng.normal(loc=nsc_bh_spin_dist_mu, scale=nsc_bh_spin_dist_sigma, size=disk_bh_num)
     return disk_bh_initial_spins
 
 
@@ -107,11 +109,10 @@ def setup_disk_blackholes_spin_angles(disk_bh_num, disk_bh_initial_spins):
         disk_bh_initial_spins : float array
             Array of initial BH spins of size disk_bh_num
     """
-    
-    integer_nbh = int(disk_bh_num)
+
     bh_initial_spin_indices = np.array(disk_bh_initial_spins)
     negative_spin_indices = np.where(bh_initial_spin_indices < 0.)
-    disk_bh_initial_spin_angles = rng.uniform(0.,1.57,integer_nbh)
+    disk_bh_initial_spin_angles = rng.uniform(low=0., high=1.57, size=disk_bh_num)
     disk_bh_initial_spin_angles[negative_spin_indices] = disk_bh_initial_spin_angles[negative_spin_indices] + 1.57
     return disk_bh_initial_spin_angles
 
@@ -130,10 +131,8 @@ def setup_disk_blackholes_orb_ang_mom(disk_bh_num):
         disk_bh_initial_orb_ang_mom : float array
             Array of initial BH orb ang mom of size disk_bh_num
     """
-    
-    integer_nbh = int(disk_bh_num)
-    random_uniform_number = rng.random((integer_nbh,))
-    disk_bh_initial_orb_ang_mom = (2.0*np.around(random_uniform_number)) - 1.0
+
+    disk_bh_initial_orb_ang_mom = rng.choice(a=[1.,-1.],size=disk_bh_num)
     return disk_bh_initial_orb_ang_mom
 
 def setup_disk_blackholes_eccentricity_thermal(disk_bh_num):
@@ -152,9 +151,8 @@ def setup_disk_blackholes_eccentricity_thermal(disk_bh_num):
         disk_bh_initial_orb_ecc : float array
             Array of initial BH orb eccentricity of size disk_bh_num
     """
-    
-    integer_nbh = int(disk_bh_num)
-    random_uniform_number = rng.random((integer_nbh,))
+
+    random_uniform_number = rng.uniform(size=disk_bh_num)
     disk_bh_initial_orb_ecc = np.sqrt(random_uniform_number)
     return disk_bh_initial_orb_ecc
 
@@ -179,34 +177,10 @@ def setup_disk_blackholes_eccentricity_uniform(disk_bh_num, disk_bh_orb_ecc_max_
         disk_bh_initial_orb_ecc : float array
             Array of initial BH orb eccentricity of size disk_bh_num
     """
-    
-    integer_nbh = int(disk_bh_num)
-    random_uniform_number = rng.random((integer_nbh,))
-    bh_initial_orb_ecc = random_uniform_number*disk_bh_orb_ecc_max_init
-    return bh_initial_orb_ecc
 
-def setup_disk_blackholes_inclination(disk_bh_num):
-    """Return an array of disk BH initial orbital inclinations of size disk_bh_num. 
-    Right now returns an initial distribution of inclination angles that are 0.0
-    To do: initialize inclinations so random draw with i <h (so will need to input bh_locations and disk_aspect_ratio)
-    and then damp inclination.
-    To do: calculate v_kick for each merger and then the (i,e) orbital elements for the newly merged BH. 
-    Then damp (i,e) as appropriate. Return an initial distribution of inclination angles that are 0 deg.
-    
-    Parameters
-    ----------
-        disk_bh_num : int
-            Integer number of BH initially embedded in disk
-    Returns
-    -------
-        disk_bh_initial_orb_inc : float array
-            Array of initial BH orb eccentricity of size disk_bh_num
-    """
-    
-    integer_nbh = int(disk_bh_num)
-    # For now, inclinations are zeros
-    disk_bh_orb_inc_init = np.zeros((integer_nbh,),dtype = float)
-    return disk_bh_orb_inc
+    random_uniform_number = rng.uniform(size=disk_bh_num)
+    bh_initial_orb_ecc = random_uniform_number * disk_bh_orb_ecc_max_init
+    return bh_initial_orb_ecc
 
 def setup_disk_blackholes_incl(disk_bh_num, disk_bh_locations, disk_bh_orb_ang_mom, disk_aspect_ratio):
     """Return an array of disk BH initial orbital inclinations of size disk_bh_num. 
@@ -233,12 +207,11 @@ def setup_disk_blackholes_incl(disk_bh_num, disk_bh_locations, disk_bh_orb_ang_m
     """
     # Return an array of BH orbital inclinations
     # initial distribution is not 0.0
-    integer_nbh = int(disk_bh_num)
     # what is the max height at the orbiter location that keeps it in the disk?
     max_height = disk_bh_locations * disk_aspect_ratio(disk_bh_locations)
     # reflect that height to get the min
     min_height = -max_height
-    random_uniform_number = rng.random((integer_nbh,))
+    random_uniform_number = rng.uniform(size=disk_bh_num)
     # pick the actual height between the min and max, then reset zero point
     height_range = max_height - min_height
     actual_height_range = height_range * random_uniform_number
@@ -265,10 +238,8 @@ def setup_disk_blackholes_circularized(disk_bh_num,disk_bh_pro_orb_ecc_crit):
         disk_bh_orb_ecc_init : float array
             Array of initial BH orb eccentricity of size disk_bh_num. Assumed circularized.
     """
-    
-    integer_nbh = int(disk_bh_num)
-    
-    disk_bh_orb_ecc_init = disk_bh_pro_orb_ecc_crit*np.zeros((integer_nbh,),dtype = float)
+
+    disk_bh_orb_ecc_init = disk_bh_pro_orb_ecc_crit*np.zeros((disk_bh_num,),dtype = float)
     return disk_bh_orb_ecc_init
 
 def setup_disk_blackholes_arg_periapse(disk_bh_num):
@@ -287,12 +258,8 @@ def setup_disk_blackholes_arg_periapse(disk_bh_num):
         disk_bh_orb_ecc_init : float array
             Array of initial BH orb eccentricity of size disk_bh_num. Assumed circularized.
     """
-    
-    integer_nbh = int(disk_bh_num)
-    random_uniform_number = rng.random((integer_nbh,))
-    
-    bh_initial_orb_arg_periapse = 0.5 * np.pi * np.around(random_uniform_number)
 
+    bh_initial_orb_arg_periapse = rng.choice(a=[0.,0.5*np.pi],size=disk_bh_num)
     return bh_initial_orb_arg_periapse
 
 def setup_disk_nbh(nsc_mass,nsc_ratio_bh_num_star_num,nsc_ratio_mbh_mass_star_mass,nsc_radius_outer,nsc_density_index_outer,smbh_mass,disk_radius_outer,disk_aspect_ratio_avg,nsc_radius_crit,nsc_density_index_inner):
