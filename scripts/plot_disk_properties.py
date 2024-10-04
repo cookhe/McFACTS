@@ -5,6 +5,14 @@ from os.path import isfile, isdir, basename, expanduser, join, split
 from mcfacts.inputs import data as mcfacts_input_data
 from mcfacts.inputs.ReadInputs import ReadInputs_ini
 from mcfacts.inputs.ReadInputs import load_disk_arrays, construct_disk_direct, construct_disk_pAGN
+import argparse
+
+def arg():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--fname-ini", default="recipes/model_choice_old.ini")
+    parser.add_argument("--outdir", default="./")
+    opts = parser.parse_args()
+    return opts
 
 
 def ROS_plots():
@@ -297,7 +305,7 @@ def pAGN_model_batch(
     #plt.show()
     plt.close()
 
-def plot_interpolators(fname_ini=None):
+def plot_interpolators(fname_ini=None,output_directory="./"):
     ## Load input variables ##
     # Check if the user provided an  inifile
     if fname_ini is None:
@@ -410,15 +418,16 @@ def plot_interpolators(fname_ini=None):
     ax.set_ylabel(r"$\log_{10}(\mathrm{Sigma})$")
     # show plots
     #plt.tight_layout()
-    savename = "disk_interp_rho.png"
+    savename = f"{output_directory}/disk_interp_rho.png"
     fig.savefig(savename)
     #plt.show()
     plt.close()
 
 def main():
+    opts = arg()
     #ROS_plots()
-    pAGN_model_batch()
-    plot_interpolators()
+    #pAGN_model_batch()
+    plot_interpolators(opts.fname_ini,opts.outdir)
 
 if __name__ == "__main__":
     main()

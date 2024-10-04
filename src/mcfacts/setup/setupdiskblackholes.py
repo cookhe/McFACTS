@@ -239,7 +239,7 @@ def setup_disk_blackholes_circularized(disk_bh_num,disk_bh_pro_orb_ecc_crit):
             Array of initial BH orb eccentricity of size disk_bh_num. Assumed circularized.
     """
 
-    disk_bh_orb_ecc_init = disk_bh_pro_orb_ecc_crit*np.zeros((disk_bh_num,),dtype = float)
+    disk_bh_orb_ecc_init = disk_bh_pro_orb_ecc_crit*np.ones((disk_bh_num,),dtype = float)
     return disk_bh_orb_ecc_init
 
 def setup_disk_blackholes_arg_periapse(disk_bh_num):

@@ -1,9 +1,17 @@
 import numpy as np
 import scipy
 
+from astropy import constants as astropy_constants
+from astropy import units as astropy_units
+
 from mcfacts.mcfacts_random_state import rng
 import mcfacts.constants as mc_const
 from mcfacts.objects.agnobject import obj_to_binary_bh_array
+from mcfacts.physics.dynamics.point_masses import time_of_orbital_shrinkage
+from mcfacts.physics.dynamics.point_masses import orbital_separation_evolve
+from mcfacts.physics.dynamics.point_masses import orbital_separation_evolve_reverse
+from mcfacts.physics.dynamics.point_masses import time_of_orbital_shrinkage
+from mcfacts.physics.dynamics.point_masses import si_from_r_g, r_g_from_units
 
 
 """Module for handling dynamical interactions
@@ -13,7 +21,6 @@ dynamical mechanism. Of varying fidelity to reality. Also contains
 GW orbital evolution for BH in the inner disk, which should probably
 move elsewhere.
 """
-
 
 def circular_singles_encounters_prograde(
         smbh_mass,
@@ -1181,7 +1188,9 @@ def bh_near_smbh(
         disk_bh_pro_orbs_a,
         disk_bh_pro_masses,
         disk_bh_pro_orbs_ecc,
-        timestep_duration_yr
+        timestep_duration_yr,
+        inner_disk_outer_radius,
+        disk_inner_stable_circ_orb,
         ):
     """Evolve semi-major axis of single BH near SMBH according to Peters64
     
@@ -1204,6 +1213,10 @@ def bh_near_smbh(
         orbital eccentricity of singleton prograde BH
     timestep_duration_yr : float
         size of timestep in years
+    inner_disk_outer_radius : float
+        The outer radius of the inner disk (r_g)
+    disk_inner_stable_circ_orb : float
+        The Innermost stable circular orbit around the SMBH (r_g)
 
     Returns
     -------
@@ -1212,14 +1225,38 @@ def bh_near_smbh(
         gravitational radii (r_g=GM_SMBH/c^2) assuming only GW evolution
     """
     num_bh = disk_bh_pro_orbs_a.shape[0]
+    # Calculate min_safe_distance in r_g
+    min_safe_distance = max(disk_inner_stable_circ_orb,inner_disk_outer_radius)
 
-    #Distance that we are interested in (units of r_g), default is 50r_g.
-    min_safe_distance = 50.0
-
+    # Create a new bh_pro_orbs array
+    new_disk_bh_pro_orbs_a = disk_bh_pro_orbs_a.copy()
+    # Estimate the eccentricity factor for orbital decay time
+    ecc_factor_arr = (1.0 - (disk_bh_pro_orbs_ecc)**(2.0))**(7/2)
+    # Estimate the orbital decay time of each bh
+    decay_time_arr = time_of_orbital_shrinkage(
+        smbh_mass*astropy_units.solMass,
+        disk_bh_pro_masses*astropy_units.solMass,
+        si_from_r_g(smbh_mass*astropy_units.solMass,disk_bh_pro_orbs_a),
+        0*astropy_units.m,
+    )
+    # Estimate the number of timesteps to decay
+    decay_timesteps = decay_time_arr.to('yr').value / timestep_duration_yr
+    # Estimate decrement
+    decrement_arr = (1.0-(1./decay_timesteps))
+    # Fix decrement
+    decrement_arr[decay_timesteps==0.] = 0.
+    # Estimate new location
+    new_location_r_g = decrement_arr * disk_bh_pro_orbs_a
+    # Check location
+    new_location_r_g[new_location_r_g < 1.] = 1.
+    # Only update when less than min_safe_distance
+    new_disk_bh_pro_orbs_a[disk_bh_pro_orbs_a < min_safe_distance] = new_location_r_g
+    
+    """
     for i in range(0,num_bh):
         if disk_bh_pro_orbs_a[i] < min_safe_distance:
             ecc_factor = (1.0 - (disk_bh_pro_orbs_ecc[i])**(2.0))**(7/2)
-            dist_factor = (disk_bh_pro_orbs_a[i]/50.0)**(4)
+            dist_factor = (disk_bh_pro_orbs_a[i]/min_safe_distance)**(4)
             mass_factor = (10.0/disk_bh_pro_masses[i])
             smbh_factor = (smbh_mass/1.e8)**(3)
             # Decay time in units Myrs
@@ -1239,4 +1276,8 @@ def bh_near_smbh(
 
             disk_bh_pro_orbs_a[i] = new_location
 
-    return disk_bh_pro_orbs_a
+    print(disk_bh_pro_orbs_a)
+    print(new_disk_bh_pro_orbs_a)
+    raise Exception
+    """
+    return new_disk_bh_pro_orbs_a

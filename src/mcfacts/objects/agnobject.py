@@ -2,25 +2,10 @@ import numpy as np
 from copy import deepcopy
 from mcfacts.setup import setupdiskstars, setupdiskblackholes
 
-"""
-def check_1d_length(arr_list):
-    if(len({arr.shape for arr in arr_list}) > 1):
-        raise ValueError('Arrays are not all 1d.')
 
-    if( len(set(map(len,arr_list))) != 1):
-        raise ValueError('Arrays are not all the same length.')
- """
-
-# TODO: similar vein: print method? Same thing maybe?
-# TODO: custom error messages when you don't supply all the fields for init and add methods
-# TODO: custom error messages when input arrays to init and add methods aren't the same length
 # TODO: dump_record_array writes every value as a float. Make dictionary with all attributes and datatypes? Or is a float fine?
 # TODO: init_from_file: you have to initialize an empty AGNObject before you can init_from_file and that seems weird.
 #       check if this is now just an AGNObject because we would want it to be an AGNStar or AGNBlackHole etc
-# TODO: error if you try to pass kwarg that doesnt exist. AttributeError?
-# TODO: issue: right now you can pass AGNStar arrays that are 8-elements long for the star parameters and 10-elements long 
-#       for the AGNObject parameters and it doesn't complain.
-
 # Empty array to pass
 empty_arr = np.array([])
 

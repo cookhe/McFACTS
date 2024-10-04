@@ -36,7 +36,8 @@ HC_RUN_NAME = sg_fret0p5
 HC_WKDIR = ../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
 HC_INPUT_FILE = ../recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 
-MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins
+FNAME_INI_MSTAR= ${HERE}/recipes/p3_pAGN_on.ini
+MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins_pAGN
 # NAL files might not exist unless you download them from
 # https://gitlab.com/xevra/nal-data
 # scripts that use NAL files might not work unless you install
@@ -92,16 +93,17 @@ vera_plots: mcfacts_sim
 
 mstar_runs:
 	python ${MSTAR_RUNS_EXE} \
-		--fname-ini ${FNAME_INI} \
-		--timestep_num 50 \
+		--fname-ini ${FNAME_INI_MSTAR} \
+		--timestep_num 1000 \
 		--bin_num_max 10000 \
 		--nbins 33 \
-		--galaxy_num 3 \
+		--galaxy_num 100 \
 		--mstar-min 1e9 \
 		--mstar-max 1e13 \
 		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
-		--wkdir ${MSTAR_RUNS_WKDIR}
+		--wkdir ${MSTAR_RUNS_WKDIR} \
+        --truncate-opacity
 		#--nbins 33 
 		#--timestep_num 1000 \
 	#python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
