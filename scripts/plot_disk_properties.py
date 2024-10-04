@@ -6,6 +6,15 @@ from mcfacts.inputs import data as mcfacts_input_data
 from mcfacts.inputs.ReadInputs import ReadInputs_ini
 from mcfacts.inputs.ReadInputs import load_disk_arrays, construct_disk_direct, construct_disk_pAGN
 import argparse
+import mcfacts.vis.LISA as li
+import mcfacts.vis.PhenomA as pa
+from mcfacts.vis import data, plotting, styles
+
+## Set plot style ##
+plt.style.use('bmh')
+plt.style.use("mcfacts.vis.mcfacts_figures")
+size = "apj_col"
+
 
 def arg():
     parser = argparse.ArgumentParser()
@@ -355,10 +364,7 @@ def plot_interpolators(fname_ini=None,output_directory="./"):
             
     ### Density plot ###
     # Setup density plot
-    fig, ax = plt.subplots(
-        figsize=(8,6),
-        )
-    plt.style.use('bmh')
+    fig, ax = plt.subplots(figsize=plotting.set_size(size))
     # Load pagn radius array
     pagn_disk_radius_array = bonus_structures['R']
     # Identify truncation mask for pAGN R

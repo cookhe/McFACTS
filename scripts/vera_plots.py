@@ -217,7 +217,6 @@ def plot_nal_cdf(merger_dict, field, label, fname, nal_dict):
     """
     x, y = simple_cdf(merger_dict[field])
     from matplotlib import pyplot as plt
-    plt.style.use('bmh')
     fig, ax = plt.subplots(figsize=plotting.set_size(size))
     fig.suptitle(label)
     ax.plot(x, y, label="mcfacts",color=styles.color_line1)

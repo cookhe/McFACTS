@@ -14,7 +14,13 @@ from scipy.optimize import curve_fit
 # Grab those txt files
 from importlib import resources as impresources
 from mcfacts.vis import data
+from mcfacts.vis import plotting
+from mcfacts.vis import styles
 
+# Use the McFACTS plot style
+plt.style.use("mcfacts.vis.mcfacts_figures")
+
+figsize = "apj_col"
 
 ######## Arg ########
 def arg():
@@ -52,61 +58,78 @@ def main():
     # exclude all rows with NaNs or zeros in the final mass column
     mask = (np.isfinite(mergers[:,2])) & (mergers[:,2] != 0)
     mergers = mergers[mask]
-    
-    # plt.figure(figsize=(10,6))
-    # plt.figure()
 
+    # Generations of mass 1 and 2 in the binary merger
+    gen_obj1 = mergers[:,12]
+    gen_obj2 = mergers[:,13]
+
+    # Masks for hierarchical generations
+    # g1 : all 1g-1g mergers
+    # g2 : 2g-1g and 2g-2g mergers
+    # g3 : >=3g-Ng (first object at least 3rd gen; second object any gen)
+    # Pipe operator (|) = logical OR. (&)= logical AND.
+    g1_conditions = (gen_obj1 == 1) & (gen_obj2 ==1)
+    g2_conditions = ((gen_obj1 == 2) | (gen_obj2 == 2)) & ((gen_obj1 <= 2) & (gen_obj2 <= 2))
+    gX_conditions = (gen_obj1 >= 3) | (gen_obj2 >= 3)
+
+    # Ensure no union between sets
+    assert all(g1_conditions & g2_conditions) == 0
+    assert all(g1_conditions & gX_conditions) == 0
+    assert all(g2_conditions & gX_conditions) == 0
+    # Ensure no elements are missed
+    assert all(g1_conditions | g2_conditions | gX_conditions) == 1
+
+
+    # ------------ HISTORGRAM ---------------
     # Plot intial and final mass distributions
+    fig = plt.figure(figsize=plotting.set_size(figsize))
     counts, bins = np.histogram(mergers[:,2])
     # plt.hist(bins[:-1], bins, weights=counts)
     bins = np.arange(int(mergers[:,2].min()), int(mergers[:,2].max())+2, 1)
     plt.hist(mergers[:,2], bins=bins, align='left', color='rebeccapurple', alpha=0.9, rwidth=0.8)
-
-    # plt.hist(bh_masses_by_sorted_location, bins=numbins, align='left', label='Final', color='purple', alpha=0.5)
-    # plt.hist(binary_bh_array[2:4,:bin_index], bins=numbins, align='left', label='Final', color=['purple'], alpha=0.5)
-    #plt.title(f'Black Hole Merger Remnant Masses\n'+
-    #            f'Number of Mergers: {mergers.shape[0]}')
+    
     plt.ylabel('Number of Mergers')
-    plt.xlabel(r'Mass ($M_\odot$)')
-
+    plt.xlabel(r'Remnant Mass [$M_\odot$]')
+    plt.xscale('log')
+    # plt.ylim(-5,max(counts))
     ax = plt.gca()
     ax.set_axisbelow(True)
+    ax.tick_params(axis='x', direction='out', which='both')
     plt.grid(True, color='gray', ls='dashed')
-    plt.savefig(opts.plots_directory+"/merger_remnant_mass.png", format='png')
-    plt.tight_layout()
+    plt.savefig(opts.plots_directory+r"/merger_remnant_mass.png", format='png')
     plt.close()
-
 
     # TQM has a trap at 245r_g, SG has a trap radius at 700r_g.
     #trap_radius = 245
     trap_radius = 700
-    pointsize_mass_radius = 5
     plt.figure()
     #plt.title('Migration Trap influence')
     for i in range(len(mergers[:,1])):
         if mergers[i,1] < 10.0:
             mergers[i,1] = 10.0
 
-    plt.scatter(mergers[:,1], mergers[:,2], s=pointsize_mass_radius, color='teal')
-    plt.axvline(trap_radius, color='grey', linewidth=20, zorder=0, alpha=0.6,
-                label=f'Radius = {trap_radius} '+r'$R_g$')
+    plt.scatter(mergers[:,1], mergers[:,2], color='teal')
+    plt.axvline(trap_radius, color='grey', linewidth=20, zorder=0, alpha=0.6, label=f'Radius = {trap_radius} '+r'$R_g$')
     #plt.text(650, 602, 'Migration Trap', rotation='vertical', size=18, fontweight='bold')
-    plt.ylabel(r'Mass ($M_\odot$)')
-    plt.xlabel(r'Radius ($R_g$)')
+    plt.ylabel(r'Remnant Mass [$M_\odot$]')
+    plt.xlabel(r'Radius [$R_g$]')
     plt.xscale('log')
-    plt.legend(frameon=False)
-    plt.ylim(10,1000)
+    plt.yscale('log')
+    if figsize == 'apj_col':
+        plt.legend(fontsize=6)
+    elif figsize == 'apj_page':
+        plt.legend()
+    plt.ylim(18,1000)
 
     ax = plt.gca()
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
-    plt.tight_layout()
     plt.savefig(opts.plots_directory+"/merger_mass_v_radius.png", format='png')
     plt.close()
 
 
 
-
+    # retrieve component masses and mass ratio
     m1 = np.zeros(mergers.shape[0])
     m2 = np.zeros(mergers.shape[0])
     mass_ratio = np.zeros(mergers.shape[0])
@@ -123,40 +146,19 @@ def main():
     # (q,X_eff) Figure details here:
     # Want to highlight higher generation mergers on this plot
     chi_eff = mergers[:,3]
-    gen1 = mergers[:,12]
-    gen2 = mergers[:,13]
-    chi_p = mergers[:,15]
-    
-    plt.ylim(0,1.05)
-    plt.xlim(-1,1)
-    fig = plt.figure()
-    ax2 = fig.add_subplot(111)
 
-    # Pipe operator (|) = logical OR. (&)= logical AND.
     # Get 1g-1g population
-    g1_conditions = (gen1 == 1) & (gen2 ==1)
-    first_gen_chi_eff      = chi_eff[g1_conditions]
-    first_gen_mass_ratio   = mass_ratio[g1_conditions]
+    gen1_chi_eff      = chi_eff[g1_conditions]
+    gen1_mass_ratio   = mass_ratio[g1_conditions]
     # 2g-1g and 2g-2g population
-    g2_conditions = ((gen1 == 2) | (gen2 == 2)) & ((gen1 <= 2) & (gen2 <= 2))
-    second_gen_chi_eff     = chi_eff[g2_conditions]
-    second_gen_mass_ratio  = mass_ratio[g2_conditions]
-    # 3+g-Ng population (i.e., N=1,2,3,...)
-    g3_conditions = (gen1 >= 3) | (gen2 >= 3)
-    extreme_gen_chi_eff    = chi_eff[g3_conditions]
-    extreme_gen_mass_ratio = mass_ratio[g3_conditions]
-    # all 2+g mergers
-    high_gen_chi_eff = chi_eff[(g2_conditions + g3_conditions)]
-    high_gen_mass_ratio = mass_ratio[(g2_conditions + g3_conditions)]
-    
-
-   
-    # Ensure no union between sets
-    assert all(g1_conditions & g2_conditions) == 0
-    assert all(g1_conditions & g3_conditions) == 0
-    assert all(g2_conditions & g3_conditions) == 0
-    # Ensure no elements are missed
-    assert all(g1_conditions | g2_conditions | g3_conditions) == 1
+    gen2_chi_eff     = chi_eff[g2_conditions]
+    gen_mass_ratio  = mass_ratio[g2_conditions]
+    # >=3g-Ng population (i.e., N=1,2,3,4,...)
+    genX_chi_eff    = chi_eff[gX_conditions]
+    genX_mass_ratio = mass_ratio[gX_conditions]
+    # all 2+g mergers; H = hierarchical
+    genH_chi_eff = chi_eff[(g2_conditions + gX_conditions)]
+    genH_mass_ratio = mass_ratio[(g2_conditions + gX_conditions)]
 
     # function for a line used when fitting to the data.
     def linefunc(x, m):
@@ -168,67 +170,32 @@ def main():
     # fit the hierarchical mergers (any binaries with 2+g) to a line passing through 0,1
     # popt contains the model parameters, pcov the covariances
     # poptHigh, pcovHigh = curve_fit(linefunc, high_gen_mass_ratio, high_gen_chi_eff)
-    poptAll, pcovAll = curve_fit(linefunc, mass_ratio, chi_eff)
-    poptHigh, pcovHigh = curve_fit(linefunc, high_gen_mass_ratio, high_gen_chi_eff)
-    errAll = np.sqrt(np.diag(pcovAll))[0]
-    errHigh = np.sqrt(np.diag(pcovHigh))[0]
 
-    pointalpha_qchi = 0.6
-    linealpha_qchi = 0.7
-    pointsize_qchi = 10
     # plot the 1g-1g population
-    ax2.scatter(first_gen_chi_eff, first_gen_mass_ratio,
-                 s=pointsize_qchi,
-                 color='darkgoldenrod',
-                 alpha=pointalpha_qchi)
-                #  label='1g-1g')
-    # plot the 2g+ mergers
-    ax2.scatter(second_gen_chi_eff, second_gen_mass_ratio,
-                 s=pointsize_qchi,
-                 marker='v',
-                 color='rebeccapurple',
-                 alpha=pointalpha_qchi)
-                #  label='at least one 2g+')
-    # plot the 3g+ mergers
-    ax2.scatter(extreme_gen_chi_eff, extreme_gen_mass_ratio,
-                 s=pointsize_qchi,
-                 marker='^',
-                 color='red',
-                 alpha=pointalpha_qchi)
-                #  label='at least one 3+g')
-    # plot the line fitting the hierarchical mergers
-    ax2.plot(linefunc(x,*poptHigh), x,
-             ls='dashed',
-             lw=1,
-             color='gray',
-             zorder=0,
-             label=r'$d\chi/dq(\geq$2g)=' +
-                   f'{poptHigh[0]:.2f}' +
-                   r'$\pm$' + f'{errHigh:.2f}')
-    #         #  alpha=linealpha,
-    ax2.plot(linefunc(x,*poptAll), x,
-             ls='solid',
-             lw=1,
-             color='black',
-             zorder=0,
-             label=r'$d\chi/dq$(all)=' +
-                   f'{poptAll[0]:.2f}' +
-                   r'$\pm$' + f'{errAll:.2f}')
-            #  alpha=linealpha,
-    # plt.title("Mass Ratio vs. Effective Spin")
-    plt.ylabel(r'$q$') # = M_2 / M_1$  ($M_1 > M_2$)')
+    fig = plt.figure(figsize=(plotting.set_size(figsize)[0],2.8))
+    ax2 = fig.add_subplot(111)
+
+    # Pipe operator (|) = logical OR. (&)= logical AND.
+    high_gen_chi_eff = np.where((gen1 > 1.0) | (gen2 > 1.0), chi_eff, np.nan)
+    extreme_gen_chi_eff = np.where((gen1 > 2.0) | (gen2 > 2.0), chi_eff, np.nan)
+
+
+    ax2.scatter(chi_eff,mass_ratio, color='darkgoldenrod')
+    ax2.scatter(high_gen_chi_eff,mass_ratio, color='rebeccapurple',marker='+')
+    ax2.scatter(extreme_gen_chi_eff,mass_ratio,color='red',marker='o')
+    #plt.scatter(chi_eff, mass_ratio, color='darkgoldenrod')
+    #plt.title("Mass Ratio vs. Effective Spin")
+    plt.ylabel(r'$q = M_2 / M_1$ ($M_1 > M_2$)')
     plt.xlabel(r'$\chi_{\rm eff}$')
-    plt.ylim(0,1)
+    plt.ylim(0,1.05)
     plt.xlim(-1,1)
     ax = plt.gca()
     ax.set_axisbelow(True)
-    plt.legend(loc='lower left')
-    plt.grid('on', color='gray', ls='dotted')
+    plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(opts.plots_directory+"./q_chi_eff.png", format='png')#,
-                # dpi=600)
+    plt.savefig("./q_chi_eff.png", format='png')
     plt.close()
-
+    
     #Figure of Disk radius vs Chi_p follows.
     # Can break out higher mass Chi_p events as test/illustration.
     #Set up default arrays for high mass BBH (>40Msun say) to overplot vs chi_p. 
@@ -241,13 +208,12 @@ def main():
     #print("High masses", high_masses)
     high_masses_locations = np.where(np.isfinite(high_masses),all_locations, np.nan )
     #print("High masses locations",high_masses_locations)
-    pointsize_rchip = 5
     plt.ylim(0,1)
     plt.xlim(0.,5.e4)
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    ax1.scatter(all_locations, chi_p, s=pointsize_rchip, color='darkgoldenrod')
-    ax1.scatter(high_masses_locations, chi_p, s=pointsize_rchip, color='rebeccapurple',marker='+')
+    ax1.scatter(all_locations,chi_p, color='darkgoldenrod')
+    ax1.scatter(high_masses_locations,chi_p, color='rebeccapurple',marker='+')
     #plt.title("In-plane effective Spin vs. Merger radius")
     plt.ylabel(r'$\chi_{\rm p}$')
     plt.xlabel(r'Radius ($R_g$)')
@@ -256,7 +222,7 @@ def main():
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
-    plt.savefig(opts.plots_directory+"./r_chi_p.png", format='png')
+    plt.savefig("./r_chi_p.png", format='png')
     plt.close()
     
     # plt.figure()
@@ -272,25 +238,28 @@ def main():
     # plt.xlim(0,100)
     # plt.show()
 
-    pointsize_merge_time = 5
+
     plt.figure()
     #plt.title("Time of Merger after AGN Onset")
-    plt.scatter(mergers[:,14]/1e6, mergers[:,2], s=pointsize_merge_time, color='darkolivegreen')
+    plt.scatter(mergers[:,14]/1e6, mergers[:,2], color='darkolivegreen')
     plt.xlabel('Time (Myr)')
     plt.ylabel(r'Mass ($M_\odot$)')
     # plt.xscale("log")
     ax = plt.gca()
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
-    plt.tight_layout()
+    if figsize == 'apj_col':
+        ax3.legend(fontsize=6)
+    elif figsize == 'apj_page':
+        ax3.legend()
     plt.savefig(opts.plots_directory+'/time_of_merger.png', format='png')
     plt.close()
 
 
 
-    pointsize_m1m2 = 5
+
     plt.figure()
-    plt.scatter(m1, m2, s=pointsize_m1m2, color='k')
+    plt.scatter(m1, m2, color='k')
     plt.xlabel(r'$M_1$ ($M_\odot$)')
     plt.ylabel(r'$M_2$ ($M_\odot$)')
     ax = plt.gca()
@@ -299,8 +268,9 @@ def main():
     plt.grid(True, color='gray', ls='dashed')
     plt.tight_layout()
     plt.savefig(opts.plots_directory+'/m1m2.png', format='png')
+    plt.close()
 
-    #GW strain figure: 
+    # GW strain figure: 
     #make sure LISA.py and PhenomA.py in /vis directory
     #Using https://github.com/eXtremeGravityInstitute/LISA_Sensitivity/blob/master/LISA.py 
     # and same location for PhenomA.py
@@ -333,12 +303,11 @@ def main():
     Sn = lisa.Sn(f)
 
 
-    fig, ax = plt.subplots(1, figsize=(8,6))
-    #plt.tight_layout()
-
-    ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
-    ax.set_ylabel(r'${\rm h}_{\rm char}$', fontsize=20, labelpad=10)
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    fig, ax = plt.subplots(1, figsize=(plotting.set_size(figsize)[0],2.9))
+    
+    ax.set_xlabel(r'f [Hz]')#, fontsize=20, labelpad=10)
+    ax.set_ylabel(r'${\rm h}_{\rm char}$')#, fontsize=20, labelpad=10)
+    # ax.tick_params(axis='both', which='major', labelsize=20)
 
     ax.set_xlim(1.0e-7, 1.0e+4)
     ax.set_ylim(1.0e-24, 1.0e-15)
@@ -375,8 +344,8 @@ def main():
     strain_per_freq_lvk = lvk[:,5]*inv_freq_lvk/timestep
     ax.loglog(f, np.sqrt(f*Sn),label = 'LISA Sensitivity') # plot the characteristic strain
     ax.loglog(f_H1, h_H1,label = 'LIGO O3, H1 Sensitivity') # plot the characteristic strain
-    ax.scatter(emris[:,6],strain_per_freq_emris, s=pointsize_gwstrain)
-    ax.scatter(lvk[:,6],strain_per_freq_lvk, s=pointsize_gwstrain)
+    ax.scatter(emris[:,6],strain_per_freq_emris)
+    ax.scatter(lvk[:,6],strain_per_freq_lvk)
     ax.set_yscale('log')
     ax.set_xscale('log')
     #ax.loglog(f_L1, h_L1,label = 'LIGO O3, L1 Sensitivity') # plot the characteristic strain
@@ -386,8 +355,7 @@ def main():
     ax.legend()
     ax.set_xlabel(r'f [Hz]', fontsize=20, labelpad=10)
     ax.set_ylabel(r'h', fontsize=20, labelpad=10)
-    plt.tight_layout()
-    plt.savefig(opts.plots_directory+'./gw_strain.png', format='png')
+    plt.savefig('./gw_strain.png', format='png')
     plt.close()
 
 ######## Execution ########
