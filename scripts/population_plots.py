@@ -96,13 +96,13 @@ def main():
     ax.set_axisbelow(True)
     ax.tick_params(axis='x', direction='out', which='both')
     plt.grid(True, color='gray', ls='dashed')
-    plt.savefig(opts.plots_directory+r"/merger_remnant_mass.png", format='png')
+    plt.savefig(os.path.join(opts.plots_directory, "merger_remnant_mass.png"), format='png')
     plt.close()
 
     # TQM has a trap at 245r_g, SG has a trap radius at 700r_g.
     #trap_radius = 245
     trap_radius = 700
-    
+
     #plt.title('Migration Trap influence')
     for i in range(len(mergers[:,1])):
         if mergers[i,1] < 10.0:
@@ -157,7 +157,7 @@ def main():
     ax = plt.gca()
     ax.set_axisbelow(True)
     plt.grid(True, color='gray', ls='dashed')
-    plt.savefig(opts.plots_directory+"/merger_mass_v_radius.png", format='png')
+    plt.savefig(os.path.join(opts.plots_directory, "merger_mass_v_radius.png"), format='png')
     plt.close()
 
 
@@ -273,7 +273,7 @@ def main():
     elif figsize == 'apj_page':
         ax2.legend(loc='lower left')
     ax2.grid('on', color='gray', ls='dotted')
-    plt.savefig(opts.plots_directory+"./q_chi_eff.png", format='png')#,
+    plt.savefig(os.path.join(opts.plots_directory, "q_chi_eff.png"), format='png')#,
                 # dpi=600)
     plt.close()
     
@@ -321,7 +321,7 @@ def main():
         ax1.legend(fontsize=6)
     elif figsize == 'apj_page':
         ax1.legend()
-    plt.savefig(opts.plots_directory+"./r_chi_p.png", format='png')
+    plt.savefig(os.path.join(opts.plots_directory, "r_chi_p.png"), format='png')
     plt.close()
     
     # plt.figure()
@@ -383,7 +383,7 @@ def main():
         ax3.legend(fontsize=6)
     elif figsize == 'apj_page':
         ax3.legend()
-    plt.savefig(opts.plots_directory+'/time_of_merger.png', format='png')
+    plt.savefig(os.path.join(opts.plots_directory, 'time_of_merger.png'), format='png')
     plt.close()
 
     # Sort Objects into Mass 1 and Mass 2 by generation
@@ -460,7 +460,7 @@ def main():
         )
     ax4.legend(fontsize=6)
     # plt.grid(True, color='gray', ls='dotted')
-    plt.savefig(opts.plots_directory+'/m1m2.png', format='png')
+    plt.savefig(os.path.join(opts.plots_directory, 'm1m2.png'), format='png')
     plt.close()
 
     # GW strain figure: 
@@ -568,7 +568,7 @@ def main():
     # ax.legend()
     ax.set_xlabel(r'$\nu_{\rm GW}$ [Hz]')#, fontsize=20, labelpad=10)
     ax.set_ylabel(r'$h_{\rm char}/\nu_{\rm GW}$')#, fontsize=20, labelpad=10)
-    plt.savefig(opts.plots_directory+'./gw_strain.png', format='png')
+    plt.savefig(os.path.join(opts.plots_directory, 'gw_strain.png'), format='png')
     plt.close()
 
 ######## Execution ########
