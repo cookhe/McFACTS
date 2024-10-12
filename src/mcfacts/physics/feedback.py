@@ -46,7 +46,10 @@ def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_
     disk_alpha_viscosity : float
         Disk gas viscocity alpha parameter
     disk_radius_outer : float
-            final element of disk_model_radius_array (units of r_g)
+        Final element of disk_model_radius_array (units of r_g)
+    thermal_feedback_max : float
+        Maximum allowed value for the ratio of radiative feedback torque
+        to Type 1 migration torque.
 
     Returns
     -------
@@ -64,8 +67,8 @@ def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_
     ratio_feedback_migration_torque = 0.07 * (1/disk_opacity) * (disk_alpha_viscosity)**(-1.5) * \
                                       disk_bh_eddington_ratio * np.sqrt(disk_bh_pro_orbs_a) / disk_surface_density
 
-    # set ratio = 1 (no migration) for black holes beyond the disk outer radius
-    ratio_feedback_migration_torque[np.where(disk_bh_pro_orbs_a >= disk_radius_outer)] = 1
+    # set ratio = 1 (no migration) for black holes at or beyond the disk outer radius
+    ratio_feedback_migration_torque[np.where(disk_bh_pro_orbs_a >= disk_radius_outer)] = 1.
 
     # apply the cap to the feedback ratio
     ratio_feedback_migration_torque[np.where(ratio_feedback_migration_torque > thermal_feedback_max)] = thermal_feedback_max
