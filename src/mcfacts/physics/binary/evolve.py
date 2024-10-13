@@ -164,7 +164,10 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     return (blackholes_binary)
 
 
-def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacity_func, disk_bh_eddington_ratio, disk_alpha_viscosity, disk_radius_outer):
+def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
+                            disk_opacity_func, disk_bh_eddington_ratio,
+                            disk_alpha_viscosity, disk_radius_outer,
+                            thermal_feedback_max):
     """
     This feedback model uses Eqn. 28 in Hankla, Jiang & Armitage (2020)
     which yields the ratio of heating torque to migration torque.
@@ -189,8 +192,6 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
         >1 (a/2x10^4r_g)^(1/2)(Sigma/) migration is *outward* at >=20,000r_g in SG03
         >10 (a/7x10^4r_g)^(1/2)(Sigma/) migration outwards starts to runaway in SG03
 
-    TO (MAYBE) DO: kappa default as an input? Or kappa table? Or kappa user set?
-
     Parameters
     ----------
 
@@ -209,6 +210,9 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
         disk viscosity parameter
     disk_radius_outer : float
         final element of disk_model_radius_array (units of r_g)
+    thermal_feedback_max : float
+        Maximum allowed value for the ratio of radiative feedback torque
+        to Type 1 migration torque.
 
     Returns
     -------
@@ -227,7 +231,11 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
 
     ratio_heat_mig_torques_bin_com = 0.07 * (1 / disk_opacity) * np.power(disk_alpha_viscosity, -1.5) * disk_bh_eddington_ratio * np.sqrt(blackholes_binary.bin_orb_a) / disk_surface_density_at_location
 
-    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = np.ones(np.sum(blackholes_binary.bin_orb_a > disk_radius_outer))
+    # set ratio = 1 (no migration) for binaries at or beyond the disk outer radius
+    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = 1.
+
+    # apply the cap to the feedback ratio
+    ratio_heat_mig_torques_bin_com[np.where(ratio_heat_mig_torques_bin_com > thermal_feedback_max)] = thermal_feedback_max
 
     return (ratio_heat_mig_torques_bin_com)
 
