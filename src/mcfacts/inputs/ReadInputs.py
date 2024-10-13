@@ -101,6 +101,9 @@ Inifile
         Fraction of BBH that form retrograde to test (q,X_eff) relation. Default retro=0.1
     "flag_thermal_feedback"         : int
         Switch (1) turns feedback from embedded BH on.
+    "thermal_feedback_ratio_max"    : float
+        Impose this limit on the ratio of feedback to migration torques to prevent runaway
+        outward migration in low opacity disks
     "flag_orb_ecc_damping"          : int
         Switch (1) turns orb. ecc damping on.
         If switch = 0, assumes all bh are circularized (at e=e_crit)
@@ -181,6 +184,7 @@ INPUT_TYPES = {
     "galaxy_num"                    : int,
     "fraction_bin_retro"            : float,
     "flag_thermal_feedback"         : int,
+    "thermal_feedback_ratio_max"    : float,
     "flag_orb_ecc_damping"          : int,
     "capture_time_yr"               : float,
     "disk_radius_capture_outer"     : float,
@@ -494,7 +498,9 @@ def construct_disk_pAGN(
             #'epsilon': rad_efficiency
             #'le': disk_bh_eddington_ratio,\
         Rg = smbh_mass * ct.M_sun * ct.G / (ct.c**2)
-        base_args['Rout'] = disk_radius_outer * Rg.to('m').value
+        # pAGN TQM disk models exclude `Rout`, so feed pAGN a slightly
+        # larger value (+1%) than the user set for `disk_radius_outer`
+        base_args['Rout'] = 1.01 * disk_radius_outer * Rg.to('m').value
     else:
         raise RuntimeError("unknown disk model: %s"%(disk_model_name))
 
