@@ -23,6 +23,7 @@ def circular_singles_encounters_prograde(
         disk_bh_pro_orbs_ecc,
         timestep_duration_yr,
         disk_bh_pro_orb_ecc_crit,
+        disk_radius_outer,
         delta_energy_strong
         ):
     """"Adjust orb ecc due to encounters btw 2 single circ pro BH
@@ -145,13 +146,6 @@ def circular_singles_encounters_prograde(
         dynamics
     """
 
-    # Set up new_disk_bh_pro_orbs_ecc
-    new_disk_bh_pro_orbs_ecc=np.empty_like(disk_bh_pro_orbs_ecc)
-    
-    # Calculate & normalize all the parameters above in t_damp
-    # E.g. normalize q=bh_mass/smbh_mass to 10^-7
-    mass_ratio = disk_bh_pro_masses/smbh_mass
-
     #Find the e< crit_ecc. population. These are the (circularized) population that can form binaries.
     circ_prograde_population = np.ma.masked_where(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit, disk_bh_pro_orbs_ecc)
     #Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
@@ -202,6 +196,9 @@ def circular_singles_encounters_prograde(
                         num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
+
+    # Reset semi-major axis to outer disk radius if an encounter pushed one outside it
+    disk_bh_pro_orbs_a[disk_bh_pro_orbs_a > disk_radius_outer] = disk_radius_outer
 
     # Check finite
     assert np.isfinite(disk_bh_pro_orbs_a).all(), \
@@ -1245,7 +1242,7 @@ def bh_near_smbh(
     new_location_r_g[new_location_r_g < 1.] = 1.
     # Only update when less than min_safe_distance
     new_disk_bh_pro_orbs_a[disk_bh_pro_orbs_a < min_safe_distance] = new_location_r_g
-    
+
     """
     for i in range(0,num_bh):
         if disk_bh_pro_orbs_a[i] < min_safe_distance:
