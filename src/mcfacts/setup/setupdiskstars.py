@@ -4,9 +4,9 @@ from mcfacts.mcfacts_random_state import rng
 
 
 def setup_disk_stars_orb_a(star_num, disk_radius_outer):
-    """
-    Generate star semimajor axis (location) in disk
-    distributed randomly uniformly in disk.
+    """Generates initial single star semi-major axes
+
+    BH semi-major axes are distributed randomly uniformly through disk of radial size :math:`\mathtt{disk_outer_radius}`
 
     Parameters
     ----------
@@ -17,7 +17,7 @@ def setup_disk_stars_orb_a(star_num, disk_radius_outer):
 
     Returns
     -------
-    star_orb_a_initial : numpy array
+    star_orb_a_initial : numpy.ndarray
         semi-major axes for stars
     """
     star_orb_a_initial = disk_radius_outer*rng.uniform(size=star_num)
@@ -44,7 +44,7 @@ def setup_disk_stars_masses(star_num,
 
     Returns
     -------
-    masses : numpy array
+    masses : numpy.ndarray
         stellar masses
     """
 
@@ -69,12 +69,12 @@ def setup_disk_stars_radius(masses):
 
     Parameters
     ----------
-    masses : numpy array
+    masses : numpy.ndarray
         stellar masses
 
     Returns
     -------
-    radii : numpy array
+    radii : numpy.ndarray
         stellar radii
     """
     star_radius_initial = np.power(masses, 0.8)
@@ -188,14 +188,14 @@ def setup_disk_stars_orb_ang_mom(star_num,
         reduced mass, calculated as mass*smbh_mass/(mass+smbh_mass)
     mass_total : float
         total mass, calculated as smbh_mass + mass
-    orb_a : numpy array
+    orb_a : numpy.ndarray
         orbital semi-major axis
-    orb_inc : numpy array
+    orb_inc : numpy.ndarray
         orbital inclination
 
     Returns
     -------
-    star_orb_ang_mom_initial : numpy array
+    star_orb_ang_mom_initial : numpy.ndarray
         orbital angular momentum
     """
     random_uniform_number = rng.uniform(size=star_num)
@@ -226,7 +226,7 @@ def setup_disk_stars_arg_periapse(star_num):
 
     Returns
     -------
-    star_initial_orb_arg_periapse : numpy array
+    star_initial_orb_arg_periapse : numpy.ndarray
         arguments for orbital periapse
     """
 

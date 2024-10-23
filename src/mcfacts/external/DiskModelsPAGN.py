@@ -1,5 +1,6 @@
-
-
+"""
+Interface with pAGN
+"""
 import numpy as np
 import pagn.constants as ct
 

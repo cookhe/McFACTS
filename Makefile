@@ -11,7 +11,7 @@ tests: mcfacts_sim
 # Alpha begins at 0.1.0
 # Feature-complete Alpha begins at 0.2.0
 # Beta begins at 0.3.0
-VERSION=0.0.0
+VERSION=0.1.0
 
 ### Should work for everyone ###
 # Current directory
@@ -69,6 +69,18 @@ unit_test: clean version
 	conda activate mcfacts-dev && \
 	pytest
 
+DIST=dist/mcfacts-${VERSION}.tar.gz
+build-install: clean version
+	python3 -m build
+	python3 -m pip install $(DIST)
+
+test-build: build-install
+	mkdir test-build
+	cp ${DIST} test-build
+	cp ${MCFACTS_SIM_EXE} test-build
+	cd test-build; pip install ${notdir ${DIST}}
+	cd test-build; python3 ${notdir ${MCFACTS_SIM_EXE}}
+
 #### Test one thing at a time ####
 
 # do not put linebreaks between any of these lines. Your run will call a different .ini file
@@ -83,6 +95,10 @@ mcfacts_sim: clean
 
 
 plots: mcfacts_sim
+	cd runs; \
+	python ../${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
+
+just_plots:
 	cd runs; \
 	python ../${POPULATION_PLOTS_EXE} --fname-mergers ${wd}/output_mergers_population.dat --plots-directory ${wd}
 
@@ -103,7 +119,7 @@ mstar_runs:
 		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
 		--wkdir ${MSTAR_RUNS_WKDIR} \
-        --truncate-opacity
+		--truncate-opacity
 		#--nbins 33 
 		#--timestep_num 1000 \
 	#python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
@@ -156,6 +172,8 @@ clean:
 	rm -rf ${wd}/mergers_cdf*.png
 	rm -rf ${wd}/mergers_nal*.png
 	rm -rf ${wd}/r_chi_p.png
+	rm -rf ${wd}/dist
+	rm -rf ${wd}/test-build
 
 clean_win:
 	for /d %%i in (.\run*) do rd /s /q "%%i"

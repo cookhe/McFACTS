@@ -498,17 +498,17 @@ class AGNObject(object):
 
         assert fname is not None, "Need to pass filename"
 
-        header = " ".join(cols)
-
-        if extra_header is not None:
-            header = extra_header + header
-
         self.check_consistency()
 
         if cols is not None:
             attributes = cols
         else:
             attributes = get_attr_list(self)
+
+        header = " ".join(attributes)
+
+        if extra_header is not None:
+            header = extra_header + header
 
         attrs_list = []
         for attr in attributes:

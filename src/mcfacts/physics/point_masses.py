@@ -16,28 +16,28 @@ from astropy import constants as astropy_constants
 
 ######## Functions ########
 
+
 def time_of_orbital_shrinkage(mass_1, mass_2, sep_initial, sep_final):
-    """Calculate the GW time for orbital shrinkage
+    """Calculates the GW time for orbital shrinkage
 
     Calculate the time it takes for two orbiting masses
-        to shrink from an initial separation to a final separation
-        (Peters)
+    to shrink from an initial separation to a final separation (Peters)
 
     Parameters
     ----------
-    mass_1 : astropy quantity (npts,)
-        A mass array with astropy units
-    mass_2 : astropy quantity (npts,)
-        Another mass array with astropy units
-    sep_initial : astropy quantity (npts,)
-        Initial separation of two bodies with astropy units
-    sep_final : astropy quantity (npts,)
-        Final separation of two bodies with astropy units
+    mass_1 : astropy.units.quantity.Quantity
+        Mass of object 1
+    mass_2 : astropy.units.quantity.Quantity
+        Mass of object 2
+    sep_initial : astropy.units.quantity.Quantity
+        Initial separation of two bodies
+    sep_final : astropy.units.quantity.Quantity
+        Final separation of two bodies
 
     Returns
     -------
-    time_of_shrinkage : astropy quantity (npts,)
-        time of orbital shrinkage (seconds)
+    time_of_shrinkage : astropy.units.quantity.Quantity
+        Time [s] of orbital shrinkage
     """
     # Calculate c and G in SI
     c = astropy_constants.c.to('m/s').value
@@ -57,24 +57,25 @@ def time_of_orbital_shrinkage(mass_1, mass_2, sep_initial, sep_final):
     time_of_shrinkage = time_of_shrinkage * astropy_units.s
     return time_of_shrinkage
 
+
 def orbital_separation_evolve(mass_1, mass_2, sep_initial, evolve_time):
-    """Calculate the final separation of an evolved orbit
+    """Calculates the final separation of an evolved orbit
 
     Parameters
     ----------
-    mass_1 : astropy quantity (npts,)
-        A mass array with astropy units
-    mass_2 : astropy quantity (npts,)
-        Another mass array with astropy units
-    sep_initial : astropy quantity (npts,)
-        Initial separation of two bodies with astropy units
-    evolve_time : astropy quantity (npts,)
+    mass_1 : astropy.units.quantity.Quantity
+        Mass of object 1
+    mass_2 : astropy.units.quantity.Quantity
+        Mass of object 2
+    sep_initial : astropy.units.quantity.Quantity
+        Initial separation of two bodies
+    evolve_time : astropy.units.quantity.Quantity
         Time to evolve GW orbit
 
     Returns
     -------
-    sep_final : astropy quantity (npts,)
-        Final separation of two bodies with astropy units
+    sep_final : astropy.units.quantity.Quantity
+        Final separation [m] of two bodies
     """
     # Calculate c and G in SI
     c = astropy_constants.c.to('m/s').value
@@ -95,24 +96,25 @@ def orbital_separation_evolve(mass_1, mass_2, sep_initial, evolve_time):
     sep_final[quantity > 0] = np.sqrt(np.sqrt(quantity[quantity > 0]))
     return sep_final * astropy_units.m
 
+
 def orbital_separation_evolve_reverse(mass_1, mass_2, sep_final, evolve_time):
-    """Calculate the initial separation of an evolved orbit
+    """Calculates the initial separation of an evolved orbit
 
     Parameters
     ----------
-    mass_1 : astropy quantity (npts,)
-        A mass array with astropy units
-    mass_2 : astropy quantity (npts,)
-        Another mass array with astropy units
-    sep_final : astropy quantity (npts,)
-        Final separation of two bodies with astropy units
-    evolve_time : astropy quantity (npts,)
+    mass_1 : astropy.units.quantity.Quantity
+        Mass of object 1
+    mass_2 : astropy.units.quantity.Quantity
+        Mass of object 2
+    sep_final : astropy.units.quantity.Quantity
+        Final separation of two bodies
+    evolve_time : astropy.units.quantity.Quantity
         Time to evolve GW orbit
 
     Returns
     -------
-    sep_initial : astropy quantity (npts,)
-        Initial separation of two bodies with astropy units
+    sep_initial : astropy.units.quantity.Quantity
+        Initial separation [m] of two bodies
     """
     # Calculate c and G in SI
     c = astropy_constants.c.to('m/s').value
@@ -132,20 +134,21 @@ def orbital_separation_evolve_reverse(mass_1, mass_2, sep_final, evolve_time):
     sep_initial = np.sqrt(np.sqrt(quantity))
     return sep_initial * astropy_units.m
 
+
 def si_from_r_g(smbh_mass, distance_rg):
     """Calculate the SI distance from r_g
-     
+
     Parameters
     ----------
     smbh_mass : float
-        SMBH mass in units of solMass
+        Mass [M_sun] of the SMBH
     distance_rg : array_like
-        Distances in r_g
+        Distances [r_{g,SMBH}]
 
     Returns
     -------
-    distance : array_like
-        Distance in SI, with astropy units
+    distance : numpy.ndarray
+        Distance in SI with :obj:`astropy.units.quantity.Quantity` type
     """
     # Calculate c and G in SI
     c = astropy_constants.c.to('m/s')
@@ -163,20 +166,21 @@ def si_from_r_g(smbh_mass, distance_rg):
     distance = distance_rg * r_g
     return distance
 
+
 def r_g_from_units(smbh_mass, distance):
     """Calculate the SI distance from r_g
-     
+
     Parameters
     ----------
     smbh_mass : float
-        SMBH mass in units of solMass
-    distance_rg : astropy quantity
-        Distances in astropy units
+        Mass [M_sun] of the SMBH
+    distance_rg : astropy.units.quantity.Quantity
+        Distances
 
     Returns
     -------
-    distance_rg : array_like
-        Distance in r_g
+    distance_rg : numpy.ndarray
+        Distances [r_g]
     """
     # Calculate c and G in SI
     c = astropy_constants.c.to('m/s')
