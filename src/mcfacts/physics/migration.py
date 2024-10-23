@@ -79,7 +79,8 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
     #   and Omega is the Keplerian orbital frequency around the SMBH
     # here smbh_mass/disk_bh_mass_pro are both in M_sun, so units cancel
     # c, G and disk_surface_density in SI units
-    tau = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/disk_bh_mass_pro) / disk_surface_density) / np.sqrt(disk_bh_orb_a_pro)
+    tau = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/disk_bh_mass_pro) \
+           / disk_surface_density) / np.sqrt(disk_bh_orb_a_pro)
     # ratio of timestep to tau_mig (timestep in years so convert)
     dt = timestep_duration_yr * scipy.constants.year / tau
     # migration distance is original locations times fraction of tau_mig elapsed
@@ -101,36 +102,37 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
     #Given a population migrating inwards
     if disk_bh_mig_inward_mod.size > 0:
         for i in range(0,disk_bh_mig_inward_mod.size):
-                # Among all inwards migrators, find location in disk & compare to trap radius
-                disk_bh_mig_inward_index = disk_bh_mig_inward_mod[i]
+            # Among all inwards migrators, find location in disk & compare to trap radius
+            disk_bh_mig_inward_index = disk_bh_mig_inward_mod[i]
 
-                #If outside trap, migrates inwards
-                if disk_bh_mig_inward_all[i] > disk_radius_trap:
-                    disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] - (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
-                    #If inward migration takes object inside trap, fix at trap.
-                    if disk_bh_pro_a_new[disk_bh_mig_inward_index] <= disk_radius_trap:
-                        disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
-                #If inside trap, migrate outwards
-                elif disk_bh_mig_inward_all[i] < disk_radius_trap:
-                    disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] + (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
-                    #If outward migration takes object outside trap, fix at trap.
-                    if disk_bh_pro_a_new[disk_bh_mig_inward_index] >= disk_radius_trap:
-                        disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
-                #If at trap, stays there
-                elif disk_bh_mig_inward_all[i] == disk_radius_trap:
-                    disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index]
-                # Something wrong has happened
-                else:
-                    raise RuntimeError("Forbidden case")
+            #If outside trap, migrates inwards
+            if disk_bh_mig_inward_all[i] > disk_radius_trap:
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] - \
+                        (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
+                #If inward migration takes object inside trap, fix at trap.
+                if disk_bh_pro_a_new[disk_bh_mig_inward_index] <= disk_radius_trap:
+                    disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
+            #If inside trap, migrate outwards
+            elif disk_bh_mig_inward_all[i] < disk_radius_trap:
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] + \
+                    (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
+                #If outward migration takes object outside trap, fix at trap.
+                if disk_bh_pro_a_new[disk_bh_mig_inward_index] >= disk_radius_trap:
+                    disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
+            #If at trap, stays there
+            elif disk_bh_mig_inward_all[i] == disk_radius_trap:
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index]
+            # Something wrong has happened
+            else:
+                raise RuntimeError("Forbidden case")
 
     # Find indices of objects where feedback ratio >1; these migrate outwards.
     # In Sirko & Goodman (2003) disk model this is well outside migration trap region.
     disk_bh_mig_outward_mod = np.where(disk_feedback_ratio > 1)[0]
 
     if disk_bh_mig_outward_mod.size > 0:
-        disk_bh_pro_a_new[disk_bh_mig_outward_mod] = disk_bh_orb_a_pro[disk_bh_mig_outward_mod] + (disk_bh_dist_mig[disk_bh_mig_outward_mod]*(disk_feedback_ratio[disk_bh_mig_outward_mod]-1))
-        # catch to keep stuff from leaving the outer radius of the disk
-        disk_bh_pro_a_new[disk_bh_mig_outward_mod[np.where(disk_bh_pro_a_new[disk_bh_mig_outward_mod] > disk_radius_outer)]] = disk_radius_outer
+        disk_bh_pro_a_new[disk_bh_mig_outward_mod] = disk_bh_orb_a_pro[disk_bh_mig_outward_mod] + \
+            (disk_bh_dist_mig[disk_bh_mig_outward_mod]*(disk_feedback_ratio[disk_bh_mig_outward_mod]-1))
 
     # if the ratio is 1 migration torques balance and no migration occurs.
     disk_bh_nomig_mod = np.where(disk_feedback_ratio == 1)[0]
