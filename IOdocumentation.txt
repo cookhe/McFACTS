@@ -129,6 +129,11 @@ star cluster variables second, and assorted other choices (time resolution etc.)
         feedback = 0 means no BH gas torque modifications (Type I migration only).
         Feedback model right now is Hanka et al. 2022
         default : 1
+    thermal_feedback_ratio_max : float
+        Set a maximum value for the ratio of Hankla+22 radiative feedback torque to type 1 migration
+        torque. When disks are extremely low opacity (like Thompson, Quataert, and Murray 06 disks)
+        the ratio can become exceedingly large which causes runaway outward migration.
+        default : 2
     flag_orb_ecc_damping : int
         Switch to incorporate orbital eccentricity damping.
         orb_ecc_damping = 1 gives all BH an initial orb eccentricity 
