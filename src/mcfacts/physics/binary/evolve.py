@@ -292,7 +292,8 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
         disk_aspect_ratio = disk_aspect_ratio_model(bin_com)
 
     # This is an exact copy of mcfacts.physics.migration.type1.type1.
-    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/bin_mass) / disk_surface_density) / np.sqrt(bin_com)
+    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * \
+               (smbh_mass/bin_mass) / disk_surface_density) / np.sqrt(bin_com)
     # ratio of timestep_duration_yr to tau_mig (timestep_duration_yr in years so convert)
     dt = timestep_duration_yr * scipy.constants.year / tau_mig
     # migration distance is original locations times fraction of tau_mig elapsed
@@ -308,50 +309,41 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
     #Given a population migrating inwards
     if index_inwards_size > 0:
         for i in range(0,index_inwards_size):
-                # Among all inwards migrators, find location in disk & compare to trap radius
-                critical_distance = all_inwards_migrators[i]
-                actual_index = index_inwards_modified[i]
-                #If outside trap, migrates inwards
-                if critical_distance > disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] - (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
-                    #If inward migration takes object inside trap, fix at trap.
-                    if disk_bin_bhbh_pro_orbs_a[actual_index] <= disk_radius_trap:
-                        disk_bin_bhbh_pro_orbs_a[actual_index] = disk_radius_trap
-                #If inside trap, migrates out
-                if critical_distance < disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] + (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
-                    if disk_bin_bhbh_pro_orbs_a[actual_index] >= disk_radius_trap:
-                        disk_bin_bhbh_pro_orbs_a[actual_index] = disk_radius_trap
-                #If at trap, stays there
-                if critical_distance == disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index]
+            # Among all inwards migrators, find location in disk & compare to trap radius
+            critical_distance = all_inwards_migrators[i]
+            actual_index = index_inwards_modified[i]
+            #If outside trap, migrates inwards
+            if critical_distance > disk_radius_trap:
+                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] - \
+                    (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
+                #If inward migration takes object inside trap, fix at trap.
+                if disk_bin_bhbh_pro_orbs_a[actual_index] <= disk_radius_trap:
+                    disk_bin_bhbh_pro_orbs_a[actual_index] = disk_radius_trap
+            #If inside trap, migrates out
+            if critical_distance < disk_radius_trap:
+                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] + \
+                    (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
+                if disk_bin_bhbh_pro_orbs_a[actual_index] >= disk_radius_trap:
+                    disk_bin_bhbh_pro_orbs_a[actual_index] = disk_radius_trap
+            #If at trap, stays there
+            if critical_distance == disk_radius_trap:
+                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index]
 
     # Find indices of objects where feedback ratio >1; these migrate outwards.
-    index_outwards_modified = np.where(feedback_ratio >1)[0]
+    index_outwards_modified = np.where(feedback_ratio > 1)[0]
 
     if index_outwards_modified.size > 0:
-        disk_bin_bhbh_pro_orbs_a[index_outwards_modified] = bin_com[index_outwards_modified] +(migration_distance[index_outwards_modified]*(feedback_ratio[index_outwards_modified]-1))
+        disk_bin_bhbh_pro_orbs_a[index_outwards_modified] = bin_com[index_outwards_modified] + \
+            (migration_distance[index_outwards_modified] * (feedback_ratio[index_outwards_modified]-1))
         # catch to keep stuff from leaving the outer radius of the disk!
-        disk_bin_bhbh_pro_orbs_a[index_outwards_modified[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)]] = disk_radius_outer
-    
-    #Find indices where feedback ratio is identically 1; shouldn't happen (edge case) if feedback on, but == 1 if feedback off.
+        disk_bin_bhbh_pro_orbs_a[
+            index_outwards_modified[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)]
+            ] = disk_radius_outer
+
+    # If the ratio is 1 migration torques balance and no migration occurs.
     index_unchanged = np.where(feedback_ratio == 1)[0]
     if index_unchanged.size > 0:
-    # If BH location > trap radius, migrate inwards
-        for i in range(0,index_unchanged.size):
-            locn_index = index_unchanged[i]
-            if bin_com[locn_index] > disk_radius_trap:
-                disk_bin_bhbh_pro_orbs_a[locn_index] = bin_com[locn_index] - migration_distance[locn_index]
-            # if new location is <= trap radius, set location to trap radius
-                if disk_bin_bhbh_pro_orbs_a[locn_index] <= disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[locn_index] = disk_radius_trap
-
-        # If BH location < trap radius, migrate outwards
-            if bin_com[locn_index] < disk_radius_trap:
-                disk_bin_bhbh_pro_orbs_a[locn_index] = bin_com[locn_index] + migration_distance[locn_index]
-                #if new location is >= trap radius, set location to trap radius
-                if disk_bin_bhbh_pro_orbs_a[locn_index] >= disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[locn_index] = disk_radius_trap
+        disk_bin_bhbh_pro_orbs_a[index_unchanged] = bin_com[index_unchanged]
 
     # Finite check
     assert np.isfinite(disk_bin_bhbh_pro_orbs_a).all(),\
