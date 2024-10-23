@@ -6,7 +6,7 @@ import numpy as np
 import scipy
 
 
-def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr, disk_feedback_ratio_func, disk_radius_trap, disk_bh_orb_ecc_pro, disk_bh_pro_orb_ecc_crit,disk_radius_outer):
+def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr, disk_feedback_ratio, disk_radius_trap, disk_bh_orb_ecc_pro, disk_bh_pro_orb_ecc_crit,disk_radius_outer):
     """Calculates how far an object migrates in an AGN gas disk in a single timestep
 
     Assumes a gas disk surface density and aspect ratio profile, for objects of specified masses and
@@ -104,13 +104,13 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
 
             # If outside trap, migrates inwards
             if disk_bh_mig_inward_all[i] > disk_radius_trap:
-                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] - (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio_func[disk_bh_mig_inward_index]))
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] - (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
                 # If inward migration takes object inside trap, fix at trap.
                 if disk_bh_pro_a_new[disk_bh_mig_inward_index] <= disk_radius_trap:
                     disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
             # If inside trap, migrate outwards
             elif disk_bh_mig_inward_all[i] < disk_radius_trap:
-                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] + (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio_func[disk_bh_mig_inward_index]))
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] + (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
                 #If outward migration takes object outside trap, fix at trap.
                 if disk_bh_pro_a_new[disk_bh_mig_inward_index] >= disk_radius_trap:
                     disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
