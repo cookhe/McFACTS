@@ -51,7 +51,8 @@ napoleon_attr_annotations = True
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'matplotlib': ('https://matplotlib.org/stable', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy', None),
-                       'astropy': ('https://docs.astropy.org/en/stable', None)}
+                       'astropy': ('https://docs.astropy.org/en/stable', None),
+                       'numpy': ('http://docs.scipy.org/doc/numpy/', None)}
 
 templates_path = ['_templates']
 exclude_patterns = []

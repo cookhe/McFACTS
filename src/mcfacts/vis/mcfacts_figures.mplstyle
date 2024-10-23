@@ -1,5 +1,5 @@
-text.usetex: True
-font.family: cmr10
+#text.usetex: True
+#font.family: cmr10
 
 # Commented out so auto-scaling works
 # Uncomment if you want fonts scaled for ApJ
@@ -9,7 +9,7 @@ font.family: cmr10
 #xtick.labelsize: 9
 #ytick.labelsize: 9
 #axes.labelsize: 9
-axes.formatter.use_mathtext: True
+#axes.formatter.use_mathtext: True
 
 figure.facecolor: white
 figure.dpi: 300

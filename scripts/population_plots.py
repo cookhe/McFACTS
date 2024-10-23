@@ -2,6 +2,7 @@
 
 ######## Imports ########
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 import mcfacts.vis.LISA as li
 import mcfacts.vis.PhenomA as pa
@@ -120,7 +121,14 @@ def main():
     svf_ax = plt.gca()
     svf_ax.set_axisbelow(True)
     svf_ax.tick_params(axis='x', direction='out', which='both')
-    plt.grid(True, color='gray', ls='dashed')
+    #plt.grid(True, color='gray', ls='dashed')
+    svf_ax.yaxis.grid(True, color='gray', ls='dashed')
+
+    plt.xticks(np.geomspace(int(mergers[:, 2].min()), int( mergers[:, 2].max()), 5).astype(int))
+    #plt.xticks(np.geomspace(20, 200, 5).astype(int))
+
+    svf_ax.xaxis.set_major_formatter(mticker.StrMethodFormatter('{x:.0f}'))
+    svf_ax.xaxis.set_minor_formatter(mticker.NullFormatter())
 
     if figsize == 'apj_col':
         plt.legend(fontsize=6)

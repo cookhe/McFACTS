@@ -9,27 +9,31 @@ def change_star_mass(disk_star_pro_masses,
                      disk_star_eddington_ratio,
                      mdisk_star_eddington_mass_growth_rate,
                      timestep_duration_yr):
-    """Given initial star masses at start of timestep, add mass according to
-        chosen stellar mass accretion prescription
+    """Adds mass according to chosen stellar mass accretion prescription
+
+    Takes initial star masses at start of timestep and adds mass according to
+    chosen stellar mass accretion prescription
 
     Parameters
     ----------
-    disk_star_pro_masses : float array
-        initial masses of stars in prograde orbits around SMBH, units of solar masses
+    disk_star_pro_masses : numpy.ndarray
+        Initial masses [M_sun] of stars in prograde orbits around SMBH with :obj:`float` type.
     disk_star_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stars
-          in units of Eddington accretion rate. 1.0=embedded star accreting at Eddington.
+        Accretion rate of fully embedded stars [Eddington accretion rate].
+        1.0=embedded star accreting at Eddington.
         Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     mdisk_star_eddington_mass_growth_rate : float
-        fractional rate of mass growth AT Eddington accretion rate per year (2.3e-8)
+        Fractional rate of mass growth AT Eddington accretion rate per year (fixed at 2.3e-8 in mcfacts_sim) [yr^{-1}]
     timestep_duration_yr : float
-        length of timestep in units of years
+        Length of timestep [yr]
 
     Returns
     -------
-    disk_star_pro_new_masses : float array
-        masses of stars after accreting at prescribed rate for one timestep
+    disk_star_pro_new_masses : numpy.ndarray
+        Masses [M_sun] of stars after accreting at prescribed rate for one timestep [M_sun] with :obj:`float` type
     """
+
     # Mass grows exponentially for length of timestep:
     disk_star_pro_new_masses = disk_star_pro_masses*np.exp(mdisk_star_eddington_mass_growth_rate*disk_star_eddington_ratio*timestep_duration_yr)
 
@@ -37,26 +41,29 @@ def change_star_mass(disk_star_pro_masses,
 
 
 def change_bh_mass(disk_bh_pro_masses, disk_bh_eddington_ratio, disk_bh_eddington_mass_growth_rate, timestep_duration_yr):
-    """Given initial black hole masses at start of timestep, add mass according to
-        chosen BH mass accretion prescription
+    """Adds mass according to chosen BH mass accretion prescription
+
+    Takes initial BH masses at start of timestep and adds mass according to
+    chosen BH mass accretion prescription
 
     Parameters
     ----------
-    disk_bh_pro_masses : float array
-        initial masses of black holes in prograde orbits around SMBH, units of solar masses
+    disk_bh_pro_masses : numpy.ndarray
+        Initial masses [M_sun] of black holes in prograde orbits around SMBH :obj:`float` type
     disk_bh_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
         Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     mdisk_bh_eddington_mass_growth_rate : float
-        fractional rate of mass growth AT Eddington accretion rate per year (2.3e-8)
+        Fractional rate of mass growth [yr^{-1}] AT Eddington accretion rate per year (fixed at 2.3e-8 in mcfacts_sim)
     timestep_duration_yr : float
-        length of timestep in units of years
+        Length of timestep [yr]
 
     Returns
     -------
-    disk_bh_pro_new_masses : float array
-        masses of black holes after accreting at prescribed rate for one timestep
+    disk_bh_pro_new_masses : numpy.ndarray
+        Masses [M_sun] of black holes after accreting at prescribed rate for one timestep with :obj:`float` type
     """
     # Mass grows exponentially for length of timestep:
     disk_bh_pro_new_masses = disk_bh_pro_masses*np.exp(disk_bh_eddington_mass_growth_rate*disk_bh_eddington_ratio*timestep_duration_yr)
@@ -70,35 +77,38 @@ def change_star_spin_magnitudes(disk_star_pro_spins,
                                 timestep_duration_yr,
                                 disk_star_pro_orbs_ecc,
                                 disk_star_pro_orbs_ecc_crit):
-    """
-    Update the spin magnitude of the embedded stars based on their accreted
-    mass in this timestep.
-    Right now this is just a copy of the BH function. No changes.
+    """Updates the spin magnitude of the embedded stars based on their accreted mass in this timestep.
 
     Parameters
     ----------
-    disk_star_pro_spins : float array
-        initial spins of black holes in prograde orbits around SMBH
+    disk_star_pro_spins : numpy.ndarray
+        Initial spins [unitless] of black holes in prograde orbits around SMBH :obj:`float` type
     disk_star_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
+        Accretion rate of fully embedded stars [Eddington accretion rate].
+        1.0=embedded star accreting at Eddington.
         Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     disk_star_torque_condition : float
-        user chosen input set by input file; fraction of initial mass required to be
-        accreted before BH spin is torqued fully into alignment with the AGN disk.
-        We don't know for sure but Bogdanovic et al. says between 0.01=1% and 0.1=10%
-        is what is required
+        Fraction of initial mass required to be accreted before BH spin is torqued fully into
+        alignment with the AGN disk [unitless]. We don't know for sure but Bogdanovic et al.
+        says between 0.01=1% and 0.1=10% is what is required
+        User chosen input set by input file
     timestep_duration_yr : float
-        length of timestep in units of years
-    disk_star_pro_orbs_ecc : float array
-        orbital eccentricity of BH in prograde orbits around SMBH
+        Length of timestep [yr]
+    disk_star_pro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of BH in prograde orbits around SMBH
     disk_star_pro_orbs_ecc_crit : float
-        critical value of orbital eccentricity below which prograde accretion (& migration & binary formation) occurs
+        Critical value of orbital eccentricity [unitless] below which prograde accretion (& migration & binary formation) occurs
     Returns
     -------
-    disk_star_pro_spins_new : float array
-        spin magnitudes of black holes after accreting at prescribed rate for one timestep
+    disk_star_pro_spins_new : numpy.ndarray
+        Spin magnitudes [unitless] of black holes after accreting at prescribed rate for one timestep with :obj:`float` type
+
+    Notes
+    -----
+    Right now this is just a copy of the BH function. No changes.
     """
+
     # A retrograde BH a=-1 will spin down to a=0 when it accretes a factor sqrt(3/2)=1.22 in mass (Bardeen 1970).
     # Since M_edd/t = 2.3 e-8 M0/yr or 2.3e-4M0/10kyr then M(t)=M0*exp((M_edd/t)*f_edd*time)
     # so M(t)~1.2=M0*exp(0.2) so in 10^7yr, spin should go a=-1 to a=0. Or delta a ~ 10^-3 every 10^4yr.
@@ -144,37 +154,41 @@ def change_star_spin_angles(prograde_stars_spin_angles,
                             timestep_duration_yr,
                             disk_star_pro_orbs_ecc,
                             disk_star_pro_orbs_ecc_crit):
-    """
-    Update the spin angles of the embedded black holes based on their
-    accreted mass in this timestep. Right now this is just a copy
-    of the BH function, no changes.
+    """Updates the spin angles of the embedded stars based on their accreted mass in this timestep.
 
     Parameters
     ----------
-    prograde_stars_spin_angles : float array
-        spin angles of stars in prograde orbits around SMBH
+    prograde_stars_spin_angles : numpy.ndarray
+        Spin angles [radian] of stars in prograde orbits around SMBH
     disk_star_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
+        Accretion rate of fully embedded stars [Eddington accretion rate].
+        1.0=embedded star accreting at Eddington.
         Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     disk_star_torque_condition : float
-        user chosen input set by input file; fraction of initial mass required to be
-        accreted before BH spin is torqued fully into alignment with the AGN disk.
-        We don't know for sure but Bogdanovic et al. says between 0.01=1% and 0.1=10%
-        is what is required
+        Fraction of initial mass required to be accreted before BH spin is torqued fully into
+        alignment with the AGN disk [unitless]. We don't know for sure but Bogdanovic et al.
+        says between 0.01=1% and 0.1=10% is what is required
+        User chosen input set by input file
     disk_star_spin_minimum_resolution : float
-        user chosen input set by input file; minimum resolution of spin change followed by code.
+        Minimum resolution of spin change followed by code [unitless]
     timestep_duration_yr : float
-        length of timestep in units of years
-    prograde_bh_orb ecc : float array
-        orbital eccentricity of stars in prograde orbist around SMBH
+        Length of timestep [yr]
+    prograde_bh_orb ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of stars in prograde orbist around SMBH
     disk_star_pro_orbs_ecc_crit : float
-        critical eccentricity of stars below which prograde accretion & spin
+        Critical eccentricity [unitless] of stars below which prograde accretion & spin
         will torque into disk alignment else retrograde accretion
+
     Returns
     -------
-    disk_star_spin_angles_new : float array
-        spin magnitudes of stars after accreting at prescribed rate for one timestep
+    disk_star_spin_angles_new : numpy.ndarray
+        Spin angles [radian] of stars after accreting at prescribed rate for one timestep with :obj:`float` type
+
+    Notes
+    -----
+    Right now this is just a copy of the BH function. No changes.
+
     """
     # Calculate change in spin angle due to accretion during timestep
     disk_bh_eddington_ratio_normalized = disk_star_eddington_ratio/1.0
@@ -215,36 +229,33 @@ def change_bh_spin_magnitudes(disk_bh_pro_spins,
                               timestep_duration_yr,
                               disk_bh_pro_orbs_ecc,
                               disk_bh_pro_orbs_ecc_crit):
-    """
-    Update the spin magnitude of the embedded black holes based on their
-    accreted mass in this timestep.
+    """Updates the spin magnitude of the embedded black holes based on their accreted mass in this timestep.
 
     Parameters
     ----------
-    disk_bh_pro_spins : float array
-        initial spins of black holes in prograde orbits around SMBH
+    disk_bh_pro_spins : numpy.ndarray
+        Initial spins [unitless] of black holes in prograde orbits around SMBH
     disk_bh_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully
-        embedded stellar mass black hole in units of Eddington accretion rate.
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
         1.0=embedded BH accreting at Eddington.
         Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     disk_bh_torque_condition : float
-        user chosen input set by input file; fraction of initial mass required
-        to be accreted before BH spin is torqued fully into alignment with
-        the AGN disk. We don't know for sure but Bogdanovic et al. says
+        Fraction of initial mass required to be accreted before BH spin is torqued fully into
+        alignment with the AGN disk. We don't know for sure but Bogdanovic et al. says
         between 0.01=1% and 0.1=10% is what is required
+        User chosen input set by input file
     timestep_duration_yr : float
-        length of timestep in units of years
-    disk_bh_pro_orbs_ecc : float array
-        orbital eccentricity of BH in prograde orbits around SMBH
+        Length of timestep [yr]
+    disk_bh_pro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of BH in prograde orbits around SMBH with :obj:`float` type
     disk_bh_pro_orbs_ecc_crit : float
-        critical value of orbital eccentricity below which prograde accretion
+        Critical value of orbital eccentricity [unitless] below which prograde accretion
         (& migration & binary formation) occurs
     Returns
     -------
-    disk_bh_pro_spins_new : float array
-        spin magnitudes of black holes after accreting at prescribed rate for
-        one timestep
+    disk_bh_pro_spins_new : numpy.ndarray
+        Spin magnitudes [unitless] of black holes after accreting at prescribed rate for one timestep with :obj:`float` type
     """
     # A retrograde BH a=-1 will spin down to a=0 when it accretes a factor sqrt(3/2)=1.22 in mass (Bardeen 1970).
     # Since M_edd/t = 2.3 e-8 M0/yr or 2.3e-4M0/10kyr then M(t)=M0*exp((M_edd/t)*f_edd*time)
@@ -291,34 +302,34 @@ def change_bh_spin_angles(disk_bh_pro_spin_angles,
                           timestep_duration_yr,
                           disk_bh_pro_orbs_ecc,
                           disk_bh_pro_orbs_ecc_crit):
-    """Update the spin magnitude of the embedded black holes based on their accreted mass
-        in this timestep.
+    """Updates the spin angles of the embedded black holes based on their accreted mass in this timestep.
 
     Parameters
     ----------
-    disk_bh_pro_spin_angles : float array
-        initial spin angles of black holes in prograde orbits around SMBH
+    disk_bh_pro_spin_angles : numpy.ndarray
+        Initial spin angles [radian] of black holes in prograde orbits around SMBH with :obj:`float` type
     disk_bh_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
         Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     disk_bh_torque_condition : float
-        user chosen input set by input file; fraction of initial mass required to be
-        accreted before BH spin is torqued fully into alignment with the AGN disk.
-        We don't know for sure but Bogdanovic et al. says between 0.01=1% and 0.1=10%
-        is what is required
+        Fraction of initial mass required to be accreted before BH spin is torqued fully into
+        alignment with the AGN disk. We don't know for sure but Bogdanovic et al. says
+        between 0.01=1% and 0.1=10% is what is required
+        User chosen input set by input file
     disk_bh_spin_minimum_resolution : float
-        user chosen input set by input file; minimum resolution of spin change followed by code.
+        Minimum resolution of spin change followed by code [unitless]
     timestep_duration_yr : float
-        length of timestep in units of years
-    disk_bh_orbs_ecc : float array
-        orbital eccentricity of BH in prograde orbits around SMBH
+        Length of timestep [yr]
+    disk_bh_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of BH in prograde orbits around SMBH [unitless] with :obj:`float` type
     disk_bh_orbs_ecc_crit : float
-        critical value of orbital eccentricity below which prograde accretion (& migration & binary formation) occurs
+        Critical value of orbital eccentricity [unitless] below which prograde accretion (& migration & binary formation) occurs
     Returns
     -------
-    disk_bh_pro_spin_new : float array
-        spin magnitudes of black holes after accreting at prescribed rate for one timestep
+    disk_bh_pro_spin_new : numpy.ndarray
+        Spin angles [radian] of black holes after accreting at prescribed rate for one timestep with :obj:`float` type
     """
 
     # Calculate change in spin angle due to accretion during timestep

@@ -14,7 +14,7 @@ def binary_check(
         disk_bh_pro_orbs_ecc,
         disk_bh_pro_orb_ecc_crit
         ):
-    """Which prograde BH will form binaries in this timestep.
+    """Calculates which prograde BH will form binaries in this timestep.
 
     Takes as inputs the singleton BH locations,masses & orbital eccentricities,
     and takes the candidate binary population from BH with orbital eccentricities
@@ -30,17 +30,15 @@ def binary_check(
     Parameters
     ----------
     disk_bh_pro_orbs_a : float array
-        locations of prograde singleton BH at start of timestep in units of
-        gravitational radii (r_g=GM_SMBH/c^2)
+        Semi-major axes around the SMBH [r_{g,SMBH}] of prograde singleton BH at start of timestep
     disk_bh_pro_masses : float array
-        initial masses of bh in prograde orbits around SMBH in units of solar
-        masses
+        Initial masses [M_sun] of bh in prograde orbits around SMBH
     smbh_mass : float
-        mass of supermassive black hole in units of solar masses
+        Mass [M_sun] of the SMBH
     disk_bh_pro_orbs_ecc : float array
-        Orbital ecc of singleton BH after damping during timestep
+        Orbital ecc [unitless] of singleton BH after damping during timestep
     disk_bh_pro_orb_ecc_crit : float
-        Critical eccentricity allowing bin formation and migration
+        Critical eccentricity [unitless] allowing bin formation and migration
 
     Returns
     -------
@@ -102,10 +100,10 @@ def binary_check(
             disk_bin_bhbh_pro_indices = np.array([subset[test_idx],subset[test_idx+1]])
 
             for i in range(len(test_idx)):
-                #If more than 1 binary
-                if i >0:
+                # If more than 1 binary
+                if i > 0:
                     # append nth binary indices formed this timestep
-                    bin_indices = np.append(bin_indices,[subset[test_idx[i]],subset[test_idx[i]+1]])
+                    bin_indices = np.append(bin_indices, [subset[test_idx[i]],subset[test_idx[i]+1]])
 
                     #Check to see if repeat binaries among the set of binaries formed (e.g. (1,2)(2,3) )
                     #If repeats, only form a binary from the pair with smallest fractional Hill sphere separation
@@ -119,7 +117,7 @@ def binary_check(
 
                     # Assume the smallest sep/R_Hill should form a binary, so
                     if len(sorted_sequences) > 0:
-                        #Index of smallest sorted fractional Hill radius binary so far
+                        # Index of smallest sorted fractional Hill radius binary so far
                         checked_binary_index = np.array([test_idx[sorted_sequences_indices[0]]])
                     else:
                         checked_binary_index = []
@@ -148,8 +146,7 @@ def binary_check(
 
 
 def add_to_binary_obj(blackholes_binary, blackholes_pro, bh_pro_id_num_binary, id_start_val, fraction_bin_retro, smbh_mass, agn_redshift):
-    """
-    Create new BH binaries with appropriate parameters.
+    """Create new BH binaries with appropriate parameters.
 
     We take the semi-maj axis, masses, spins, spin angles and generations
     from the relevant singletons, found in hillsphere.binary_check2, and sort
@@ -162,30 +159,30 @@ def add_to_binary_obj(blackholes_binary, blackholes_pro, bh_pro_id_num_binary, i
     Parameters
     ----------
     blackholes_binary : AGNBinaryBlackHole
-        binary black holes, will add new binaries
+        Binary black holes
     blackholes_pro : AGNBlackHole
-        prograde black holes
-    bh_pro_id_num_binary : numpy array of ints
-        ID numbers for the prograde blackholes that will form binaries
+        Prograde black holes
+    bh_pro_id_num_binary : numpy.ndarray
+        ID numbers for the prograde blackholes that will form binaries with :obj:`int` type
     id_start_val : int
-        starting value for the ID numbers (add 1 to ensure it's unique)
+        Starting value for the ID numbers (add 1 to ensure it's unique)
     fraction_bin_retro : float
-        fraction of binaries which form retrograde (wrt to the disk gas)
+        Fraction of binaries which form retrograde (wrt to the disk gas)
         around their own center of mass.
         = 0.0 turns all retrograde BBH at formation into prograde BBH.
         = 0.5 half of the binaries will be retrograde
         = 1.0 all binaries will be retrograde.
     smbh_mass : float
-        mass of SMBH in units of Msun
+        Mass [M_sun] of the SMBH
     agn_redshift : float
-        redshift of the AGN, used to set d_obs
+        Redshift [unitless] of the AGN, used to set d_obs
 
     Returns
     -------
     blackholes_binary : AGNBinaryBlackHole
-        binary black hole object with new binaries added
-    id_nums : numpy array of ints
-        ID numbers of the new binary black holes
+        Binary black hole object with new binaries added
+    id_nums : numpy.ndarray
+        ID numbers of the new binary black holes with :obj:`int` type
     """
 
     bin_num = bh_pro_id_num_binary.shape[1]
@@ -247,9 +244,9 @@ def add_to_binary_obj(blackholes_binary, blackholes_pro, bh_pro_id_num_binary, i
         if fraction_bin_retro == 0:
             bin_orb_ang_mom[i] = 1.
         else:
-            #return a 1 or -1 in the ratio 
+            # return a 1 or -1 in the ratio 
             # (1-fraction_bin_retro: fraction_bin_retro)
-            bin_orb_ang_mom[i] = rng.choice(a=[1,-1],p=[1-fraction_bin_retro,fraction_bin_retro])
+            bin_orb_ang_mom[i] = rng.choice(a=[1, -1], p=[1-fraction_bin_retro, fraction_bin_retro])
 
     gw_strain, gw_freq = gw_strain_freq(mass_1=mass_1, mass_2=mass_2, obj_sep=bin_sep, timestep_duration_yr=-1,
                                         old_gw_freq=-1, smbh_mass=smbh_mass, agn_redshift=agn_redshift,

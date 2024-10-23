@@ -8,21 +8,20 @@ from mcfacts.physics.gw import gw_strain_freq
 
 
 def evolve_emri_gw(blackholes_inner_disk, timestep_duration_yr, old_gw_freq, smbh_mass, agn_redshift):
-    """
-    This function evaluates the EMRI gravitational wave frequency and strain at the end of each timestep_duration_yr
+    """Evaluates the EMRI gravitational wave frequency and strain at the end of each timestep_duration_yr
 
     Parameters
     ----------
     blackholes_inner_disk : AGNBlackHole
-        black holes in the inner disk
+        Parameters of black holes in the inner disk
     timestep_duration_yr : float
-        timestep in years
-    old_gw_freq : numpy array
-        previous GW frequency in Hz
+        Length of timestep [yr]
+    old_gw_freq : numpy.ndarray
+        Previous GW frequency [Hz] with :obj:`float` type
     smbh_mass : float
-        mass of the SMBH in Msun
+        Mass [M_sun] of the SMBH
     agn_redshift : float
-        redshift of the AGN
+        Redshift [unitless] of the AGN
     """
 
     old_gw_freq = old_gw_freq * u.Hz

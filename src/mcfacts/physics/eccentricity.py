@@ -7,7 +7,7 @@ import numpy as np
 
 def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk_surf_density_func,
                         disk_aspect_ratio_func, disk_bh_pro_orbs_ecc, timestep_duration_yr, disk_bh_pro_orb_ecc_crit):
-    """This method returns an array of BH orbital eccentricities damped according to a prescription.
+    """Calculates damping of BH orbital eccentricities according to a prescription.
 
     Using Tanaka & Ward (2004)  t_damp = M^3/2 h^4 / (2^1/2 m Sigma a^1/2 G )
     where M is the central mass, h is the disk aspect ratio (H/a), m is the orbiter mass,
@@ -15,6 +15,37 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
 
     From McKernan & Ford (2023) eqn 4. we can parameterize t_damp as
     t_damp ~ 0.1Myr (q/10^-7)^-1 (h/0.03)^4 (Sigma/10^5 kg m^-2)^-1 (a/10^4r_g)^-1/2
+
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    disk_bh_pro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of prograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_bh_pro_masses : numpy.ndarray
+        Masses [M_sun] of prograde singleton BH at start of timestep with :obj:`float` type
+    disk_bh_pro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of singleton prograde BH with :obj:`float` type
+    timestep_duration_yr : float
+        Length of timestep [yr]
+    disk_bh_pro_orb_ecc_crit : float
+        Critical orbital eccentricity [unitless] below which orbit is close enough to circularize
+    delta_energy_strong : float
+        Average energy change [units??] per strong encounter
+    nsc_spheroid_normalization : float
+        Normalization factor [unitless] determines the departures from sphericity of
+        the initial distribution of perturbers (1.0=spherical)
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_aspect_ratio_func : function
+        Returns AGN gas disk aspect ratio [unitless] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+
+    Returns
+    -------
+    bh_new_orb_ecc : float array
+        updated orbital eccentricities damped by AGN gas
 
     Notes
     -----
@@ -30,35 +61,9 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
     For now assume e<2h condition. To do: Add condition below (if ecc>2h..)
 
     For eccentricity e>2h eqn. 9 in McKernan & Ford (2023), based on Horn et al. (2012) the scaling time is now t_ecc.
-    t_ecc = (t_damp/0.78)*[1 - (0.14*(e/h)^2) + (0.06*(e/h)^3)] ......(2)
+    :math:`t_{ecc} = (t_{damp}/0.78)*[1 - (0.14*(e/h)^2) + (0.06*(e/h)^3)]` ......(2)
     which in the limit of e>0.1 for most disk models becomes
-    t_ecc ~ (t_damp/0.78)*[1 + (0.06*(e/h)^3)]
-
-    Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bh_pro_orbs_a : float array
-        locations of prograde singleton BH at start of timestep in units of gravitational radii (r_g=GM_SMBH/c^2)
-    disk_bh_pro_orbs_masses : float array
-        mass of prograde singleton BH at start of timestep in units of solar masses
-    disk_surf_density_func : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    disk_aspect_ratio_func : function
-        returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    disk_bh_pro_orbs_ecc : float array
-        orbital eccentricity of singleton BH
-    timestep_duration_yr : float
-        size of timestep in years
-    disk_bh_pro_orb_ecc_crit: float
-        critical eccentricity of prograde BH
-
-    Returns
-    -------
-    bh_new_orb_ecc : float array
-        updated orbital eccentricities damped by AGN gas
+    :math:`t_{ecc} \propto (t_{damp}/0.78)*[1 + (0.06*(e/h)^3)]`
     """
     # Check incoming eccentricities for nans
     assert np.isfinite(disk_bh_pro_orbs_ecc).all(), \
@@ -153,9 +158,8 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
 
 def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr,
                             disk_bh_pro_orb_ecc_crit):
-    """"
-    Return bin_array orbital eccentricities damped according to a prescription.
-
+    """Calculates damping of BBH orbital eccentricities according to a prescription.
+    
     Use same mechanisms as for prograde singleton BH.
 
     E.g. Tanaka & Ward (2004)  t_damp = M^3/2 h^4 / (2^1/2 m Sigma a^1/2 G )
@@ -164,6 +168,28 @@ def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func
     From McKernan & Ford (2023) eqn 4. we can parameterize t_damp as
     t_damp ~ 0.1Myr (q/10^-7)^-1 (h/0.03)^4 (Sigma/10^5 kg m^-2)^-1 (a/10^4r_g)^-1/2
 
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    blackholes_binary : AGNBinaryBlackHole
+        binary black hole parameters
+    timestep_duration_yr : float
+        Length of timestep [yr]
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_aspect_ratio_func : function
+        Returns AGN gas disk aspect ratio [unitless] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+
+    Returns
+    -------
+    blackholes_binary : AGNBinaryBlackHole
+        binaries with updated orbital eccentricities damped by AGN gas
+
+    Notes
+    -----
     For eccentricity e<2h
         e(t)=e0*exp(-t/t_damp)......(1)
         So
@@ -178,26 +204,6 @@ def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func
         t_ecc = (t_damp/0.78)*[1 - (0.14*(e/h)^2) + (0.06*(e/h)^3)] ......(2)
         which in the limit of e>0.1 for most disk models becomes
         t_ecc ~ (t_damp/0.78)*[1 + (0.06*(e/h)^3)]
-
-        Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    blackholes_binary : AGNBinaryBlackHole
-        binaries
-    disk_surf_density_func : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    disk_aspect_ratio_func : function
-        returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    timestep_duration_yr : float
-        size of timestep in years
-
-    Returns
-    -------
-    blackholes_binary : AGNBinaryBlackHole
-        binaries with updated orbital eccentricities damped by AGN gas
     """
     # Check incoming eccentricities for nans
     assert np.isfinite(blackholes_binary.bin_ecc).all(), \
@@ -263,7 +269,31 @@ def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func
 def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk_surf_density_func,
                     disk_aspect_ratio_func,
                     disk_bh_pro_orbs_ecc, timestep_duration_yr, disk_bh_pro_orb_ecc_crit):
-    """"Return binary array with modified eccentricities according to Calcino et al. (2023), arXiv:2312.13727
+    """"Calculate modified eccentricities for BBH according to Calcino et al. (2023), arXiv:2312.13727
+
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    disk_bh_pro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of prograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_bh_pro_masses : numpy.ndarray
+        Masses [M_sun] of prograde singleton BH at start of timestep with :obj:`float` type
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_aspect_ratio_func : function
+        Returns AGN gas disk aspect ratio [unitless] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_bh_pro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of singleton prograde BH with :obj:`float` type
+    timestep_duration_yr : float
+        Length of timestep [yr]
+
+    Returns
+    -------
+    bh_new_orb_ecc : float array
+        updated orbital eccentricities damped by AGN gas
 
     Notes
     -----
@@ -304,30 +334,6 @@ def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk
         t_ecc = (t_damp/0.78)*[1 - (0.14*(e/h)^2) + (0.06*(e/h)^3)] ......(2)
         which in the limit of e>0.1 for most disk models becomes
         t_ecc ~ (t_damp/0.78)*[1 + (0.06*(e/h)^3)]
-
-    Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bh_pro_orbs_a : float array
-        locations of prograde singleton BH at start of timestep in units of gravitational radii (r_g=GM_SMBH/c^2)
-    disk_bh_pro_orbs_masses : float array
-        mass of prograde singleton BH at start of timestep in units of solar masses
-    disk_surf_density_func : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    disk_aspect_ratio_func : function
-        returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    disk_bh_pro_orbs_ecc : float array
-        orbital eccentricity of singleton BH
-    timestep_duration_yr : float
-        size of timestep in years
-
-    Returns
-    -------
-    bh_new_orb_ecc : float array
-        updated orbital eccentricities damped by AGN gas
     """
     # Check incoming eccentricities for nans
     assert np.isfinite(disk_bh_pro_orbs_ecc).all(), \

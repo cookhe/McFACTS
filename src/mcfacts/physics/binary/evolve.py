@@ -8,27 +8,26 @@ from mcfacts.objects.agnobject import obj_to_binary_bh_array
 
 def change_bin_mass(blackholes_binary, disk_bh_eddington_ratio,
                     disk_bh_eddington_mass_growth_rate, timestep_duration_yr):
-    """
-    Given initial binary black hole masses at timestep start, add mass according to
-    chosen BH mass accretion prescription
+    """Add mass to binary components according to chosen BH mass accretion prescription
 
     Parameters
     ----------
     blackholes_binary : AGNBinaryBlackHole
-        binary black holes in prograde orbits around SMBH
+        Binary black holes in prograde orbits around SMBH
     disk_bh_eddington_ratio : float
-        user chosen input set by input file; accretion rate of fully embedded stellar
-        mass black hole in units of Eddington accretion rate. 1.0=embedded BH accreting
-        at Eddington. Super-Eddington accretion rates are permitted.
-    disk_bh_eddington_mass_growth : float
-        fractional rate of mass growth AT Eddington accretion rate per year (2.3e-8)
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
+        Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
+    mdisk_bh_eddington_mass_growth_rate : float
+        Fractional rate of mass growth [yr^{-1}] AT Eddington accretion rate per year (fixed at 2.3e-8 in mcfacts_sim)
     timestep_duration_yr : float
-        length of timestep in units of years
+        Length of timestep [yr]
 
     Returns
     -------
     blackholes_binary : AGNBinaryBlackHole
-        updated binary black holes after accreting mass at prescribed rate for one timestep
+        Binary black holes with updated masses after accreting at prescribed rate for one timestep
     """
 
     # Only interested in BH that have not merged
@@ -51,30 +50,32 @@ def change_bin_mass(blackholes_binary, disk_bh_eddington_ratio,
 
 def change_bin_spin_magnitudes(blackholes_binary, disk_bh_eddington_ratio,
                                disk_bh_torque_condition, timestep_duration_yr):
-    """
+    """Add spin according to chosen BH torque prescription
+
     Given initial binary black hole spins at start of timestep_duration_yr, add spin according to
-        chosen BH torque prescription. If spin is greater than max allowed spin, spin is set to
-        max value.
+    chosen BH torque prescription. If spin is greater than max allowed spin, spin is set to max value.
 
     Parameters
     ----------
     blackholes_binary : AGNBinaryBlackHole
-        binary black holes in prograde orbits around SMBH
+        Binary black holes in prograde orbits around SMBH
     disk_bh_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass 
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
-        Super-Eddington accretion rates are permitted.    
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
+        Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     disk_bh_torque_condition : float
-        fraction of initial mass required to be accreted before BH spin is torqued
-        fully into alignment with the AGN disk. We don't know for sure but
-        Bogdanovic et al. (2007) says between 0.01=1% and 0.1=10% is what is required.
+        Fraction of initial mass required to be accreted before BH spin is torqued fully into
+        alignment with the AGN disk. We don't know for sure but Bogdanovic et al. says
+        between 0.01=1% and 0.1=10% is what is required
+        User chosen input set by input file
     timestep_duration_yr : float
-        length of timestep in units of years. Default is 10^4yr
+        Length of timestep [yr]
 
     Returns
     -------
     blackholes_binary : AGNBinaryBlackHole
-        Updated blackholes_binary after spin up of BH at prescribed rate for one timestep_duration_yr
+        Binary black holes with updated spins after spinning up at prescribed rate for one timestep
     """
 
     disk_bh_eddington_ratio_normalized = disk_bh_eddington_ratio/1.0  # does nothing?
@@ -111,7 +112,8 @@ def change_bin_spin_magnitudes(blackholes_binary, disk_bh_eddington_ratio,
 def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
                            disk_bh_torque_condition, spin_minimum_resolution,
                            timestep_duration_yr):
-    """
+    """Subtract spin angle according to chosen BH torque prescription
+
     Given initial binary black hole spin angles at start of timestep, subtract spin angle
     according to chosen BH torque prescription. If spin angle is less than spin minimum
     resolution, spin angle is set to 0.
@@ -121,20 +123,22 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     blackholes_binary : AGNBinaryBlackHole
         binary black holes in prograde orbits around the SMBH
     disk_bh_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass 
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
-        Super-Eddington accretion rates are permitted.    
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
+        Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
     disk_bh_torque_condition : float
-        fraction of initial mass required to be accreted before BH spin is torqued
-        fully into alignment with the AGN disk. We don't know for sure but
-        Bogdanovic et al. (2007) says between 0.01=1% and 0.1=10% is what is required.
+        Fraction of initial mass required to be accreted before BH spin is torqued fully into
+        alignment with the AGN disk. We don't know for sure but Bogdanovic et al. says
+        between 0.01=1% and 0.1=10% is what is required
+        User chosen input set by input file
     timestep_duration_yr : float
-        length of timestep in units of years. Default is 10^4yr
+        Length of timestep [yr]
 
     Returns
     -------
     blackholes_binary : AGNBinaryBlackHole
-        Updated blackholes_binary after spin up of BH at prescribed rate for one timestep_duration_yr
+        Binary black holes with updated spin angles after subtracting angle at prescribed rate for one timestep
     """
     disk_bh_eddington_ratio_normalized = disk_bh_eddington_ratio/1.0  # does nothing?
     timestep_duration_yr_normalized = timestep_duration_yr/1.e4  # yrs to yr/10k?
@@ -168,7 +172,37 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
                             disk_opacity_func, disk_bh_eddington_ratio,
                             disk_alpha_viscosity, disk_radius_outer,
                             thermal_feedback_max):
-    """
+    """Calculates ratio of heating torque to migration torque using Eqn. 28 in Hankla, Jiang & Armitage (2020)
+
+    Parameters
+    ----------
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black holes
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_opacity_model : lambda
+        Opacity as a function of radius
+    disk_bh_eddington_ratio : float
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
+        Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
+    disk_alpha_viscosity : float
+        Disk gas viscocity [units??] alpha parameter
+    disk_radius_outer : float
+            Outer radius [r_{g,SMBH}] of the disk
+    thermal_feedback_max : float
+        Maximum allowed value for the ratio of radiative feedback torque
+        to Type 1 migration torque.
+
+    Returns
+    -------
+    ratio_feedback_to_mig : float array
+        Ratio of feedback torque to migration torque [unitless]
+
+    Notes
+    -----
     This feedback model uses Eqn. 28 in Hankla, Jiang & Armitage (2020)
     which yields the ratio of heating torque to migration torque.
     Heating torque is directed outwards. 
@@ -191,33 +225,6 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
         ~0.243 (R/10^4r_g)^(1/2) (Sigma/5.e5)  comparable.
         >1 (a/2x10^4r_g)^(1/2)(Sigma/) migration is *outward* at >=20,000r_g in SG03
         >10 (a/7x10^4r_g)^(1/2)(Sigma/) migration outwards starts to runaway in SG03
-
-    Parameters
-    ----------
-
-    blackholes_binary : AGNBinaryBlackHole
-        binary black holes
-    disk_surface_density : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g (r_g=GM_SMBH/c^2)
-        can accept a simple float (constant), but this is deprecated
-    disk_opacity_func : lambda
-        Opacity as a function of radius
-    disk_bh_eddington_ratio : float
-        user chosen input set by input file; Accretion rate of fully embedded stellar mass 
-        black hole in units of Eddington accretion rate. 1.0=embedded BH accreting at Eddington.
-        Super-Eddington accretion rates are permitted.
-    disk_alpha_viscosity : float
-        disk viscosity parameter
-    disk_radius_outer : float
-        final element of disk_model_radius_array (units of r_g)
-    thermal_feedback_max : float
-        Maximum allowed value for the ratio of radiative feedback torque
-        to Type 1 migration torque.
-
-    Returns
-    -------
-    ratio_feedback_to_mig : float array
-        ratio of feedback torque to migration torque for each entry in prograde_bh_locations
     """
 
     # Making sure that surface density is a float or a function (from old function)
@@ -241,39 +248,44 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
 
 
 def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspect_ratio_model, timestep_duration_yr, feedback_ratio, disk_radius_trap, disk_bh_pro_orb_ecc_crit, disk_radius_outer):
-    """
+    """Calculates how far the center of mass of a binary moves in an AGN disk in one timestep
+
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    disk_bin_bhbh_pro_array : numpy.ndarray
+        Full binary array.
+    disk_surf_model : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_aspect_ratio_model : function
+        Returns AGN gas disk aspect ratio [unitless] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    timestep_duration_yr : float
+        Length of timestep [yr]
+    feedback_ratio : float
+        Ratio of heating/migration torque [unitless]. If ratio <1, migration inwards, but slows by factor tau_mig/(1-R)
+        if ratio >1, migration outwards on timescale tau_mig/(R-1)
+    disk_radius_trap : float
+        Radius [r_{g,SMBH}] of disk migration trap
+        From Bellovary+16, should be 700r_g for Sirko & Goodman '03, 245r_g for Thompson et al. '05
+    disk_bh_pro_orb_ecc_crit : float
+        Critical value of orbital eccentricity [unitless] below which we assume Type 1 migration must occur. Do not damp orb ecc below this (e_crit=0.01 is default)
+
+    Returns
+    -------
+    disk_bin_bhbh_pro_array : float array
+        Returns modified disk_bin_bhbh_pro_array with updated center of masses of the binary bhbh.
+
+    Notes
+    -----
     This function calculates how far the center of mass of a binary migrates in an AGN gas disk in a time
     of length timestep_duration_yr, assuming a gas disk surface density and aspect ratio profile, for
     objects of specified masses and starting locations, and returns their new locations
     after migration over one timestep_duration_yr. Uses standard Type I migration prescription,
     modified by Hankla+22 feedback model if included.
     This is an exact copy of mcfacts.physics.migration.type1.type1
-
-    Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bin_bhbh_pro_array : float array
-        Full binary array.
-    disk_surf_model : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    disk_aspect_ratio_model : function
-        returns AGN gas disk aspect ratio given a distance from the SMBH in r_g
-        can accept a simple float (constant), but this is deprecated
-    timestep_duration_yr : float
-        size of timestep_duration_yr in years
-    feedback_ratio : float
-        effect of feedback on Type I migration torque if feedback switch on
-    disk_radius_trap : float
-        location of migration trap in units of r_g. From Bellovary+16, should be 700r_g for Sirko & Goodman '03, 245r_g for Thompson et al. '05
-    disk_bh_pro_orb_ecc_crit : float
-        User defined critical orbital eccentricity for pro BH, below which BH are considered circularized
-
-    Returns
-    -------
-    disk_bin_bhbh_pro_array : float array
-        Returns modified disk_bin_bhbh_pro_array with updated center of masses of the binary bhbh.
     """
 
     # locations of center of mass of bhbh binaries
@@ -306,23 +318,21 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
     index_inwards_size = index_inwards_modified.size
     all_inwards_migrators = bin_com[index_inwards_modified]
 
-    #Given a population migrating inwards
+    # Given a population migrating inwards
     if index_inwards_size > 0:
-        for i in range(0,index_inwards_size):
+        for i in range(0, index_inwards_size):
             # Among all inwards migrators, find location in disk & compare to trap radius
             critical_distance = all_inwards_migrators[i]
             actual_index = index_inwards_modified[i]
-            #If outside trap, migrates inwards
+            # If outside trap, migrates inwards
             if critical_distance > disk_radius_trap:
-                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] - \
-                    (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
+                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] - (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
                 #If inward migration takes object inside trap, fix at trap.
                 if disk_bin_bhbh_pro_orbs_a[actual_index] <= disk_radius_trap:
                     disk_bin_bhbh_pro_orbs_a[actual_index] = disk_radius_trap
             #If inside trap, migrates out
             if critical_distance < disk_radius_trap:
-                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] + \
-                    (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
+                disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index] + (migration_distance[actual_index]*(1-feedback_ratio[actual_index]))
                 if disk_bin_bhbh_pro_orbs_a[actual_index] >= disk_radius_trap:
                     disk_bin_bhbh_pro_orbs_a[actual_index] = disk_radius_trap
             #If at trap, stays there
@@ -336,11 +346,9 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
         disk_bin_bhbh_pro_orbs_a[index_outwards_modified] = bin_com[index_outwards_modified] + \
             (migration_distance[index_outwards_modified] * (feedback_ratio[index_outwards_modified]-1))
         # catch to keep stuff from leaving the outer radius of the disk!
-        disk_bin_bhbh_pro_orbs_a[
-            index_outwards_modified[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)]
-            ] = disk_radius_outer
+        disk_bin_bhbh_pro_orbs_a[index_outwards_modified[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)]] = disk_radius_outer
 
-    # If the ratio is 1 migration torques balance and no migration occurs.
+    # Find indices where feedback ratio is identically 1; shouldn't happen (edge case) if feedback on, but == 1 if feedback off.
     index_unchanged = np.where(feedback_ratio == 1)[0]
     if index_unchanged.size > 0:
         disk_bin_bhbh_pro_orbs_a[index_unchanged] = bin_com[index_unchanged]
@@ -366,7 +374,7 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
 
     # Finite check
     assert np.isfinite(disk_bin_bhbh_pro_array[18,:]).all(),\
-        "Fintie check failure: disk_bin_bhbh_pro_array"
+        "Finite check failure: disk_bin_bhbh_pro_array"
     # Assert that things are not allowed to migrate out of the disk.
     mask_disk_radius_outer = disk_radius_outer < disk_bin_bhbh_pro_array
     disk_bin_bhbh_pro_array[mask_disk_radius_outer] = disk_radius_outer
@@ -376,6 +384,38 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
 def bin_migration_obj(smbh_mass, blackholes_binary, disk_surf_model, disk_aspect_ratio_model,
                       timestep_duration_yr, feedback_ratio, disk_radius_trap,
                       disk_bh_pro_orb_ecc_crit, disk_radius_outer):
+    """Wrapper function to calculate :math:`\mathtt{bin_migration}`
+
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black hole parameters
+    disk_surf_model : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_aspect_ratio_model : function
+        Returns AGN gas disk aspect ratio [unitless] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    timestep_duration_yr : float
+        Length of timestep [yr]
+    feedback_ratio : float
+        Ratio of heating/migration torque [unitless]. If ratio <1, migration inwards, but slows by factor tau_mig/(1-R)
+        if ratio >1, migration outwards on timescale tau_mig/(R-1)
+    disk_radius_trap : float
+        Radius [r_{g,SMBH}] of disk migration trap
+        From Bellovary+16, should be 700r_g for Sirko & Goodman '03, 245r_g for Thompson et al. '05
+    disk_bh_pro_orb_ecc_crit : float
+        Critical value of orbital eccentricity [unitless] below which we assume Type 1 migration must occur. Do not damp orb ecc below this (e_crit=0.01 is default)
+    disk_radius_outer : float
+            Outer radius [r_{g,SMBH}] of the disk
+
+    Returns
+    -------
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black holes with orbital semi-major axes updated
+    """
 
     disk_bin_bhbh_pro_array = obj_to_binary_bh_array(blackholes_binary)
 
@@ -390,11 +430,26 @@ def bin_migration_obj(smbh_mass, blackholes_binary, disk_surf_model, disk_aspect
 
 
 def bin_ionization_check(blackholes_binary, smbh_mass):
-    """
+    """Tests whether binary has been ionized beyond some limit
+
     This function tests whether a binary has been softened beyond some limit.
     Returns ID numbers of binaries to be ionized.
     The limit is set to some fraction of the binary Hill sphere, frac_R_hill
 
+    Parameters
+    ----------
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black hole parameters
+    smbh_mass : float
+        Mass [M_sun] of the SMBH
+
+    Returns
+    -------
+    bh_id_nums : numpy.ndarray
+        ID numbers of binaries to be removed from binary array
+
+    Notes
+    -----
     Default is frac_R_hill = 1.0 (ie binary is ionized at the Hill sphere). 
     Change frac_R_hill if you're testing binary formation at >R_hill.
 
@@ -409,18 +464,6 @@ def bin_ionization_check(blackholes_binary, smbh_mass):
         Ionize binary.
         Remove binary from blackholes_binary!
         Add two new singletons to the singleton arrays.
-
-    Parameters
-    ----------
-    blackholes_binary : AGNBinaryBlackHole 
-        Full binary array.
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-
-    Returns
-    -------
-    bh_id_nums : numpy array
-        ID numbers of binaries to be removed from binary array
     """
 
     # Remove returning -1 if that's not how it's supposed to work
@@ -438,27 +481,28 @@ def bin_ionization_check(blackholes_binary, smbh_mass):
 
 
 def bin_contact_check(blackholes_binary, smbh_mass):
-    """
-    This function tests to see if the binary separation has shrunk so that the binary is touching!
+    """Tests if binary separation has shrunk so that binary is touching
 
+    Parameters
+    ----------
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black hole parameters
+    smbh_mass : float
+        Mass [M_sun] of the SMBH
+
+    Returns
+    -------
+    blackholes_binary : AGNBinaryBlackHole
+        Returns modified blackholes_binary with updated bin_sep and flag_merging.
+
+    Notes
+    -----
     Touching condition is where binary separation is <= R_schw(M_1) + R_schw(M_2)
                                                       = 2(R_g(M_1) + R_g(M_2))
                                                       = 2G(M_1+M_2) / c^{2}
 
     Since binary separation is in units of r_g (GM_smbh/c^2) then condition is simply:
         binary_separation <= 2M_bin/M_smbh
-    
-    Parameters
-    ---------- 
-    blackholes_binary : float array 
-        Full binary array.
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-
-    Returns
-    -------
-    blackholes_binary : float array 
-        Returns modified blackholes_binary with updated bin_sep and flag_merging.
     """
 
     mass_binary = blackholes_binary.mass_1 + blackholes_binary.mass_2
@@ -475,19 +519,21 @@ def bin_contact_check(blackholes_binary, smbh_mass):
 
 
 def bin_reality_check(blackholes_binary):
-    """ This function tests to see if the binary is real. If location = 0 or mass = 0 *and* any other element is NON-ZERO then discard this binary element.
-        Returns ID numbers of fake binaries.
+    """Tests if binaries are real (location and mass do not equal 0)
 
-        Parameters
-        ----------
-        blackholes_binary : AGNBinaryBlackHole 
-            binary black holes.
+    This function tests to see if the binary is real. If location = 0 or mass = 0 *and* any other element is NON-ZERO then discard this binary element.
+    Returns ID numbers of fake binaries.
 
-        Returns
-        -------
-        disk_bin_bhbh_pro_array : float array 
-            Returns modified disk_bin_bhbh_pro_array with updated GW properties (strain,freq) bhbh.
-        """
+    Parameters
+    ----------
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black hole parameters
+
+    Returns
+    -------
+    id_nums or bh_bin_id_num_fakes : numpy.ndarray
+        ID numbers of fake binaries with :obj:`float` type
+    """
     bh_bin_id_num_fakes = np.array([])
 
     mass_1_id_num = blackholes_binary.id_num[blackholes_binary.mass_1 == 0]
@@ -506,8 +552,7 @@ def bin_reality_check(blackholes_binary):
 
 def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
                         time_gw_normalization, time_passed):
-    """
-    Harden black hole binaries using Baruteau+11 prescription
+    """Harden black hole binaries using Baruteau+11 prescription
 
     Use Baruteau+11 prescription to harden a pre-existing binary.
     For every 1000 orbits of binary around its center of mass, the
@@ -515,24 +560,24 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
 
     Parameters
     ----------
-    binary_bh_array : ndarray
-        Array of binary black holes in the disk.
-    smbh_mass : ndarray
-        Mass of supermassive black hole.
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black hole parameters
+    smbh_mass : float
+        Mass [M_sun] of the SMBH
     timestep_duration_yr : float
-        Length of timestep of the simulation in years.
+        Length of timestep [yr]
     time_gw_normalization : float
         A normalization for GW decay timescale, set by `smbh_mass` & normalized for
         a binary total mass of 10 solar masses.
     bin_index : int
         Count of number of binaries
     time_passed : float
-        Time elapsed since beginning of simulation.
+        Time elapsed [yr] since beginning of simulation.
 
     Returns
     -------
-    ndarray
-        Updated array of black hole binaries in the disk.
+    blackholes_binary : AGNBinaryBlackHole
+        Black hole binaries with time_to_merger_gw, bin_sep, flag_merging, and time_merged updated
     """
 
     # 1. Find active binaries

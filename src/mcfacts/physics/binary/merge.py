@@ -8,8 +8,7 @@ from mcfacts.physics.point_masses import time_of_orbital_shrinkage, si_from_r_g
 
 
 def chi_effective(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angles_2, bin_ang_mom):
-    """
-    Calculate the effective spin :math:`\chi_{\rm eff}` associated with a merger.
+    """Calculates the effective spin :math:`\chi_{\rm eff}` associated with a merger.
 
     The measured effective spin of a merger is calculated as
 
@@ -17,18 +16,18 @@ def chi_effective(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angl
 
     Parameters
     ----------
-    masses_1 : numpy array
-        Mass of object 1.
-    masses_2 : numpy array
-        Mass of object 2.
-    spins_1 : numpy array
-        Dimensionless spin magnitude of object 1.
-    spins_2 : numpy array
-        Dimensionless spin magnitude of object 2.
-    spin_angles_1 : numpy array
-        Dimensionless spin angle of object 1.
-    spin_angles_2 : numpy array
-        Dimensionless spin angle of object 2.
+    masses_1 : numpy.ndarray
+        Mass [M_sun] of object 1 with :obj:`float` type
+    masses_2 : numpy.ndarray
+        Mass [M_sun] of object 2 with :obj:`float` type
+    spins_1 : numpy.ndarray
+        Spin magnitude [unitless] of object 1 with :obj:`float` type
+    spins_2 : numpy.ndarray
+        Spin magnitude [unitless] of object 2 with :obj:`float` type
+    spin_angles_1 : numpy.ndarray
+        Spin angle [radian] of object 1 with :obj:`float` type
+    spin_angles_2 : numpy.ndarray
+        Spin angle [radian] of object 2 with :obj:`float` type
     bin_ang_mom : int/ndarray
         Magnitude of the binary's mutual angular momentum. If 1, the binary
         is prograde (aligned with disk angular momentum). If -1, the binary
@@ -36,8 +35,8 @@ def chi_effective(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angl
 
     Returns
     -------
-    chi_eff : numpy array
-        The effective spin value for these object(s).
+    chi_eff : numpy.ndarray
+        The effective spin value [unitless] for these object(s) with :obj:`float` type
     """
 
     total_masses = masses_1 + masses_2
@@ -56,8 +55,7 @@ def chi_effective(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angl
 
 
 def chi_p(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angles_2, bin_orbs_inc):
-    """
-    Calculate the precessing spin component :math:`\chi_p` associated with a merger.
+    """Calculates the precessing spin component :math:`\chi_p` associated with a merger.
 
     chi_p = max[spin_1_perp, (q(4q+3)/(4+3q))* spin_2_perp]
 
@@ -72,25 +70,25 @@ def chi_p(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angles_2, bi
 
     Parameters
     ----------
-    masses_1 : numpy array
-        Mass of object 1.
-    masses_2 : numpy array
-        Mass of object 2.
-    spins_1 : numpy array
-        Dimensionless spin magnitude of object 1.
-    spins_2 : numpy array
-        Dimensionless spin magnitude of object 2.
-    spin_angles_1 : numpy array
-        Dimensionless spin angle of object 1.
-    spin_angles_2 : numpy array
-        Dimensionless spin angle of object 2.
-    bin_orbs_inc : numpy array
-        Angle of inclination of the binary with respect to the disk.
+    masses_1 : numpy.ndarray
+        Mass [M_sun] of object 1 with :obj:`float` type
+    masses_2 : numpy.ndarray
+        Mass [M_sun] of object 2 with :obj:`float` type
+    spins_1 : numpy.ndarray
+        Spin magnitude [unitless] of object 1 with :obj:`float` type
+    spins_2 : numpy.ndarray
+        Spin magnitude [unitless] of object 2 with :obj:`float` type
+    spin_angles_1 : numpy.ndarray
+        Spin angle [radian] of object 1 with :obj:`float` type
+    spin_angles_2 : numpy.ndarray
+        Spin angle [radian] of object 2 with :obj:`float` type
+    bin_orbs_inc : numpy.ndarray
+        Angle of inclination [radian] of the binary with respect to the disk.
 
     Returns
     -------
-    chi_p : numpy array
-        precessing spin component for these objects
+    chi_p : numpy.ndarray
+        Precessing spin component for these objects
     """
 
     # If mass_1 is the dominant binary component
@@ -115,10 +113,8 @@ def chi_p(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angles_2, bi
     mass_ratios[masses_1 > masses_2] = masses_2[masses_1 > masses_2] / masses_1[masses_1 > masses_2]
     mass_ratios[masses_2 > masses_1] = masses_1[masses_2 > masses_1] / masses_2[masses_2 > masses_1]
 
-    #spins_1_perp[masses_1 > masses_2] = np.abs(spins_1[masses_1 > masses_2]) * np.sin(spin_angles_1[masses_1 > masses_2])
     spins_1_perp[masses_2 > masses_1] = np.abs(spins_2[masses_2 > masses_1]) * np.sin(spin_angles_2[masses_2 > masses_1])
 
-    #spins_2_perp[masses_1 > masses_2] = np.abs(spins_2[masses_1 > masses_2]) * np.sin(spin_angles_2[masses_1 > masses_2])
     spins_2_perp[masses_2 > masses_1] = np.abs(spins_1[masses_2 > masses_1]) * np.sin(spin_angles_1[masses_2 > masses_1])
 
     mass_ratio_factors = mass_ratios * ((4.0 * mass_ratios) + 3.0) / (4.0 + (3.0 * mass_ratios))
@@ -132,31 +128,32 @@ def chi_p(masses_1, masses_2, spins_1, spins_2, spin_angles_1, spin_angles_2, bi
 
 
 def normalize_tgw(smbh_mass, inner_disk_outer_radius):
-    """Gravitational wave timescale normalization.
+    """Normalizes Gravitational wave timescale.
 
     Calculate the normalization for timescale of a merger (in yrs) due to GW emission.
     From Peters(1964):
 
-    t_gw approx (5/256)* c^5/G^3 *a_b^4/(M_{b}^{2}mu_{b}) assuming ecc=0.0.
+    .. math:: t_{gw} \approx (5/256)* c^5/G^3 *a_b^4/(M_{b}^{2}mu_{b})
+    assuming ecc=0.0.
 
     For a_b in units of r_g=GM_smbh/c^2 we find
 
-    t_gw=(5/256)*(G/c^3)*(a/r_g)^{4} *(M_s^4)/(M_b^{2}mu_b)
+    .. math:: t_{gw}=(5/256)*(G/c^3)*(a/r_g)^{4} *(M_s^4)/(M_b^{2}mu_b)
 
-    Put bin_mass_ref in units of 10Msun is a reference mass.
+    Put bin_mass_ref in units of 10Msun (is a reference mass).
     reduced_mass in units of 2.5Msun.
 
     Parameters
     ----------
     smbh_mass : float
-        Mass of the supermassive black hole.
+        Mass [M_sun] of the SMBH
     inner_disk_outer_radius : float
-        Outer radius of the inner disk (r_g)
+        Outer radius of the inner disk [r_g]
 
     Returns
     -------
-    float
-        normalization to gravitational wave timescale
+    time_gw_normalization : float
+        Normalization to gravitational wave timescale [s]
     """
 
     bin_mass_ref = 10.0
@@ -179,28 +176,27 @@ def normalize_tgw(smbh_mass, inner_disk_outer_radius):
 
 
 def merged_mass(masses_1, masses_2, spins_1, spins_2):
-    """
-    Calculate the final mass of a merged binary.
+    """Calculates the final mass of a merged binary.
 
     Using approximations from Tichy \& Maronetti (2008) where
-    m_final=(M1+M2)*[1.0-0.2nu-0.208nu^2(a1+a2)]
+    m_final=(M_1+M_2)*[1.0-0.2\nu-0.208\nu^2(a_1+a_2)]
     where nu is the symmetric mass ratio or nu=q/((1+q)^2)
 
     Parameters
     ----------
-    masses_1 : numpy array
-        Masses of objects 1.
-    masses_2 : numpy array
-        Masses of objects 2.
-    spins_1 : numpy array
-        Spin magnitudes of objects 1.
-    spins_2 : numpy array
-        Spin magnitudes of objects 2.
+    masses_1 : numpy.ndarray
+        Mass [M_sun] of object 1 with :obj:`float` type
+    masses_2 : numpy.ndarray
+        Mass [M_sun] of object 2 with :obj:`float` type
+    spins_1 : numpy.ndarray
+        Spin magnitude [unitless] of object 1 with :obj:`float` type
+    spins_2 : numpy.ndarray
+        Spin magnitude [unitless] of object 2 with :obj:`float` type
 
     Returns
     -------
-    merged_masses: numpy array
-        Final mass of merger remnant.
+    merged_masses: numpy.ndarray
+        Final mass [M_sun] of merger remnant with :obj:`float` type
     """
 
     mass_ratios = np.ones(masses_1.size)
@@ -220,29 +216,28 @@ def merged_mass(masses_1, masses_2, spins_1, spins_2):
 
 
 def merged_spin(masses_1, masses_2, spins_1, spins_2):
-    """
-    Calculate the spin magnitude of a merged binary.
+    """Calculates the spin magnitude of a merged binary.
 
     Only depends on M1,M2,a1,a2 and the binary ang mom around its center of mass.
     Using approximations from Tichy \& Maronetti(2008) where
-    a_final=0.686(5.04nu-4.16nu^2) +0.4[a1/((0.632+1/q)^2)+ a2/((0.632+q)^2)]
+    :math:`a_{final}=0.686(5.04\nu-4.16\nu^2) +0.4[a_{1}/((0.632+1/q)^2)+ a_2/((0.632+q)^2)]`
     where q=m_2/m_1 and nu=q/((1+q)^2)
 
     Parameters
     ----------
-    masses_1 : numpy array
-        Masses of objects 1.
-    masses_2 : numpy array
-        Masses of objects 2.
-    spins_1 : numpy array
-        Spin magnitudes of objects 1.
-    spins_2 : numpy array
-        Spin magnitudes of objects 2.
+    masses_1 : numpy.ndarray
+        Mass [M_sun] of object 1 with :obj:`float` type
+    masses_2 : numpy.ndarray
+        Mass [M_sun] of object 2 with :obj:`float` type
+    spins_1 : numpy.ndarray
+        Spin magnitude [unitless] of object 1 with :obj:`float` type
+    spins_2 : numpy.ndarray
+        Spin magnitude [unitless] of object 2 with :obj:`float` type
 
     Returns
     -------
     merged_spins : numpy array
-        Final spin magnitude of merger remnant.
+        Final spin magnitude [unitless] of merger remnant with :obj:`float` type
     """
 
     mass_ratios = np.ones(masses_1.size)

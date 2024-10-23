@@ -7,43 +7,47 @@ from astropy.units import cds
 
 
 def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, smbh_mass, agn_redshift, flag_include_old_gw_freq=1):
-    """
+    """Calculates GW strain [unitless] and frequency [Hz]
+
     This function takes in two masses, their separation, the previous frequency, and the redshift and
     calculates the new GW strain (unitless) and frequency (Hz).
 
-    Note from Saavik about hardcoding strain_factor to 4e3 if nu_gw > 1e-6:
-        basically we are implicitly assuming if the frequency is low enough the source is monochromatic
-        in LISA over the course of 1yr, so that's where those values come from... and we do need to make
-        a decision about that... and that's an ok decision for now. But if someone were to be considering
-        a different observatory they might not like that decision?
-
     Parameters
     ----------
-    mass_1 : numpy array
-        mass of object 1
-    mass_2 : numpy array
-        mass of object 2
-    obj_sep : numpy array
-        separation between both objects, in R_g of the SMBH = GM_smbh/c^2
+    mass_1 : numpy.ndarray
+        Mass [M_sun] of object 1 with :obj:`float` type
+    mass_2 : numpy.ndarray
+        Mass [M_sun] of object 2 with :obj:`float` type
+    obj_sep : numpy.ndarray
+        Separation between both objects [r_{g,SMBH}] with :obj:`float` type
     timestep_duration_yr : float, or -1 if not given
-        current timestep in years
-    old_gw_freq : numpy array, or -1 if not given
-        previous GW frequency
+        Current timestep [yr]
+    old_gw_freq : numpy.ndarray, or -1 if not given
+        Previous GW frequency [Hz] with :obj:`float` type
     smbh_mass : float
-        mass of the SMBH in Msun
+        Mass [M_sun] of the SMBH
     agn_redshift : float
-        redshift of the SMBH
+        Redshift [unitless] of the SMBH
     flag_include_old_gw_freq : boolean
-        flag indicating if old_gw_freq should be included in calculations
-        if not, we use the hardcoded value (see note above)
+        Flag indicating if old_gw_freq should be included in calculations
+        if not, we use the hardcoded value (see note below)
         0 if no, 1 if yes
 
     Returns
     -------
-    char_strain : numpy array
-        dimensionless characteristic strain
-    nu_gw : numpy array
-        GW frequency in Hz
+    char_strain : numpy.ndarray
+        Characteristic strain [unitless] with :obj:`float` type
+    nu_gw : numpy.ndarray
+        GW frequency [Hz] with :obj:`float` type
+
+    Notes
+    -----
+    Note from Saavik about hardcoding strain_factor to 4e3 if nu_gw > 1e-6:
+    basically we are implicitly assuming if the frequency is low enough the source is monochromatic
+    in LISA over the course of 1yr, so that's where those values come from... and we do need to make
+    a decision about that... and that's an ok decision for now. But if someone were to be considering
+    a different observatory they might not like that decision?
+
     """
 
     redshift_d_obs_dict = {0.1: 421*u.Mpc,
@@ -98,6 +102,22 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
 
 
 def evolve_gw(blackholes_binary, smbh_mass, agn_redshift):
+    """Wrapper function to calculate GW strain [unitless] and frequency [Hz] for BBH with no previous GW frequency
+
+    Parameters
+    ----------
+    blackholes_binary : AGNBinaryBlackHole
+        Binary black hole parameters
+    smbh_mass : float
+        Mass [M_sun] of the SMBH
+    agn_redshift : float
+        Redshift [unitless] of the SMBH
+
+    Returns
+    -------
+    blackholes_binary : AGNBinaryBlackHole
+        BBH with GW strain [unitless] and frequency [Hz] updated
+    """
 
     char_strain, nu_gw = gw_strain_freq(mass_1=blackholes_binary.mass_1,
                                         mass_2=blackholes_binary.mass_2,
@@ -116,34 +136,29 @@ def evolve_gw(blackholes_binary, smbh_mass, agn_redshift):
 
 
 def bbh_gw_params(blackholes_binary, bh_binary_id_num_gw, smbh_mass, timestep_duration_yr, old_bbh_freq, agn_redshift):
-    """
-    This function evaluates the binary gravitational wave frequency and strain at the end of each timestep_duration_yr.
-    Set up binary GW frequency nu_gw = 1/pi *sqrt(GM_bin/a_bin^3). Set up binary strain of GW
-    h = (4/d_obs) *(GM_chirp/c^2)*(pi*nu_gw*GM_chirp/c^3)^(2/3)
-    where m_chirp =(M_1 M_2)^(3/5) /(M_bin)^(1/5)
-
+    """Wrapper function to calculate GW strain and frequency for BBH at the end of each timestep
 
     Parameters
     ----------
     blackholes_binary : AGNBinaryBlackHole
-        Full binary array.
-    bh_binary_id_num_gw : numpy array
-        ID numbers of binaries with separations below min_bbh_gw_separation
+        Binary black hole parameters
+    bh_binary_id_num_gw : numpy.ndarray
+        ID numbers of binaries with separations below :math:`\mathtt{min_bbh_gw_separation}` with :obj:`float` type
     smbh_mass : float
-        Mass of the SMBH
+        Mass [M_sun] of the SMBH
     timestep_duration_yr : float
-        timestep in years
-    old_bbh_freq : numpy array
-        Previous gw_freq
+        Length of timestep [yr]
+    old_bbh_freq : numpy.ndarray
+        Previous GW frequency [Hz] with :obj:`float` type
     agn_redshift : float
-        Redshift of the AGN, used to set d_obs
+        Redshift [unitless] of the AGN, used to set d_obs
 
     Returns
     -------
-    char_strain : numpy array
-        characteristic strain, unitless
-    nu_gw : numpy array
-        GW frequency in Hz
+    char_strain : numpy.ndarray
+        Characteristic strain [unitless] with :obj:`float` type
+    nu_gw : numpy.ndarray
+        GW frequency [Hz] with :obj:`float` type
     """
 
     num_tracked = bh_binary_id_num_gw.size

@@ -13,9 +13,32 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
 
     Appropriate for BH, NS, maaaybe WD?--check using Wang, Zhu & Lin 2024, MNRAS, 528, 4958 (WZL).
 
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    disk_bh_retro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of retrograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_bh_retro_masses : numpy.ndarray
+        Masses [M_sun] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_ecc : numpy.ndarray
+        Orbital eccentricities [unitless] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_inc : numpy.ndarray
+        Orbital inclinations [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_arg_periapse : numpy.ndarray
+        Argument of periapse [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    timestep_duration_yr : float
+        Length of timestep [yr]
+    disk_surf_density_func : function
+        Method provides the AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+
+    Returns
+    -------
+    disk_bh_retro_orbs_ecc_new : numpy.ndarray
+        Orbital inclinations [radian] of retrograde singletons BH at end of a timestep with :obj:`float` type
+
     Notes
     -----
-
     It returns the new locations of the retrograde
     orbiters after 1 timestep_duration_yr. Note we have assumed the masses of the orbiters are
     negligible compared to the SMBH (<1% should be fine).
@@ -29,31 +52,6 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
     Also, I think this function will still work fine if you feed it prograde bh
     just change the variable name in the function call... (this is not true for migration)
     Testing implies that inc=0 or pi is actually ok, at least for omega=0 or pi
-
-    Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bh_retro_orbs_a : float array
-        locations of retrograde singleton BH at start of a timestep in units of gravitational radii (r_g=GM_SMBH/c^2)
-        (actually we assume this is the same as the semi-major axis)
-    disk_bh_retro_masses : float array
-        masses of retrograde singleton BH at start of a timestep in units of solar masses
-    disk_bh_retro_orbs_ecc : float array
-        orbital eccentricities of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_orbs_inc : float array
-        orbital inclinations of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_arg_periapse : float array
-        argument of periapse of retrograde singleton BH at start of a timestep.
-    timestep_duration_yr : float
-        size of a timestep in years
-    disk_surf_density_func : function
-        method provides the AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-
-    Returns
-    -------
-    disk_bh_retro_orbs_ecc_new : float array
-        orbital inclinations of retrograde singletons BH at end of a timestep.
     """
 
     # throw most things into SI units (that's right, ENGINEER UNITS!)
@@ -102,13 +100,42 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
     return disk_bh_retro_orbs_ecc_new
 
 
-
 def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs_a, disk_bh_retro_orbs_ecc,
                              disk_bh_retro_orbs_inc, disk_bh_retro_arg_periapse, disk_surf_density_func, timestep_duration_yr):
     """Evolve the orbit of initially-embedded retrograde black hole orbiters due to disk interactions.
 
     This is a CRUDE version of evolution, future upgrades may couple to SpaceHub.
 
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    disk_bh_retro_masses : numpy.ndarray
+        Mass [M_sun] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of retrograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_bh_retro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_inc : numpy.ndarray
+        Orbital inclination [radians] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_arg_periapse : numpy.ndarray
+        Argument of periapse [unitless] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+    timestep_duration_yr : float
+        Length of a timestep [yr]
+
+    Returns
+    -------
+    disk_bh_retro_orbs_ecc_new : numpy.ndarray
+        Updated value of eccentricity [unitless] with :obj:`float` typeafter one timestep_duration_yr assuming gas only evolution hacked together badly...
+    disk_bh_retro_orbs_a_new : numpy.ndarray
+        Updated value of semi-major axis [r_{g,SMBH}] with :obj:`float` typeafter one timestep_duration_yr assuming gas only evolution hacked together badly...
+    disk_bh_retro_orbs_inc_new : numpy.ndarray
+        Updated value of orbital inclination [radians] with :obj:`float` typeafter one timestep_duration_yr assuming gas only evolution hacked together badly...
+
+    Notes
+    -----
     To avoid having to install and couple to SpaceHub, and run N-body code
     this is a distinctly half-assed treatment of retrograde orbiters, based
     LOOSELY on Wang, Zhu & Lin 2024 (WZL). Evolving all orbital params simultaneously.
@@ -116,31 +143,6 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     Hardcoding some stuff from WZL figs 7, 8 & 12 (see comments).
     Arg of periapse = w in comments below
 
-    Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bh_retro_masses : float array
-        mass of retrograde singleton BH at start of a timestep in units of solar masses
-    disk_bh_retro_orbs_a : float array
-        locations of retrograde singleton BH at start of timestep_duration_yr in units of gravitational radii (r_g=GM_SMBH/c^2)
-        (actually we assume this is the same as the semi-major axis)
-    disk_bh_retro_orbs_ecc : float array
-        orbital eccentricity of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_orbs_inc : float array
-        orbital inclination in radians of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_arg_periapse : float array
-        argument of periapse of retrograde singleton BH at start of a timestep.
-    disk_surf_density_func : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-    timestep_duration_yr : float
-        length of a timestep in years
-
-    Returns
-    -------
-    disk_bh_retro_orbs_ecc_new, disk_bh_retro_orbs_a_new, disk_bh_retro_orbs_inc_new : float arrays
-        updated values of eccentricity, semimajor axis (in r_g) and inclination (in radians)
-        after one timestep_duration_yr assuming gas only evolution hacked together badly...
     """
     # first handle cos(w)=+/-1 (assume abs(cos(w))>0.5)
     #   this evolution is multistage:
@@ -382,25 +384,24 @@ def tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
     Parameters
     ----------
     smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bh_retro_orbs_a : float array
-        locations of retrograde singleton BH at start of timestep_duration_yr in units of gravitational radii (r_g=GM_SMBH/c^2)
-        (actually we assume this is the same as the semi-major axis)
-    disk_bh_retro_masses : float array
-        mass of retrograde singleton BH at start of timestep_duration_yr in units of solar masses
-    disk_bh_retro_arg_periapse : float array
-        argument of periapse of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_orbs_ecc : float array
-        orbital eccentricity of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_orbs_inc : float array
-        orbital inclination in radians of retrograde singleton BH at start of a timestep.
+        Mass [M_sun] of supermassive black hole
+    disk_bh_retro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of retrograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_bh_retro_masses : numpy.ndarray
+        Mass [M_sun] of retrograde singleton BH at start of timestep_duration_yr with :obj:`float` type
+    disk_bh_retro_arg_periapse : numpy.ndarray
+        Argument of periapse [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_inc : numpy.ndarray
+        Orbital inclination [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
     disk_surf_density_func : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
 
     Returns
     -------
-    tau_i_dyn : float array
-        inclination damping timescale in seconds
+    tau_i_dyn : numpy.ndarray
+        Inclination damping timescale [s]
     """
     # throw most things into SI units (that's right, ENGINEER UNITS!)
     #    or more locally convenient variable names
@@ -439,9 +440,33 @@ def tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
 
 def tau_semi_lat(smbh_mass, retrograde_bh_locations, retrograde_bh_masses, retrograde_bh_orb_ecc, retrograde_bh_orb_inc,
                  retro_arg_periapse, disk_surf_model):
-    """This function calculates how fast the semi-latus rectum of a retrograde single orbiter
-    changes due to dynamical friction (appropriate for BH, NS, maaaybe WD?--check) using
-    Wang, Zhu & Lin 2024, MNRAS, 528, 4958 (WZL). It returns the timescale for the retrograde
+    """Calculates how fast the semi-latus rectum of a retrograde single orbiter changes due to dynamical friction
+
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    retrograde_bh_locations : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of retrograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    retrograde_bh_masses : numpy.ndarray
+        Mass [M_sun] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    retrograde_bh_orb_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    retrograde_bh_orb_inc : numpy.ndarray
+        Orbital inclination [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    retro_arg_periapse : numpy.ndarray
+        Argument of periapse [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_surf_model : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+
+    Returns
+    -------
+    tau_p_dyn : numpy.ndarray
+        Timescale [s] for the evolution of the semi-latus rectum of each object
+
+    Notes
+    -----
+    Uses Wang, Zhu & Lin 2024, MNRAS, 528, 4958 (WZL). It returns the timescale for the retrograde
     orbiters to change their semi-latus rectum (eqn 70). Note we have assumed the masses of
     the orbiters are negligible compared to the SMBH (<1% should be fine).
 
@@ -451,27 +476,7 @@ def tau_semi_lat(smbh_mass, retrograde_bh_locations, retrograde_bh_masses, retro
     you get something like sensible answers.
     So we gotta watch out for this
 
-    Parameters
-    ----------
-    smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    retrograde_bh_locations : float array
-        locations of retrograde singleton BH at start of timestep_duration_yr in units of gravitational radii (r_g=GM_SMBH/c^2)
-    retrograde_bh_masses : float array
-        mass of retrograde singleton BH at start of a timestep in units of solar masses
-    retrograde_bh_orb_ecc : float array
-        orbital eccentricity of retrograde singleton BH at start of a timestep.
-    retrograde_bh_orb_inc : float array
-        orbital inclination of retrograde singleton BH at start of a timestep.
-    retro_arg_periapse : float array
-        argument of periapse of retrograde singleton BH at start of a timestep.
-    disk_surf_model : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
-
-    Returns
-    -------
-    tau_p_dyn : float array
-        timescales for the evolution of the semi-latus rectum of each object
+    Appropriate for BH, NS, maaaybe WD?--check
     """
     # throw most things into SI units (that's right, ENGINEER UNITS!)
     #    or more locally convenient variable names
@@ -516,30 +521,32 @@ def tau_semi_lat(smbh_mass, retrograde_bh_locations, retrograde_bh_masses, retro
 def tau_ecc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_retro_arg_periapse,
                 disk_bh_retro_orbs_ecc, disk_bh_retro_orbs_inc, disk_surf_density_func):
     """Computes eccentricity & semi-maj axis damping timescale from actual variables
-    not including migration; used only for scaling.
+
+    This does not including migration; used only for scaling.
 
     Parameters
     ----------
     smbh_mass : float
-        mass of supermassive black hole in units of solar masses
-    disk_bh_retro_orbs_a : float array
-        locations of retrograde singleton BH at start of timestep_duration_yr in units of gravitational radii (r_g=GM_SMBH/c^2)
-        (actually we assume this is the same as the semi-major axis)
+        Mass [M_sun] of supermassive black hole
+    disk_bh_retro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of retrograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
     disk_bh_retro_masses : float array
-        mass of retrograde singleton BH at start of timestep_duration_yr in units of solar masses
-    disk_bh_retro_arg_periapse : float array
-        argument of periapse of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_orbs_ecc : float array
-        orbital eccentricity of retrograde singleton BH at start of a timestep.
-    disk_bh_retro_orbs_inc : float array
-        orbital inclination in radians of retrograde singleton BH at start of a timestep.
+        Mass [M_sun] of retrograde singleton BH at start of timestep_duration_yr with :obj:`float` type
+    disk_bh_retro_arg_periapse : numpy.ndarray
+        Argument of periapse [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_ecc : numpy.ndarray
+        Orbital eccentricity [unitless] of retrograde singleton BH at start of a timestep with :obj:`float` type
+    disk_bh_retro_orbs_inc : numpy.ndarray
+        Orbital inclination [radian] of retrograde singleton BH at start of a timestep with :obj:`float` type
     disk_surf_density_func : function
-        returns AGN gas disk surface density in kg/m^2 given a distance from the SMBH in r_g
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
 
     Returns
     -------
-    tau_e_dyn, tau_a_dyn : float arrays
-        eccentricty, semi-major axis damping timescales in seconds
+    tau_e_dyn : numpy.ndarray
+        Eccentricity damping timescale [s]
+    tau_a_dyn : numpy.ndarray
+        Semi-major axis damping timescale [s]
     """
     # throw most things into SI units (that's right, ENGINEER UNITS!)
     #    or more locally convenient variable names

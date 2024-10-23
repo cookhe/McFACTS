@@ -13,6 +13,35 @@ def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_
     So, Ratio < 1, slows the inward migration of an object. Ratio > 1 sends the object migrating outwards.
     The direction & magnitude of migration (effected by feedback) will be executed in type1.py.
 
+    Parameters
+    ----------
+    disk_bh_pro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of prograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_opacity_model : lambda
+        Opacity as a function of radius
+    disk_bh_eddington_ratio : float
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
+        Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
+    disk_alpha_viscosity : float
+        Disk gas viscocity [units??] alpha parameter
+    disk_radius_outer : float
+            Outer radius [r_{g,SMBH}] of the disk
+    thermal_feedback_max : float
+        Maximum allowed value for the ratio of radiative feedback torque
+        to Type 1 migration torque.
+
+    Returns
+    -------
+    ratio_feedback_migration_torque : numpy.ndarray
+        Ratio of feedback torque to migration torque with :obj:`float` type
+
+    Notes
+    -----
     The ratio of torque due to heating to Type 1 migration torque is calculated as
     R   = Gamma_heat/Gamma_mig
         ~ 0.07 (speed of light/ Keplerian vel.)(Eddington ratio)(1/optical depth)(1/alpha)^3/2
@@ -29,39 +58,12 @@ def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_
         ~0.243 (R/10^4r_g)^(1/2) (Sigma/5.e5)  comparable.
         >1 (a/2x10^4r_g)^(1/2)(Sigma/) migration is *outward* at >=20,000r_g in SG03
         >10 (a/7x10^4r_g)^(1/2)(Sigma/) migration outwards starts to runaway in SG03
-
-    TO-DO : kappa needs to be returned from pAGN model or set by user. Currently hardcoded below.
-
-    Parameters
-    ----------
-
-    disk_bh_pro_orbs_a : float array
-        Prograde singleton BH semi-major axes
-    disk_surf_density_func : function
-        AGN gas disk surface density interpolator function
-    disk_opacity_model : lambda
-        Opacity as a function of radius
-    disk_bh_eddington_ratio : float
-        The accretion rate Eddington ratio for black holes in the disk
-    disk_alpha_viscosity : float
-        Disk gas viscocity alpha parameter
-    disk_radius_outer : float
-        Final element of disk_model_radius_array (units of r_g)
-    thermal_feedback_max : float
-        Maximum allowed value for the ratio of radiative feedback torque
-        to Type 1 migration torque.
-
-    Returns
-    -------
-    ratio_feedback_migration_torque : float array
-        ratio of feedback torque to migration torque for each entry in prograde_bh_locations
     """
 
     # get disk surface density at black hole orbital semi-major axes
     disk_surface_density = disk_surf_density_func(disk_bh_pro_orbs_a)
 
     #Define kappa (or set up a function to call).
-    #kappa = 10^0.76 cm^2/g = 10^(0.76) (10^-2m)^2/10^-3kg=10^(0.76-1)=10^(-0.24) m^2/kg to match units of Sigma
     disk_opacity = disk_opacity_func(disk_bh_pro_orbs_a)
 
     ratio_feedback_migration_torque = 0.07 * (1/disk_opacity) * (disk_alpha_viscosity)**(-1.5) * \
@@ -83,9 +85,36 @@ def feedback_stars_hankla(disk_stars_pro_orbs_a, disk_surf_density_func, disk_op
     which yields the ratio of heating torque to migration torque.
     Heating torque is directed outwards.
     So, Ratio < 1, slows the inward migration of an object. Ratio > 1 sends the object
-     migrating outwards.
+    migrating outwards.
     The direction & magnitude of migration (effected by feedback) will be executed in type1.py.
 
+    Parameters
+    ----------
+    disk_bh_pro_orbs_a : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of prograde singleton BH at start of a timestep (math:`r_g=GM_{SMBH}/c^2`) with :obj:`float` type
+    disk_surf_density_func : function
+        Returns AGN gas disk surface density [kg/m^2] given a distance [r_{g,SMBH}] from the SMBH
+        can accept a simple float (constant), but this is deprecated
+    disk_opacity_model : lambda
+        Opacity as a function of radius
+    disk_bh_eddington_ratio : float
+        Accretion rate of fully embedded stellar mass black hole [Eddington accretion rate].
+        1.0=embedded BH accreting at Eddington.
+        Super-Eddington accretion rates are permitted.
+        User chosen input set by input file
+    disk_alpha_viscosity : float
+        Disk gas viscocity [units??] alpha parameter
+    disk_radius_outer : float
+            Outer radius [r_{g,SMBH}] of the disk
+
+
+    Returns
+    -------
+    ratio_feedback_to_mig : numpy.ndarray
+        Ratio of feedback torque to migration torque with :obj:`float` type
+
+    Notes
+    -----
     The ratio of torque due to heating to Type 1 migration torque is calculated as
     R   = Gamma_heat/Gamma_mig
         ~ 0.07 (speed of light/ Keplerian vel.)(Eddington ratio)(1/optical depth)(1/alpha)^3/2
@@ -104,36 +133,12 @@ def feedback_stars_hankla(disk_stars_pro_orbs_a, disk_surf_density_func, disk_op
         ~0.243 (R/10^4r_g)^(1/2) (Sigma/5.e5)  comparable.
         >1 (a/2x10^4r_g)^(1/2)(Sigma/) migration is *outward* at >=20,000r_g in SG03
         >10 (a/7x10^4r_g)^(1/2)(Sigma/) migration outwards starts to runaway in SG03
-
-    TO-DO : kappa needs to be returned from pAGN model or set by user. Currently hardcoded below.
-
-    Parameters
-    ----------
-
-    disk_bh_pro_orbs_a : float array
-        Prograde singleton BH semi-major axes
-    disk_surf_density_func : function
-        AGN gas disk surface density interpolator function
-    disk_opacity_model : lambda
-        Opacity as a function of radius
-    disk_bh_eddington_ratio : float
-        The accretion rate Eddington ratio for black holes in the disk
-    disk_alpha_viscosity : float
-        Disk gas viscocity alpha parameter
-    disk_radius_outer : float
-            final element of disk_model_radius_array (units of r_g)
-
-    Returns
-    -------
-    ratio_feedback_to_mig : float array
-        ratio of feedback torque to migration torque for each entry in prograde_bh_locations
     """
 
     # get disk surface density at black hole orbital semi-major axes
     disk_surface_density = disk_surf_density_func(disk_stars_pro_orbs_a)
 
     #Define kappa (or set up a function to call).
-    #kappa = 10^0.76 cm^2/g = 10^(0.76) (10^-2m)^2/10^-3kg=10^(0.76-1)=10^(-0.24) m^2/kg to match units of Sigma
     disk_opacity = disk_opacity_func(disk_stars_pro_orbs_a)
 
     ratio_feedback_migration_torque = 0.07 * (1/disk_opacity) * (disk_alpha_viscosity)**(-1.5) * \
