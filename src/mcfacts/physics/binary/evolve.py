@@ -168,7 +168,10 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     return (blackholes_binary)
 
 
-def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacity_func, disk_bh_eddington_ratio, disk_alpha_viscosity, disk_radius_outer):
+def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
+                            disk_opacity_func, disk_bh_eddington_ratio,
+                            disk_alpha_viscosity, disk_radius_outer,
+                            thermal_feedback_max):
     """Calculates ratio of heating torque to migration torque using Eqn. 28 in Hankla, Jiang & Armitage (2020)
 
     Parameters
@@ -189,6 +192,9 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
         Disk gas viscocity [units??] alpha parameter
     disk_radius_outer : float
             Outer radius [r_{g,SMBH}] of the disk
+    thermal_feedback_max : float
+        Maximum allowed value for the ratio of radiative feedback torque
+        to Type 1 migration torque.
 
     Returns
     -------
@@ -232,7 +238,11 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
 
     ratio_heat_mig_torques_bin_com = 0.07 * (1 / disk_opacity) * np.power(disk_alpha_viscosity, -1.5) * disk_bh_eddington_ratio * np.sqrt(blackholes_binary.bin_orb_a) / disk_surface_density_at_location
 
-    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = np.ones(np.sum(blackholes_binary.bin_orb_a > disk_radius_outer))
+    # set ratio = 1 (no migration) for binaries at or beyond the disk outer radius
+    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = 1.
+
+    # apply the cap to the feedback ratio
+    ratio_heat_mig_torques_bin_com[np.where(ratio_heat_mig_torques_bin_com > thermal_feedback_max)] = thermal_feedback_max
 
     return (ratio_heat_mig_torques_bin_com)
 
@@ -294,7 +304,8 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
         disk_aspect_ratio = disk_aspect_ratio_model(bin_com)
 
     # This is an exact copy of mcfacts.physics.migration.type1.type1.
-    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/bin_mass) / disk_surface_density) / np.sqrt(bin_com)
+    tau_mig = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * \
+               (smbh_mass/bin_mass) / disk_surface_density) / np.sqrt(bin_com)
     # ratio of timestep_duration_yr to tau_mig (timestep_duration_yr in years so convert)
     dt = timestep_duration_yr * scipy.constants.year / tau_mig
     # migration distance is original locations times fraction of tau_mig elapsed
@@ -329,31 +340,18 @@ def bin_migration(smbh_mass, disk_bin_bhbh_pro_array, disk_surf_model, disk_aspe
                 disk_bin_bhbh_pro_orbs_a[actual_index] = bin_com[actual_index]
 
     # Find indices of objects where feedback ratio >1; these migrate outwards.
-    index_outwards_modified = np.where(feedback_ratio >1)[0]
+    index_outwards_modified = np.where(feedback_ratio > 1)[0]
 
     if index_outwards_modified.size > 0:
-        disk_bin_bhbh_pro_orbs_a[index_outwards_modified] = bin_com[index_outwards_modified] +(migration_distance[index_outwards_modified]*(feedback_ratio[index_outwards_modified]-1))
+        disk_bin_bhbh_pro_orbs_a[index_outwards_modified] = bin_com[index_outwards_modified] + \
+            (migration_distance[index_outwards_modified] * (feedback_ratio[index_outwards_modified]-1))
         # catch to keep stuff from leaving the outer radius of the disk!
         disk_bin_bhbh_pro_orbs_a[index_outwards_modified[np.where(disk_bin_bhbh_pro_orbs_a[index_outwards_modified] > disk_radius_outer)]] = disk_radius_outer
 
     # Find indices where feedback ratio is identically 1; shouldn't happen (edge case) if feedback on, but == 1 if feedback off.
     index_unchanged = np.where(feedback_ratio == 1)[0]
     if index_unchanged.size > 0:
-        # If BH location > trap radius, migrate inwards
-        for i in range(0,index_unchanged.size):
-            locn_index = index_unchanged[i]
-            if bin_com[locn_index] > disk_radius_trap:
-                disk_bin_bhbh_pro_orbs_a[locn_index] = bin_com[locn_index] - migration_distance[locn_index]
-            # if new location is <= trap radius, set location to trap radius
-                if disk_bin_bhbh_pro_orbs_a[locn_index] <= disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[locn_index] = disk_radius_trap
-
-        # If BH location < trap radius, migrate outwards
-            if bin_com[locn_index] < disk_radius_trap:
-                disk_bin_bhbh_pro_orbs_a[locn_index] = bin_com[locn_index] + migration_distance[locn_index]
-                # if new location is >= trap radius, set location to trap radius
-                if disk_bin_bhbh_pro_orbs_a[locn_index] >= disk_radius_trap:
-                    disk_bin_bhbh_pro_orbs_a[locn_index] = disk_radius_trap
+        disk_bin_bhbh_pro_orbs_a[index_unchanged] = bin_com[index_unchanged]
 
     # Finite check
     assert np.isfinite(disk_bin_bhbh_pro_orbs_a).all(),\

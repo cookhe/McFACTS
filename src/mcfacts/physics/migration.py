@@ -6,7 +6,7 @@ import numpy as np
 import scipy
 
 
-def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr, disk_feedback_ratio_func, disk_radius_trap, disk_bh_orb_ecc_pro, disk_bh_pro_orb_ecc_crit,disk_radius_outer):
+def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr, disk_feedback_ratio, disk_radius_trap, disk_bh_orb_ecc_pro, disk_bh_pro_orb_ecc_crit,disk_radius_outer):
     """Calculates how far an object migrates in an AGN gas disk in a single timestep
 
     Assumes a gas disk surface density and aspect ratio profile, for objects of specified masses and
@@ -76,7 +76,8 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
     #   and Omega is the Keplerian orbital frequency around the SMBH
     # here smbh_mass/disk_bh_mass_pro are both in M_sun, so units cancel
     # c, G and disk_surface_density in SI units
-    tau = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/disk_bh_mass_pro) / disk_surface_density) / np.sqrt(disk_bh_orb_a_pro)
+    tau = ((disk_aspect_ratio**2)* scipy.constants.c/(3.0*scipy.constants.G) * (smbh_mass/disk_bh_mass_pro) \
+           / disk_surface_density) / np.sqrt(disk_bh_orb_a_pro)
     # ratio of timestep to tau_mig (timestep in years so convert)
     dt = timestep_duration_yr * scipy.constants.year / tau
     # migration distance is original locations times fraction of tau_mig elapsed
@@ -92,7 +93,7 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
 
     # Find indices of objects where feedback ratio <1; these still migrate inwards, but more slowly
     # feedback ratio is a tuple, so need [0] part not [1] part (ie indices not details of array)
-    disk_bh_mig_inward_mod = np.where(disk_feedback_ratio_func < 1)[0]
+    disk_bh_mig_inward_mod = np.where(disk_feedback_ratio < 1)[0]
     disk_bh_mig_inward_all = disk_bh_orb_a_pro[disk_bh_mig_inward_mod]
 
     # Given a population migrating inwards
@@ -103,13 +104,13 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
 
             # If outside trap, migrates inwards
             if disk_bh_mig_inward_all[i] > disk_radius_trap:
-                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] - (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio_func[disk_bh_mig_inward_index]))
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] - (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
                 # If inward migration takes object inside trap, fix at trap.
                 if disk_bh_pro_a_new[disk_bh_mig_inward_index] <= disk_radius_trap:
                     disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
             # If inside trap, migrate outwards
             elif disk_bh_mig_inward_all[i] < disk_radius_trap:
-                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] + (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio_func[disk_bh_mig_inward_index]))
+                disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_bh_orb_a_pro[disk_bh_mig_inward_index] + (disk_bh_dist_mig[disk_bh_mig_inward_index]*(1-disk_feedback_ratio[disk_bh_mig_inward_index]))
                 #If outward migration takes object outside trap, fix at trap.
                 if disk_bh_pro_a_new[disk_bh_mig_inward_index] >= disk_radius_trap:
                     disk_bh_pro_a_new[disk_bh_mig_inward_index] = disk_radius_trap
@@ -122,38 +123,22 @@ def type1_migration(smbh_mass, disk_bh_orb_a_pro, disk_bh_mass_pro, disk_surf_de
 
     # Find indices of objects where feedback ratio >1; these migrate outwards.
     # In Sirko & Goodman (2003) disk model this is well outside migration trap region.
-    disk_bh_mig_outward_mod = np.where(disk_feedback_ratio_func >1)[0]
+    disk_bh_mig_outward_mod = np.where(disk_feedback_ratio > 1)[0]
 
     if disk_bh_mig_outward_mod.size > 0:
-        disk_bh_pro_a_new[disk_bh_mig_outward_mod] = disk_bh_orb_a_pro[disk_bh_mig_outward_mod] +(disk_bh_dist_mig[disk_bh_mig_outward_mod]*(disk_feedback_ratio_func[disk_bh_mig_outward_mod]-1))
-        # catch to keep stuff from leaving the outer radius of the disk
-        disk_bh_pro_a_new[disk_bh_mig_outward_mod[np.where(disk_bh_pro_a_new[disk_bh_mig_outward_mod] > disk_radius_outer)]] = disk_radius_outer
+        disk_bh_pro_a_new[disk_bh_mig_outward_mod] = disk_bh_orb_a_pro[disk_bh_mig_outward_mod] + \
+            (disk_bh_dist_mig[disk_bh_mig_outward_mod]*(disk_feedback_ratio[disk_bh_mig_outward_mod]-1))
 
-    # Find indices where feedback ratio is identically 1; shouldn't happen (edge case) if feedback on, but == 1 if feedback off.
-    disk_bh_mig_unchanged = np.where(disk_feedback_ratio_func == 1)[0]
-    if disk_bh_mig_unchanged.size > 0:
-        # If BH location > trap radius, migrate inwards
-        for i in range(0, disk_bh_mig_unchanged.size):
-            disk_bh_mig_unchanged_index = disk_bh_mig_unchanged[i]
-            if disk_bh_orb_a_pro[disk_bh_mig_unchanged_index] > disk_radius_trap:
-                disk_bh_pro_a_new[disk_bh_mig_unchanged_index] = disk_bh_orb_a_pro[disk_bh_mig_unchanged_index] - disk_bh_dist_mig[disk_bh_mig_unchanged_index]
-            # if new location is <= trap radius, set location to trap radius
-                if disk_bh_pro_a_new[disk_bh_mig_unchanged_index] <= disk_radius_trap:
-                    disk_bh_pro_a_new[disk_bh_mig_unchanged_index] = disk_radius_trap
-
-            # If BH location < trap radius, migrate outwards
-            if disk_bh_orb_a_pro[disk_bh_mig_unchanged_index] < disk_radius_trap:
-                disk_bh_pro_a_new[disk_bh_mig_unchanged_index] = disk_bh_orb_a_pro[disk_bh_mig_unchanged_index] + disk_bh_dist_mig[disk_bh_mig_unchanged_index]
-                # if new location is >= trap radius, set location to trap radius
-                if disk_bh_pro_a_new[disk_bh_mig_unchanged_index] >= disk_radius_trap:
-                    disk_bh_pro_a_new[disk_bh_mig_unchanged_index] = disk_radius_trap
-    # print("bh new locations",np.sort(bh_new_locations))
-    # print('migration distance2',migration_distance, prograde_bh_orb_ecc)
-    # new locations are original ones - distance traveled
-    # bh_new_locations = prograde_bh_locations - migration_distance
+    # if the ratio is 1 migration torques balance and no migration occurs.
+    disk_bh_nomig_mod = np.where(disk_feedback_ratio == 1)[0]
+    if disk_bh_nomig_mod.size > 0:
+        disk_bh_pro_a_new[disk_bh_nomig_mod] = disk_bh_orb_a_pro[disk_bh_nomig_mod]
+    
     # Assert that things are not allowed to migrate out of the disk.
     mask_disk_radius_outer = disk_radius_outer < disk_bh_pro_a_new
     disk_bh_pro_a_new[mask_disk_radius_outer] = disk_radius_outer
+
+    # Check all black holes have new semi-major axes
     if np.sum(disk_bh_pro_a_new == 0) > 0:
         empty_mask = disk_bh_pro_a_new == 0
         print("empty_mask:",np.where(empty_mask))
