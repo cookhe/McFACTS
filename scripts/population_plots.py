@@ -687,7 +687,7 @@ def main():
     svf_ax.set_xlabel(r'$\nu_{\rm GW}$ [Hz]')  # , fontsize=20, labelpad=10)
     svf_ax.set_ylabel(r'$h_{\rm char}/\nu_{\rm GW}$')  # , fontsize=20, labelpad=10)
 
-    plt.savefig(opts.plots_directory + './gw_strain.png', format='png')
+    plt.savefig(opts.plots_directory + '/gw_strain.png', format='png')
     plt.close()
 
 
