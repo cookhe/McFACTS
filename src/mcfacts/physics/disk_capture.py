@@ -58,7 +58,7 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
     #    or more locally convenient variable names
     smbh_mass = smbh_mass * mc_const.mass_per_msun  # kg
     semi_maj_axis = disk_bh_retro_orbs_a * scipy.constants.G * smbh_mass \
-                    / (scipy.constants.c) ** 2  # m
+                    / (scipy.constants.c ** 2)  # m
     retro_mass = disk_bh_retro_masses * mc_const.mass_per_msun  # kg
     omega = disk_bh_retro_arg_periapse  # radians
     ecc = disk_bh_retro_orbs_ecc  # unitless
@@ -66,25 +66,25 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
     timestep_duration_yr = timestep_duration_yr * scipy.constants.Julian_year  # sec
 
     # period in units of sec
-    period = 2.0 * np.pi * np.sqrt(semi_maj_axis ** 3 / (scipy.constants.G * smbh_mass))
+    period = 2.0 * np.pi * np.sqrt((semi_maj_axis ** 3) / (scipy.constants.G * smbh_mass))
     # semi-latus rectum in units of meters
-    semi_lat_rec = semi_maj_axis * (1.0 - ecc ** 2)
+    semi_lat_rec = semi_maj_axis * (1.0 - (ecc ** 2))
     # WZL Eqn 7 (sigma+/-)
-    sigma_plus = np.sqrt(1.0 + ecc ** 2 + 2.0 * ecc * np.cos(omega))
-    sigma_minus = np.sqrt(1.0 + ecc ** 2 - 2.0 * ecc * np.cos(omega))
+    sigma_plus = np.sqrt(1.0 + (ecc ** 2) + 2.0 * ecc * np.cos(omega))
+    sigma_minus = np.sqrt(1.0 + (ecc ** 2) - 2.0 * ecc * np.cos(omega))
     # WZL Eqn 8 (eta+/-)
     eta_plus = np.sqrt(1.0 + ecc * np.cos(omega))
     eta_minus = np.sqrt(1.0 - ecc * np.cos(omega))
     # WZL Eqn 62
-    kappa = 0.5 * (np.sqrt(1.0 / eta_plus ** 15) + np.sqrt(1.0 / eta_minus ** 15))
+    kappa = 0.5 * (np.sqrt(1.0 / (eta_plus ** 15)) + np.sqrt(1.0 / (eta_minus ** 15)))
     # WZL Eqn 30
-    delta = 0.5 * (sigma_plus / eta_plus ** 2 + sigma_minus / eta_minus ** 2)
+    delta = 0.5 * (sigma_plus / (eta_plus ** 2) + sigma_minus / (eta_minus ** 2))
     # WZL Eqn 71
     #   NOTE: preserved disk_bh_retro_orbs_a in r_g to feed to disk_surf_density_func function
     #   tau in units of sec
-    tau_i_dyn = np.sqrt(2.0) * inc * (delta - np.cos(inc)) ** 1.5 \
-                * smbh_mass ** 2 * period / (
-                            retro_mass * disk_surf_density_func(disk_bh_retro_orbs_a) * np.pi * semi_lat_rec ** 2) \
+    tau_i_dyn = np.sqrt(2.0) * inc * ((delta - np.cos(inc)) ** 1.5) \
+                * (smbh_mass ** 2) * period / (
+                            retro_mass * disk_surf_density_func(disk_bh_retro_orbs_a) * np.pi * (semi_lat_rec ** 2)) \
                 / kappa
 
     # assume the fractional change in inclination is the fraction
@@ -216,7 +216,7 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     #
     #      Estimating for smbh_mass=1e8Msun, orbiter_mass=30Msun, SG disk surf dens
     #       in 1.5e7yrs a=100rg->60rg, e=0.7->0.5, i=175->170deg
-    stepw0_time = 1.5e7  #years
+    stepw0_time = 1.5e7  # years
     stepw0_delta_ecc = stepw0_ecc_0 - stepw0_ecc_f
     stepw0_delta_semimaj = stepw0_semi_maj_0 - stepw0_semi_maj_f  #rg
     stepw0_delta_inc = stepw0_inc_0 - stepw0_inc_f
@@ -238,9 +238,9 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
                 inc_scale_factor = step1_time * tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a[i], disk_bh_retro_masses[i],
                                                             disk_bh_retro_arg_periapse[i], disk_bh_retro_orbs_ecc[i], disk_bh_retro_orbs_inc[i],
                                                             disk_surf_density_func) / tau_inc_dyn(smbh_mass_0, step1_semi_maj_0,
-                                                                                        orbiter_mass_0, periapse_1,
-                                                                                        step1_ecc_0, step1_inc_0,
-                                                                                        disk_surf_density_func)
+                                                                                                  orbiter_mass_0, periapse_1,
+                                                                                                  step1_ecc_0, step1_inc_0,
+                                                                                                  disk_surf_density_func)
                 disk_bh_retro_orbs_ecc_new[i] = disk_bh_retro_orbs_ecc[i] * (
                             1.0 + step1_delta_ecc / disk_bh_retro_orbs_ecc[i] * (timestep_duration_yr / ecc_scale_factor))
                 # catch overshooting ecc=1
@@ -267,9 +267,9 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
                 inc_scale_factor = step2_time * tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a[i], disk_bh_retro_masses[i],
                                                             disk_bh_retro_arg_periapse[i], disk_bh_retro_orbs_ecc[i], disk_bh_retro_orbs_inc[i],
                                                             disk_surf_density_func) / tau_inc_dyn(smbh_mass_0, step2_semi_maj_0,
-                                                                                        orbiter_mass_0, periapse_1,
-                                                                                        step2_ecc_0, step2_inc_0,
-                                                                                        disk_surf_density_func)
+                                                                                                  orbiter_mass_0, periapse_1,
+                                                                                                  step2_ecc_0, step2_inc_0,
+                                                                                                  disk_surf_density_func)
                 disk_bh_retro_orbs_ecc_new[i] = disk_bh_retro_orbs_ecc[i] * (
                             1.0 - step2_delta_ecc / disk_bh_retro_orbs_ecc[i] * (timestep_duration_yr / ecc_scale_factor))
                 # catch overshooting ecc=0
@@ -298,9 +298,9 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
                 inc_scale_factor = step3_time * tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a[i], disk_bh_retro_masses[i],
                                                             disk_bh_retro_arg_periapse[i], disk_bh_retro_orbs_ecc[i], disk_bh_retro_orbs_inc[i],
                                                             disk_surf_density_func) / tau_inc_dyn(smbh_mass_0, step3_semi_maj_0,
-                                                                                        orbiter_mass_0, periapse_1,
-                                                                                        step3_ecc_0, step3_inc_0,
-                                                                                        disk_surf_density_func)
+                                                                                                  orbiter_mass_0, periapse_1,
+                                                                                                  step3_ecc_0, step3_inc_0,
+                                                                                                  disk_surf_density_func)
                 disk_bh_retro_orbs_ecc_new[i] = disk_bh_retro_orbs_ecc[i] * (
                             1.0 - step3_delta_ecc / disk_bh_retro_orbs_ecc[i] * (timestep_duration_yr / ecc_scale_factor))
                 # catch overshooting ecc=0
@@ -407,32 +407,32 @@ def tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
     #    or more locally convenient variable names
     SI_smbh_mass = smbh_mass * mc_const.mass_per_msun  # kg
     SI_semi_maj_axis = disk_bh_retro_orbs_a * scipy.constants.G * smbh_mass \
-                       / (scipy.constants.c) ** 2  # m
+                       / (scipy.constants.c ** 2)  # m
     SI_orbiter_mass = disk_bh_retro_masses * mc_const.mass_per_msun  # kg
     omega = disk_bh_retro_arg_periapse  # radians
     ecc = disk_bh_retro_orbs_ecc  # unitless
     inc = disk_bh_retro_orbs_inc  # radians
 
     # period in units of sec
-    period = 2.0 * np.pi * np.sqrt(SI_semi_maj_axis ** 3 / (scipy.constants.G * SI_smbh_mass))
+    period = 2.0 * np.pi * np.sqrt((SI_semi_maj_axis ** 3) / (scipy.constants.G * SI_smbh_mass))
     # semi-latus rectum in units of meters
-    semi_lat_rec = SI_semi_maj_axis * (1.0 - ecc ** 2)
+    semi_lat_rec = SI_semi_maj_axis * (1.0 - (ecc ** 2))
     # WZL Eqn 7 (sigma+/-)
-    sigma_plus = np.sqrt(1.0 + ecc ** 2 + 2.0 * ecc * np.cos(omega))
-    sigma_minus = np.sqrt(1.0 + ecc ** 2 - 2.0 * ecc * np.cos(omega))
+    sigma_plus = np.sqrt(1.0 + (ecc ** 2) + 2.0 * ecc * np.cos(omega))
+    sigma_minus = np.sqrt(1.0 + (ecc ** 2) - 2.0 * ecc * np.cos(omega))
     # WZL Eqn 8 (eta+/-)
     eta_plus = np.sqrt(1.0 + ecc * np.cos(omega))
     eta_minus = np.sqrt(1.0 - ecc * np.cos(omega))
     # WZL Eqn 62
-    kappa = 0.5 * (np.sqrt(1.0 / eta_plus ** 15) + np.sqrt(1.0 / eta_minus ** 15))
+    kappa = 0.5 * (np.sqrt(1.0 / (eta_plus ** 15)) + np.sqrt(1.0 / (eta_minus ** 15)))
     # WZL Eqn 30
-    delta = 0.5 * (sigma_plus / eta_plus ** 2 + sigma_minus / eta_minus ** 2)
+    delta = 0.5 * (sigma_plus / (eta_plus ** 2) + sigma_minus / (eta_minus ** 2))
     # WZL Eqn 71
     #   NOTE: preserved disk_bh_retro_orbs_a in r_g to feed to disk_surf_density_func function
     #   tau in units of sec
-    tau_i_dyn = np.sqrt(2.0) * inc * (delta - np.cos(inc)) ** 1.5 \
-                * SI_smbh_mass ** 2 * period / (
-                            SI_orbiter_mass * disk_surf_density_func(disk_bh_retro_orbs_a) * np.pi * semi_lat_rec ** 2) \
+    tau_i_dyn = np.sqrt(2.0) * inc * ((delta - np.cos(inc)) ** 1.5) \
+                * (SI_smbh_mass ** 2) * period / (
+                            SI_orbiter_mass * disk_surf_density_func(disk_bh_retro_orbs_a) * np.pi * (semi_lat_rec ** 2)) \
                 / kappa
 
     return tau_i_dyn
@@ -482,37 +482,37 @@ def tau_semi_lat(smbh_mass, retrograde_bh_locations, retrograde_bh_masses, retro
     #    or more locally convenient variable names
     smbh_mass = smbh_mass * mc_const.mass_per_msun  # kg
     semi_maj_axis = retrograde_bh_locations * scipy.constants.G * smbh_mass \
-                    / (scipy.constants.c) ** 2  # m
+                    / (scipy.constants.c ** 2)  # m
     retro_mass = retrograde_bh_masses * mc_const.mass_per_msun  # kg
     omega = retro_arg_periapse  # radians
     ecc = retrograde_bh_orb_ecc  # unitless
     inc = retrograde_bh_orb_inc  # radians
 
     # period in units of sec
-    period = 2.0 * np.pi * np.sqrt(semi_maj_axis ** 3 / (scipy.constants.G * smbh_mass))
+    period = 2.0 * np.pi * np.sqrt((semi_maj_axis ** 3) / (scipy.constants.G * smbh_mass))
     # semi-latus rectum in units of meters
-    semi_lat_rec = semi_maj_axis * (1.0 - ecc ** 2)
+    semi_lat_rec = semi_maj_axis * (1.0 - (ecc ** 2))
     # WZL Eqn 7 (sigma+/-)
-    sigma_plus = np.sqrt(1.0 + ecc ** 2 + 2.0 * ecc * np.cos(omega))
-    sigma_minus = np.sqrt(1.0 + ecc ** 2 - 2.0 * ecc * np.cos(omega))
+    sigma_plus = np.sqrt(1.0 + (ecc ** 2) + 2.0 * ecc * np.cos(omega))
+    sigma_minus = np.sqrt(1.0 + (ecc ** 2) - 2.0 * ecc * np.cos(omega))
     # WZL Eqn 8 (eta+/-)
     eta_plus = np.sqrt(1.0 + ecc * np.cos(omega))
     eta_minus = np.sqrt(1.0 - ecc * np.cos(omega))
     # WZL Eqn 62
-    kappa = 0.5 * (np.sqrt(1.0 / eta_plus ** 15) + np.sqrt(1.0 / eta_minus ** 15))
+    kappa = 0.5 * (np.sqrt(1.0 / (eta_plus ** 15)) + np.sqrt(1.0 / (eta_minus ** 15)))
     # WZL Eqn 63
-    xi = 0.5 * (np.sqrt(1.0 / eta_plus ** 13) + np.sqrt(1.0 / eta_minus ** 13))
+    xi = 0.5 * (np.sqrt(1.0 / (eta_plus ** 13)) + np.sqrt(1.0 / (eta_minus ** 13)))
     # WZL Eqn 64
     zeta = xi / kappa
     # WZL Eqn 30
-    delta = 0.5 * (sigma_plus / eta_plus ** 2 + sigma_minus / eta_minus ** 2)
+    delta = 0.5 * (sigma_plus / (eta_plus ** 2) + sigma_minus / (eta_minus ** 2))
     # WZL Eqn 70
     #   NOTE: preserved retrograde_bh_locations in r_g to feed to disk_surf_model function
     #   tau in units of sec
     #   NOTE: had to add an abs(sin(inc)) to avoid negative timescales(!)
-    tau_p_dyn = np.abs(np.sin(inc)) * (delta - np.cos(inc)) ** 1.5 \
-                * smbh_mass ** 2 * period / (
-                            retro_mass * disk_surf_model(retrograde_bh_locations) * np.pi * semi_lat_rec ** 2) \
+    tau_p_dyn = np.abs(np.sin(inc)) * ((delta - np.cos(inc)) ** 1.5) \
+                * (smbh_mass ** 2) * period / (
+                            retro_mass * disk_surf_model(retrograde_bh_locations) * np.pi * (semi_lat_rec ** 2)) \
                 / (np.sqrt(2)) * kappa * np.abs(np.cos(inc) - zeta)
 
     return tau_p_dyn
@@ -555,21 +555,21 @@ def tau_ecc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
     inc = disk_bh_retro_orbs_inc  # radians
 
     # WZL Eqn 7 (sigma+/-)
-    sigma_plus = np.sqrt(1.0 + ecc ** 2 + 2.0 * ecc * np.cos(omega))
-    sigma_minus = np.sqrt(1.0 + ecc ** 2 - 2.0 * ecc * np.cos(omega))
+    sigma_plus = np.sqrt(1.0 + (ecc ** 2) + 2.0 * ecc * np.cos(omega))
+    sigma_minus = np.sqrt(1.0 + (ecc ** 2) - 2.0 * ecc * np.cos(omega))
     # WZL Eqn 8 (eta+/-)
     eta_plus = np.sqrt(1.0 + ecc * np.cos(omega))
     eta_minus = np.sqrt(1.0 - ecc * np.cos(omega))
     # WZL Eqn 62
-    kappa = 0.5 * (np.sqrt(1.0 / eta_plus ** 15) + np.sqrt(1.0 / eta_minus ** 15))
+    kappa = 0.5 * (np.sqrt(1.0 / (eta_plus ** 15)) + np.sqrt(1.0 / (eta_minus ** 15)))
     # WZL Eqn 63
-    xi = 0.5 * (np.sqrt(1.0 / eta_plus ** 13) + np.sqrt(1.0 / eta_minus ** 13))
+    xi = 0.5 * (np.sqrt(1.0 / (eta_plus ** 13)) + np.sqrt(1.0 / (eta_minus ** 13)))
     # WZL Eqn 64
     zeta = xi / kappa
     # WZL Eqn 65
-    kappa_bar = 0.5 * (np.sqrt(1.0 / eta_plus ** 7) + np.sqrt(1.0 / eta_minus ** 7))
+    kappa_bar = 0.5 * (np.sqrt(1.0 / (eta_plus ** 7)) + np.sqrt(1.0 / (eta_minus ** 7)))
     # WZL Eqn 66
-    xi_bar = 0.5 * (np.sqrt(sigma_plus ** 4 / eta_plus ** 13) + np.sqrt(sigma_minus ** 4 / eta_minus ** 13))
+    xi_bar = 0.5 * (np.sqrt((sigma_plus ** 4) / (eta_plus ** 13)) + np.sqrt((sigma_minus ** 4) / (eta_minus ** 13)))
     # WZL Eqn 67
     zeta_bar = xi_bar / kappa_bar
 
@@ -578,9 +578,9 @@ def tau_ecc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
                              disk_surf_density_func)
     #  also need to find tau_a_dyn, but
     #   fortunately it's a few factors off of tau_p_dyn (this may be a dumb way to handle it)
-    tau_a_dyn = tau_p_dyn * (1.0 - ecc ** 2) * kappa * np.abs(np.cos(inc) - zeta) / (
+    tau_a_dyn = tau_p_dyn * (1.0 - (ecc ** 2)) * kappa * np.abs(np.cos(inc) - zeta) / (
                 kappa_bar * np.abs(np.cos(inc) - zeta_bar))
     # WZL Eqn 73
-    tau_e_dyn = (2.0 * ecc ** 2 / (1.0 - ecc ** 2)) * 1.0 / np.abs(1.0 / tau_a_dyn - 1.0 / tau_p_dyn)
+    tau_e_dyn = (2.0 * (ecc ** 2) / (1.0 - (ecc ** 2))) * 1.0 / np.abs(1.0 / tau_a_dyn - 1.0 / tau_p_dyn)
 
     return tau_e_dyn, tau_a_dyn

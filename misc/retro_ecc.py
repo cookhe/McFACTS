@@ -164,7 +164,7 @@ def retro_ecc(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_ret
     #   fortunately it's a few factors off of tau_p_dyn (this may be a dumb way to handle it)
     tau_a_dyn = tau_p_dyn * (1.0 - ecc ** 2) * kappa * np.abs(np.cos(inc) - zeta) / (
                 kappa_bar * np.abs(np.cos(inc) - zeta_bar))
-    
+
     # WZL Eqn 73
     tau_e_dyn = (2.0 * ecc ** 2 / (1.0 - ecc ** 2)) * 1.0 / np.abs(1.0 / tau_a_dyn - 1.0 / tau_p_dyn)
 
@@ -181,11 +181,11 @@ def retro_ecc(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_ret
     # need to figure out which way the eccentricity is going; use
     #   Eqn 69 in WZL for cosine of critical inclination
     cos_inc_crit = (xi_bar - (1.0 - ecc ** 2) * xi) / (kappa_bar - (1.0 - ecc ** 2) * kappa)
-    print("cos_inc_crit")
-    print(cos_inc_crit)
+    # print("cos_inc_crit")
+    # print(cos_inc_crit)
     inc_crit = np.arccos(cos_inc_crit)
-    print("inc_crit")
-    print(inc_crit)
+    # print("inc_crit")
+    # print(inc_crit)
     # if the inc < inc_crit, ecc is excited, else it is damped
     # WZL has a fucking typo: should be inc<inc_crit, not cos(inc)<cos(inc_crit)!!!
     frac_change[inc > inc_crit] = -frac_change[inc > inc_crit]
