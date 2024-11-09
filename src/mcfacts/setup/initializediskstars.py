@@ -1,15 +1,14 @@
-from mcfacts.setup import setupdiskstars
+from mcfacts.setup import setupdiskstars, setupdiskblackholes
 from mcfacts.setup import diskstars_hillspheremergers
 from mcfacts.objects.agnobject import AGNStar
 import numpy as np
 from mcfacts.mcfacts_random_state import rng
 
 
-
 def init_single_stars(opts, id_start_val=None):
 
     # Generate initial number of stars
-    star_num_initial = setupdiskstars.setup_disk_stars_num(
+    star_num_initial = setupdiskblackholes.setup_disk_nbh(
             opts.nsc_mass,
             opts.nsc_ratio_bh_num_star_num,
             opts.nsc_ratio_bh_mass_star_mass,
@@ -21,8 +20,10 @@ def init_single_stars(opts, id_start_val=None):
             opts.nsc_radius_crit,
             opts.nsc_density_index_inner,
         )
-    # giprint(star_num_initial) 152_248_329
-    star_num_initial = 10_000
+    star_num_initial = int(star_num_initial * (1./opts.nsc_ratio_bh_num_star_num))
+    print("num stars",star_num_initial) #201_246_118  #152_248_329
+    #print(ff)
+    #star_num_initial = 1_000_000 #10_000
 
     # Generate initial masses for the initial number of stars, pre-Hill sphere mergers
     masses_initial = setupdiskstars.setup_disk_stars_masses(star_num=star_num_initial,
