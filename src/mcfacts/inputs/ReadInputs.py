@@ -8,6 +8,8 @@ Inifile
         Use pAGN to generate disk model?
     "flag_add_stars"                : bool
         Add stars to the disk
+    "flag_initial_stars_BH_immortal": float
+        If stars over disk_star_initial_mass_cutoff turn into BH (0) or hold at cutoff (1, immortal)
     "smbh_mass"                     : float
         Mass of the supermassive black hole (solMass)
     "disk_radius_trap"              : float
@@ -68,6 +70,10 @@ Inifile
         Initial mass distribution for stars is assumed Salpeter
     "nsc_imf_star_powerlaw_index"   : float
         Initial mass distribution for stars is assumed Salpeter, disk_alpha_viscosity = 2.35
+    "disk_star_scale_factor"        : float
+        Scale factor to go from number of BH to number of stars.
+    "disk_star_initial_mass_cutoff" : float
+        Cutoff for initial star behavior
     "nsc_imf_star_mass_modex"       : float
         Mass mode for star IMF
     "nsc_star_spin_dist_mu"         : float
@@ -142,6 +148,7 @@ INPUT_TYPES = {
     "disk_model_name"               : str,
     "flag_use_pagn"                 : bool,
     "flag_add_stars"                : bool,
+    "flag_initial_stars_BH_immortal": bool,
     "smbh_mass"                     : float,
     "disk_radius_trap"              : float,
     "disk_radius_outer"             : float,
@@ -167,6 +174,8 @@ INPUT_TYPES = {
     "disk_star_mass_max_init"       : float,
     "disk_star_mass_min_init"       : float,
     "nsc_imf_star_powerlaw_index"   : float,
+    "disk_star_scale_factor"        : float,
+    "disk_star_initial_mass_cutoff" : float,
     "nsc_imf_star_mass_mode"        : float,
     "nsc_star_spin_dist_mu"         : float,
     "nsc_star_spin_dist_sigma"      : float,
