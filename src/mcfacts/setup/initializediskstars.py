@@ -8,10 +8,11 @@ from mcfacts.mcfacts_random_state import rng
 def init_single_stars(opts, id_start_val=None):
 
     # Generate initial number of stars
-    star_num_initial = setupdiskblackholes.setup_disk_nbh(
+    star_num_initial = setupdiskstars.setup_disk_stars_num(
             opts.nsc_mass,
             opts.nsc_ratio_bh_num_star_num,
             opts.nsc_ratio_bh_mass_star_mass,
+            opts.disk_star_scale_factor,
             opts.nsc_radius_outer,
             opts.nsc_density_index_outer,
             opts.smbh_mass,
@@ -20,10 +21,7 @@ def init_single_stars(opts, id_start_val=None):
             opts.nsc_radius_crit,
             opts.nsc_density_index_inner,
         )
-    star_num_initial = int(star_num_initial * (1./opts.nsc_ratio_bh_num_star_num))
-    print("num stars",star_num_initial) #201_246_118  #152_248_329
-    #print(ff)
-    #star_num_initial = 1_000_000 #10_000
+    print("num stars initial", star_num_initial)
 
     # Generate initial masses for the initial number of stars, pre-Hill sphere mergers
     masses_initial = setupdiskstars.setup_disk_stars_masses(star_num=star_num_initial,
@@ -32,24 +30,29 @@ def init_single_stars(opts, id_start_val=None):
                                                             nsc_imf_star_powerlaw_index=opts.nsc_imf_star_powerlaw_index)
 
     # Generating star locations in an x^2 distribution
-    x_vals = rng.uniform(low=0.002, high=1, size=star_num_initial)
-    r_locations_initial = np.sqrt(x_vals)
-    r_locations_initial_scaled = r_locations_initial*opts.disk_radius_trap
+    #x_vals = rng.uniform(low=0.0, high=1, size=star_num_initial)
+    #r_locations_initial = np.sqrt(x_vals)
+    #r_locations_initial_scaled = r_locations_initial*opts.disk_radius_trap
+
+    r_locations_initial_scaled = setupdiskstars.setup_disk_stars_orb_a(star_num_initial, opts.disk_radius_outer, opts.disk_inner_stable_circ_orb)
 
     # Sort the mass and location arrays by the location array
     sort_idx = np.argsort(r_locations_initial_scaled)
     r_locations_initial_sorted = r_locations_initial_scaled[sort_idx]
     masses_initial_sorted = masses_initial[sort_idx]
-
-    masses_stars, r_locations_stars = diskstars_hillspheremergers.hillsphere_mergers(n_stars=star_num_initial,
-                                                                                     masses_initial_sorted=masses_initial_sorted,
-                                                                                     r_locations_initial_sorted=r_locations_initial_sorted,
-                                                                                     min_initial_star_mass=opts.disk_star_mass_min_init,
-                                                                                     R_disk=opts.disk_radius_trap,
-                                                                                     smbh_mass=opts.smbh_mass,
-                                                                                     P_m=1.35,
-                                                                                     P_r=1.)
+    masses_stars, orbs_a_stars = diskstars_hillspheremergers.hillsphere_mergers(n_stars=star_num_initial,
+                                                                                masses_initial_sorted=masses_initial_sorted,
+                                                                                orbs_a_initial_sorted=r_locations_initial_sorted,
+                                                                                min_initial_star_mass=opts.disk_star_mass_min_init,
+                                                                                disk_radius=opts.disk_radius_trap,
+                                                                                smbh_mass=opts.smbh_mass,
+                                                                                P_m=1.35,
+                                                                                P_r=1.)
     star_num = len(masses_stars)
+
+    if (opts.flag_initial_stars_BH_immortal == 0):
+        # Stars over disk_star_initial_mass_cutoff will be held at disk_star_initial_mass_cutoff and be immortal
+        masses_stars[masses_stars > opts.disk_star_initial_mass_cutoff] = opts.disk_star_initial_mass_cutoff
 
     #star_radius = setupdiskstars.setup_disk_stars_radius(masses_stars)
     star_spin = setupdiskstars.setup_disk_stars_spins(star_num, opts.nsc_star_spin_dist_mu, opts.nsc_star_spin_dist_sigma)
@@ -69,7 +72,7 @@ def init_single_stars(opts, id_start_val=None):
     stars = AGNStar(mass=masses_stars,
                     spin=star_spin,
                     spin_angle=star_spin_angle,
-                    orb_a=r_locations_stars, #this is location
+                    orb_a=orbs_a_stars,
                     orb_inc=star_orb_inc,
                     orb_ecc=star_orb_ecc,
                     #orb_ang_mom= star_orb_ang_mom,
