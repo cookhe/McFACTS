@@ -4,7 +4,7 @@ from mcfacts.mcfacts_random_state import rng
 from mcfacts.setup import setupdiskblackholes
 
 
-def setup_disk_stars_orb_a(star_num, disk_radius_outer):
+def setup_disk_stars_orb_a(star_num, disk_radius_outer, disk_inner_stable_circ_orb):
     """Generates initial single star semi-major axes
 
     BH semi-major axes are distributed randomly uniformly through disk of radial size :math:`\\mathtt{disk_outer_radius}`
@@ -15,13 +15,19 @@ def setup_disk_stars_orb_a(star_num, disk_radius_outer):
         number of stars
     disk_radius_outer : float
         outer radius of disk, maximum semimajor axis for stars
+    disk_inner_stable_circ_orb : float
+        Inner radius of disk [r_{g,SMBH}]
 
     Returns
     -------
     star_orb_a_initial : numpy.ndarray
         semi-major axes for stars
     """
-    star_orb_a_initial = disk_radius_outer*rng.uniform(size=star_num)
+
+    # Generating star locations in an x^2 distribution
+    x_vals = rng.uniform(low=disk_inner_stable_circ_orb/disk_radius_outer, high=1, size=star_num)
+    star_orb_a_initial = np.sqrt(x_vals)*disk_radius_outer
+
     return (star_orb_a_initial)
 
 
@@ -174,7 +180,7 @@ def setup_disk_stars_spin_angles(star_num, star_spins_initial):
 
 
 def setup_disk_stars_orb_ang_mom(star_num,
-                                 mass_reduced, mass_total,
+                                 mass, smbh_mass,
                                  orb_a, orb_inc,):
     """
     Calculate initial orbital angular momentum from Keplerian orbit formula
@@ -199,6 +205,8 @@ def setup_disk_stars_orb_ang_mom(star_num,
     star_orb_ang_mom_initial : numpy.ndarray
         orbital angular momentum
     """
+    mass_total = mass + smbh_mass
+    mass_reduced = (mass * smbh_mass) / mass_total
     random_uniform_number = rng.uniform(size=star_num)
     star_orb_ang_mom_initial_sign = (2.0*np.around(random_uniform_number)) - 1.0
     star_orb_ang_mom_initial_value = mass_reduced*np.sqrt(G.to('m^3/(M_sun s^2)').value*mass_total*orb_a*(1-orb_inc**2))
