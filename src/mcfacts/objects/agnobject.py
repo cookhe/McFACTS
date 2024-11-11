@@ -625,11 +625,9 @@ class AGNStar(AGNObject):
             self.orb_ang_mom = empty_arr
         else:
             self.radius = setupdiskstars.setup_disk_stars_radius(masses=mass)
-            mass_total = mass + smbh_mass
-            mass_reduced = mass*smbh_mass/mass_total
             self.orb_ang_mom = setupdiskstars.setup_disk_stars_orb_ang_mom(star_num=star_num,
-                                                                           mass_reduced=mass_reduced,
-                                                                           mass_total=mass_total,
+                                                                           mass=mass,
+                                                                           smbh_mass=smbh_mass,
                                                                            orb_a=orb_a,
                                                                            orb_inc=orb_inc)
 
