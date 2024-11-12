@@ -100,20 +100,10 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
 
     # Modest orb eccentricities: e < 2h (experience simple exponential damping): mask entries > 2*aspect_ratio;
     # only show BH with e<2h
-    prograde_bh_modest_ecc = np.ma.masked_where(
-        prograde_disk_bh_pro_orbs_ecc > 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a),
-        prograde_disk_bh_pro_orbs_ecc)
+    modest_ecc_prograde_indices = np.asarray(prograde_disk_bh_pro_orbs_ecc <= 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a)).nonzero()[0]
 
     # Large orb eccentricities: e > 2h (experience more complicated damping)
-    prograde_bh_large_ecc = np.ma.masked_where(
-        prograde_disk_bh_pro_orbs_ecc < 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a),
-        prograde_disk_bh_pro_orbs_ecc)
-
-    # Indices of orb eccentricities where e<2h
-    modest_ecc_prograde_indices = np.ma.nonzero(prograde_bh_modest_ecc)
-
-    # Indices of orb eccentricities where e>2h
-    large_ecc_prograde_indices = np.ma.nonzero(prograde_bh_large_ecc)
+    large_ecc_prograde_indices = np.asarray(prograde_disk_bh_pro_orbs_ecc >= 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a)).nonzero()[0]
 
     # print('modest ecc indices', modest_ecc_prograde_indices)
     # print('large ecc indices', large_ecc_prograde_indices)
@@ -149,7 +139,7 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
 def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func, disk_aspect_ratio_func, timestep_duration_yr,
                             disk_bh_pro_orb_ecc_crit):
     """Calculates damping of BBH orbital eccentricities according to a prescription.
-    
+
     Use same mechanisms as for prograde singleton BH.
 
     E.g. Tanaka & Ward (2004)  t_damp = M^3/2 h^4 / (2^1/2 m Sigma a^1/2 G )
@@ -253,9 +243,7 @@ def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func
 
     blackholes_binary.bin_orb_ecc = new_bin_orb_ecc
 
-    #return (blackholes_binary)
-    #BUG 
-    return
+    return (blackholes_binary)
 
 
 def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk_surf_density_func,
@@ -360,20 +348,10 @@ def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk
 
     # Modest orb eccentricities: e < 2h (experience simple exponential damping): mask entries > 2*aspect_ratio;
     # only show BH with e<2h
-    prograde_bh_modest_ecc = np.ma.masked_where(
-        prograde_disk_bh_pro_orbs_ecc > 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a),
-        prograde_disk_bh_pro_orbs_ecc)
+    modest_ecc_prograde_indices = np.asarray(prograde_disk_bh_pro_orbs_ecc <= 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a)).nonzero()[0]
 
     # Large orb eccentricities: e > 2h (experience more complicated damping)
-    prograde_bh_large_ecc = np.ma.masked_where(
-        prograde_disk_bh_pro_orbs_ecc < 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a),
-        prograde_disk_bh_pro_orbs_ecc)
-
-    # Indices of orb eccentricities where e<2h
-    modest_ecc_prograde_indices = np.ma.nonzero(prograde_bh_modest_ecc)
-
-    # Indices of orb eccentricities where e>2h
-    large_ecc_prograde_indices = np.ma.nonzero(prograde_bh_large_ecc)
+    large_ecc_prograde_indices = np.asarray(prograde_disk_bh_pro_orbs_ecc >= 2.0 * disk_aspect_ratio_func(disk_bh_pro_orbs_a)).nonzero()[0]
 
     # print('modest ecc indices', modest_ecc_prograde_indices)
     # print('large ecc indices', large_ecc_prograde_indices)

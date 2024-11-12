@@ -59,10 +59,9 @@ def binary_check(
     # binaries.
 
     # Singleton BH with orb ecc < e_crit (candidates for binary formation)
-    prograde_bh_can_form_bins = np.ma.masked_where(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit, disk_bh_pro_orbs_ecc)
-    indices_bh_can_form_bins = np.ma.nonzero(prograde_bh_can_form_bins)
+    indices_bh_can_form_bins = np.asarray(disk_bh_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
     # Indices of those candidates for binary formation
-    allowed_to_form_bins = np.array(indices_bh_can_form_bins[0])
+    allowed_to_form_bins = np.array(indices_bh_can_form_bins)
     # Sort the location of the candidates
     sorted_bh_locations = np.sort(disk_bh_pro_orbs_a[allowed_to_form_bins])
     # Sort the indices of all singleton BH (the superset)

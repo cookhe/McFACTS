@@ -101,7 +101,8 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
 
 
 def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs_a, disk_bh_retro_orbs_ecc,
-                             disk_bh_retro_orbs_inc, disk_bh_retro_arg_periapse, disk_surf_density_func, timestep_duration_yr):
+                             disk_bh_retro_orbs_inc, disk_bh_retro_arg_periapse,
+                             disk_inner_stable_circ_orb, disk_surf_density_func, timestep_duration_yr):
     """Evolve the orbit of initially-embedded retrograde black hole orbiters due to disk interactions.
 
     This is a CRUDE version of evolution, future upgrades may couple to SpaceHub.
@@ -248,8 +249,8 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
                 if disk_bh_retro_orbs_ecc_new[i] >= (1.0 - epsilon): disk_bh_retro_orbs_ecc_new[i] = (1.0 - epsilon)
                 disk_bh_retro_orbs_a_new[i] = disk_bh_retro_orbs_a[i] * (
                             1.0 - step1_delta_semimaj / disk_bh_retro_orbs_a[i] * (timestep_duration_yr / semimaj_scale_factor))
-                # catch overshooting semimaj axis, set to 0.0
-                if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = 0.0
+                # catch overshooting semimaj axis, set to disk_inner_stable_circ_orb
+                if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = disk_inner_stable_circ_orb
                 disk_bh_retro_orbs_inc_new[i] = disk_bh_retro_orbs_inc[i] * (
                             1.0 - step1_delta_inc / disk_bh_retro_orbs_inc[i] * (timestep_duration_yr / inc_scale_factor))
                 # catch overshooting inc, set to 0.0
@@ -278,8 +279,8 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
                 if disk_bh_retro_orbs_ecc_new[i] >= (1.0 - epsilon): disk_bh_retro_orbs_ecc_new[i] = (1.0 - epsilon)
                 disk_bh_retro_orbs_a_new[i] = disk_bh_retro_orbs_a[i] * (
                             1.0 - step2_delta_semimaj / disk_bh_retro_orbs_a[i] * (timestep_duration_yr / semimaj_scale_factor))
-                # catch overshooting semimaj axis, set to 0.0
-                if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = 0.0
+                # catch overshooting semimaj axis, set to disk_inner_stable_circ_orb
+                if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = disk_inner_stable_circ_orb
                 disk_bh_retro_orbs_inc_new[i] = disk_bh_retro_orbs_inc[i] * (
                             1.0 - step2_delta_inc / disk_bh_retro_orbs_inc[i] * (timestep_duration_yr / inc_scale_factor))
                 # catch overshooting inc, set to 0.0
@@ -307,8 +308,8 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
                 if disk_bh_retro_orbs_ecc_new[i] < 0.0: disk_bh_retro_orbs_ecc_new[i] = 0.0
                 disk_bh_retro_orbs_a_new[i] = disk_bh_retro_orbs_a[i] * (
                             1.0 - step3_delta_semimaj / disk_bh_retro_orbs_a[i] * (timestep_duration_yr / semimaj_scale_factor))
-                # catch overshooting semimaj axis, set to 0.0
-                if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = 0.0
+                # catch overshooting semimaj axis, set to disk_inner_stable_circ_orb
+                if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = disk_inner_stable_circ_orb
                 disk_bh_retro_orbs_inc_new[i] = disk_bh_retro_orbs_inc[i] * (
                             1.0 - step3_delta_inc / disk_bh_retro_orbs_inc[i] * (timestep_duration_yr / inc_scale_factor))
                 # catch overshooting inc, set to 0.0
@@ -342,8 +343,8 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
             if disk_bh_retro_orbs_ecc_new[i] < 0.0: disk_bh_retro_orbs_ecc_new[i] = 0.0
             disk_bh_retro_orbs_a_new[i] = disk_bh_retro_orbs_a[i] * (
                         1.0 - stepw0_delta_semimaj / disk_bh_retro_orbs_a[i] * (timestep_duration_yr / stepw0_time))
-            # catch overshooting semimaj axis, set to 0.0
-            if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = 0.0
+            # catch overshooting semimaj axis, set to disk_inner_stable_circ_orb
+            if disk_bh_retro_orbs_a_new[i] <= 0.0: disk_bh_retro_orbs_a_new[i] = disk_inner_stable_circ_orb
             disk_bh_retro_orbs_inc_new[i] = disk_bh_retro_orbs_inc[i] * (1.0 - stepw0_delta_inc / disk_bh_retro_orbs_inc[i] * (timestep_duration_yr / stepw0_time))
             # catch overshooting inc, set to 0.0
             if disk_bh_retro_orbs_inc_new[i] <= (0.0): disk_bh_retro_orbs_inc_new[i] = (0.0)

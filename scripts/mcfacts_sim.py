@@ -667,6 +667,7 @@ def main():
                 blackholes_retro.orb_ecc,
                 blackholes_retro.orb_inc,
                 blackholes_retro.orb_arg_periapse,
+                opts.disk_inner_stable_circ_orb,
                 disk_surface_density,
                 opts.timestep_duration_yr
             )
@@ -740,7 +741,7 @@ def main():
 
                 # If there are binaries, evolve them
                 # Damp binary orbital eccentricity
-                eccentricity.orbital_bin_ecc_damping(
+                blackholes_binary = eccentricity.orbital_bin_ecc_damping(
                     opts.smbh_mass,
                     blackholes_binary,
                     disk_surface_density,
@@ -1289,7 +1290,6 @@ def main():
                     opts.smbh_mass,
                     agn_redshift
                 )
-
 
             if blackholes_inner_disk.num > 0:
                 blackholes_emris.add_blackholes(new_mass=blackholes_inner_disk.mass,

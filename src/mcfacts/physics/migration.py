@@ -4,6 +4,7 @@ Module for calculating the timescale of migrations.
 
 import numpy as np
 import scipy
+from mcfacts.mcfacts_random_state import rng
 
 
 def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
@@ -57,7 +58,9 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
         # BUG it shouldn't work like this
-        orbs_a[orbs_a > disk_radius_outer] = disk_radius_outer
+        # epsilon is disk_radius_outer * Hill sphere of BH at outer edge of disk * random number
+        epsilon = disk_radius_outer * ((masses[orbs_a > disk_radius_outer] / (3 * (masses[orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(orbs_a > disk_radius_outer))
+        orbs_a[orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
         return (orbs_a)
 
     # If things will migrate then copy over the orb_a of objects that will migrate
@@ -129,11 +132,14 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
         new_orbs_a[mask_mig_stay & mask_in_trap] = temp_orbs_a
 
     # Assert that things cannot migrate out of the disk
-    new_orbs_a[new_orbs_a > disk_radius_outer] = disk_radius_outer
+    epsilon = disk_radius_outer * ((masses[migration_indices][new_orbs_a > disk_radius_outer] / (3 * (masses[migration_indices][new_orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(new_orbs_a > disk_radius_outer))
+    new_orbs_a[new_orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
-    orbs_a[orbs_a > disk_radius_outer] = disk_radius_outer  # BUG should not work like this
+    # BUG should not work like this, check should only be for orbs_a set in this function
+    epsilon = disk_radius_outer * ((masses[orbs_a > disk_radius_outer] / (3 * (masses[orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(orbs_a > disk_radius_outer))
+    orbs_a[orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
     return (orbs_a)
 
 
