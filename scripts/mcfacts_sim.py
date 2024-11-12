@@ -524,18 +524,17 @@ def main():
                     opts.disk_bh_eddington_ratio,
                     opts.disk_alpha_viscosity,
                     opts.disk_radius_outer)
-            else:
-                ratio_heat_mig_torques = np.ones(len(blackholes_pro.orb_a))
 
-            # now for stars
-            ratio_heat_mig_stars_torques = feedback.feedback_stars_hankla(
-                stars_pro.orb_a,
-                disk_surface_density,
-                disk_opacity,
-                opts.disk_star_eddington_ratio,
-                opts.disk_alpha_viscosity,
-                opts.disk_radius_outer,
-            )
+                ratio_heat_mig_stars_torques = feedback.feedback_stars_hankla(
+                    stars_pro.orb_a,
+                    disk_surface_density,
+                    disk_opacity,
+                    opts.disk_star_eddington_ratio,
+                    opts.disk_alpha_viscosity,
+                    opts.disk_radius_outer,)
+            else:
+                ratio_heat_mig_torques = np.ones(blackholes_pro.num)
+                ratio_heat_mig_stars_torques = np.ones(stars_pro.num)
 
             # then migrate as usual
             blackholes_pro.orb_a = migration.type1_migration_single(
@@ -552,19 +551,45 @@ def main():
                 opts.timestep_duration_yr
             )
 
-            # Check for orb_a unphysical
-            bh_pro_id_num_unphysical_a = blackholes_pro.id_num[blackholes_pro.orb_a == 0.]
-            if bh_pro_id_num_unphysical_a.size > 0:
-                # The binary has unphysical eccentricity. Delete
-                blackholes_pro.remove_id_num(bh_pro_id_num_unphysical_a)
-                filing_cabinet.remove_id_num(bh_pro_id_num_unphysical_a)
+            stars_pro.orb_a = migration.type1_migration_single(
+                opts.smbh_mass,
+                stars_pro.orb_a,
+                stars_pro.mass,
+                stars_pro.orb_ecc,
+                opts.disk_bh_pro_orb_ecc_crit,
+                disk_surface_density,
+                disk_aspect_ratio,
+                ratio_heat_mig_stars_torques,
+                opts.disk_radius_trap,
+                opts.disk_radius_outer,
+                opts.timestep_duration_yr
+            )
 
+            # Check for orb_a unphysical
+            bh_pro_id_num_unphysical = blackholes_pro.id_num[blackholes_pro.orb_a == 0.]
+            if bh_pro_id_num_unphysical.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphysical)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphysical)
+
+            star_pro_id_num_unphysical = stars_pro.id_num[stars_pro.orb_a == 0.]
+            if star_pro_id_num_unphysical.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                stars_pro.remove_id_num(star_pro_id_num_unphysical)
+                filing_cabinet.remove_id_num(star_pro_id_num_unphysical)
 
             # Accrete
             blackholes_pro.mass = accretion.change_bh_mass(
                 blackholes_pro.mass,
                 opts.disk_bh_eddington_ratio,
                 disk_bh_eddington_mass_growth_rate,
+                opts.timestep_duration_yr
+            )
+
+            stars_pro.mass = accretion.change_star_mass(
+                stars_pro.mass,
+                opts.disk_star_eddington_ratio,
+                disk_bh_eddington_mass_growth_rate,  # BUG does this need to be different for stars?
                 opts.timestep_duration_yr
             )
 
@@ -575,6 +600,15 @@ def main():
                 opts.disk_bh_torque_condition,
                 opts.timestep_duration_yr,
                 blackholes_pro.orb_ecc,
+                opts.disk_bh_pro_orb_ecc_crit,
+            )
+
+            stars_pro.spin = accretion.change_star_spin_magnitudes(
+                stars_pro.spin,
+                opts.disk_star_eddington_ratio,
+                opts.disk_star_torque_condition,
+                opts.timestep_duration_yr,
+                stars_pro.orb_ecc,
                 opts.disk_bh_pro_orb_ecc_crit,
             )
 
@@ -589,7 +623,17 @@ def main():
                 opts.disk_bh_pro_orb_ecc_crit
             )
 
-            # Damp BH orbital eccentricity
+            stars_pro.spin_angle = accretion.change_star_spin_angles(
+                stars_pro.spin_angle,
+                opts.disk_star_eddington_ratio,
+                opts.disk_star_torque_condition,
+                disk_bh_spin_resolution_min,
+                opts.timestep_duration_yr,
+                stars_pro.orb_ecc,
+                opts.disk_bh_pro_orb_ecc_crit
+            )
+
+            # Damp orbital eccentricity
             blackholes_pro.orb_ecc = eccentricity.orbital_ecc_damping(
                 opts.smbh_mass,
                 blackholes_pro.orb_a,
@@ -597,6 +641,17 @@ def main():
                 disk_surface_density,
                 disk_aspect_ratio,
                 blackholes_pro.orb_ecc,
+                opts.timestep_duration_yr,
+                opts.disk_bh_pro_orb_ecc_crit,
+            )
+
+            stars_pro.orb_ecc = eccentricity.orbital_ecc_damping(
+                opts.smbh_mass,
+                stars_pro.orb_a,
+                stars_pro.mass,
+                disk_surface_density,
+                disk_aspect_ratio,
+                stars_pro.orb_ecc,
                 opts.timestep_duration_yr,
                 opts.disk_bh_pro_orb_ecc_crit,
             )
@@ -615,6 +670,18 @@ def main():
                 disk_surface_density,
                 opts.timestep_duration_yr
             )
+            # KN: Does this function apply to all disk objects and if so should we rename it?
+            stars_retro.orb_ecc, stars_retro.orb_a, stars_retro.orb_inc = disk_capture.retro_bh_orb_disk_evolve(
+                opts.smbh_mass,
+                stars_retro.mass,
+                stars_retro.orb_a,
+                stars_retro.orb_ecc,
+                stars_retro.orb_inc,
+                stars_retro.orb_arg_periapse,
+                disk_surface_density,
+                opts.timestep_duration_yr
+            )
+
             # Check for bin_ecc unphysical
             bh_retro_id_num_unphysical_ecc = blackholes_retro.id_num[blackholes_retro.orb_ecc >= 1.]
             if bh_retro_id_num_unphysical_ecc.size > 0:
@@ -622,79 +689,11 @@ def main():
                 blackholes_retro.remove_id_num(bh_retro_id_num_unphysical_ecc)
                 filing_cabinet.remove_id_num(bh_retro_id_num_unphysical_ecc)
 
-            # and now stars
-
-            # Locations
-            stars_pro.orb_a = migration.type1_migration_single(
-                opts.smbh_mass,
-                stars_pro.orb_a,
-                stars_pro.mass,
-                stars.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit,
-                disk_surface_density,
-                disk_aspect_ratio,
-                ratio_heat_mig_stars_torques,
-                opts.disk_radius_trap,
-                opts.disk_radius_outer,
-                opts.timestep_duration_yr,
-            )
-
-            # Accrete
-            stars_pro.mass = accretion.change_star_mass(
-                stars_pro.mass,
-                opts.disk_star_eddington_ratio,
-                disk_bh_eddington_mass_growth_rate,  # do we need to alter this for stars?
-                opts.timestep_duration_yr
-            )
-            # Spin up
-            stars_pro.spin = accretion.change_star_spin_magnitudes(
-                stars_pro.spin,
-                opts.disk_star_eddington_ratio,
-                opts.disk_bh_torque_condition,
-                opts.timestep_duration_yr,
-                stars_pro.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit,
-            )
-
-            # Torque spin angle
-            stars_pro.spin_angle = accretion.change_star_spin_angles(
-                stars_pro.spin_angle,
-                opts.disk_star_eddington_ratio,
-                opts.disk_bh_torque_condition,
-                disk_bh_spin_resolution_min,
-                opts.timestep_duration_yr,
-                stars_pro.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit
-            )
-
-            # Damp stars orbital eccentricity
-            stars_pro.orb_ecc = eccentricity.orbital_ecc_damping(
-                opts.smbh_mass,
-                stars_pro.orb_a,
-                stars_pro.mass,
-                disk_surface_density,
-                disk_aspect_ratio,
-                stars_pro.orb_ecc,
-                opts.timestep_duration_yr,
-                opts.disk_bh_pro_orb_ecc_crit,
-            )
-
-            # Now do retrograde singles--change semi-major axis
-            #   note this is dyn friction only, not true 'migration'
-            # change retrograde eccentricity (some damping, some pumping)
-            # damp orbital inclination
-
-            # This is not working for retrograde stars, just says parameters are unreliable
-            # stars_retro.orb_ecc, stars_retro.orb_a, stars_retro.orb_inc = crude_retro_evol.crude_retro_bh(
-            #     opts.smbh_mass,
-            #     stars_retro.mass,
-            #     stars_retro.orb_a,
-            #     stars_retro.orb_ecc,
-            #     stars_retro.orb_inc,
-            #     stars_retro.orb_arg_periapse,
-            #     disk_surface_density,
-            #     opts.timestep_duration_yr
-            # )
+            star_retro_id_num_unphysical_ecc = stars_retro.id_num[stars_retro.orb_ecc >= 1.]
+            if star_retro_id_num_unphysical_ecc.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                stars_retro.remove_id_num(star_retro_id_num_unphysical_ecc)
+                filing_cabinet.remove_id_num(star_retro_id_num_unphysical_ecc)
 
             # Perturb eccentricity via dynamical encounters
             if opts.flag_dynamic_enc > 0:
