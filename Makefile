@@ -60,7 +60,7 @@ setup: clean version
 	source ~/.bash_profile && \
 	conda activate base && \
 	conda remove -n mcfacts-dev --all -y && \
-	conda create --name mcfacts-dev "python>=3.10.4" pip "pytest" -c conda-forge -c defaults -y && \
+	conda create --name mcfacts-dev "python>=3.10.4<=3.13" pip "pytest" -c conda-forge -c defaults -y && \
 	conda activate mcfacts-dev && \
 	python -m pip install --editable .
 
