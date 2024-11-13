@@ -679,6 +679,7 @@ def main():
                 stars_retro.orb_ecc,
                 stars_retro.orb_inc,
                 stars_retro.orb_arg_periapse,
+                opts.disk_inner_stable_circ_orb,
                 disk_surface_density,
                 opts.timestep_duration_yr
             )
@@ -866,7 +867,7 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     disk_surface_density, disk_aspect_ratio, ratio_heat_mig_torques_bin_com,
                     opts.disk_radius_trap, opts.disk_radius_outer, opts.timestep_duration_yr)
-                
+
                 # Test to see if any binaries separation is O(1r_g)
                 # If so, track them for GW freq, strain.
                 # Minimum BBH separation (in units of r_g)
@@ -1093,8 +1094,8 @@ def main():
                     # No Binaries present in bin_array. Nothing to do.
                 # Finished evolving binaries
 
-                # If a close encounter within mutual Hill sphere add a new Binary
-                # check which binaries should get made
+            # If a close encounter within mutual Hill sphere add a new Binary
+            # check which binaries should get made
             close_encounters_indices = formation.binary_check(
                 blackholes_pro.orb_a,
                 blackholes_pro.mass,
@@ -1234,11 +1235,40 @@ def main():
                     new_id_num=blackholes_pro.at_id_num(bh_id_num_pro_inner_disk, "id_num")
                 )
 
-                # # Remove from blackholes_pro and update filing_cabinet
+                # Remove from blackholes_pro and update filing_cabinet
                 blackholes_pro.remove_id_num(bh_id_num_pro_inner_disk)
                 filing_cabinet.update(id_num=bh_id_num_pro_inner_disk,
                                       attr="disk_inner_outer",
                                       new_info=np.full(len(bh_id_num_pro_inner_disk), -1))
+
+            # Check if any prograde stars are in the inner disk
+            star_id_num_pro_inner_disk = stars_pro.id_num[stars_pro.orb_a < opts.inner_disk_outer_radius]
+            if (star_id_num_pro_inner_disk.size > 0):
+                # Add BH to inner_disk_arrays
+                stars_inner_disk.add_stars(
+                    new_mass=stars_pro.at_id_num(star_id_num_pro_inner_disk, "mass"),
+                    new_radius=stars_pro.at_id_num(star_id_num_inner_disk, "radius"),
+                    new_X=stars_pro.at_id_num(star_id_num_inner_disk, "star_X"),
+                    new_Y=stars_pro.at_id_num(star_id_num_inner_disk, "star_Y"),
+                    new_Z=stars_pro.at_id_num(star_id_num_inner_disk, "star_Z"),
+                    new_spin=stars_pro.at_id_num(star_id_num_pro_inner_disk, "spin"),
+                    new_spin_angle=stars_pro.at_id_num(star_id_num_pro_inner_disk, "spin_angle"),
+                    new_orb_a=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_a"),
+                    new_orb_inc=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_inc"),
+                    new_orb_ang_mom=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_ang_mom"),
+                    new_orb_ecc=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_ecc"),
+                    new_orb_arg_periapse=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_arg_periapse"),
+                    new_gen=stars_pro.at_id_num(star_id_num_pro_inner_disk, "gen"),
+                    new_galaxy=stars_pro.at_id_num(star_id_num_pro_inner_disk, "galaxy"),
+                    new_time_passed=stars_pro.at_id_num(star_id_num_pro_inner_disk, "time_passed"),
+                    new_id_num=stars_pro.at_id_num(star_id_num_pro_inner_disk, "id_num")
+                )
+
+                # Remove from stars_pro and update filing_cabinet
+                stars_pro.remove_id_num(star_id_num_pro_inner_disk)
+                filing_cabinet.update(id_num=star_id_num_pro_inner_disk,
+                                      attr="disk_inner_outer",
+                                      new_info=np.full(len(star_id_num_pro_inner_disk), -1))
 
             # Check if any retrograde BHs are in the inner disk
             bh_id_num_retro_inner_disk = blackholes_retro.id_num[blackholes_retro.orb_a < opts.inner_disk_outer_radius]
@@ -1263,6 +1293,34 @@ def main():
                 filing_cabinet.update(id_num=bh_id_num_retro_inner_disk,
                                       attr="disk_inner_outer",
                                       new_info=np.full(len(bh_id_num_retro_inner_disk), -1))
+
+            # Check if any retrograde stars are in the inner disk
+            star_id_num_retro_inner_disk = stars_retro.id_num[stars_retro.orb_a < opts.inner_disk_outer_radius]
+            if (star_id_num_retro_inner_disk.size > 0):
+                # Add BH to inner_disk_arrays
+                blackholes_inner_disk.add_blackholes(
+                    new_mass=stars_retro.at_id_num(star_id_num_retro_inner_disk, "mass"),
+                    new_radius=stars_retro.at_id_num(star_id_num_retro_inner_disk, "radius"),
+                    new_X=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_X"),
+                    new_Y=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Y"),
+                    new_Z=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Z"),
+                    new_spin=stars_retro.at_id_num(star_id_num_retro_inner_disk, "spin"),
+                    new_spin_angle=stars_retro.at_id_num(star_id_num_retro_inner_disk, "spin_angle"),
+                    new_orb_a=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_a"),
+                    new_orb_inc=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_inc"),
+                    new_orb_ang_mom=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_ang_mom"),
+                    new_orb_ecc=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_ecc"),
+                    new_orb_arg_periapse=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_arg_periapse"),
+                    new_gen=stars_retro.at_id_num(star_id_num_retro_inner_disk, "gen"),
+                    new_galaxy=stars_retro.at_id_num(star_id_num_retro_inner_disk, "galaxy"),
+                    new_time_passed=stars_retro.at_id_num(star_id_num_retro_inner_disk, "time_passed"),
+                    new_id_num=stars_retro.at_id_num(star_id_num_retro_inner_disk, "id_num")
+                )
+                # Remove from stars_retro and update filing_cabinet
+                stars_retro.remove_id_num(star_id_num_retro_inner_disk)
+                filing_cabinet.update(id_num=star_id_num_retro_inner_disk,
+                                      attr="disk_inner_outer",
+                                      new_info=np.full(len(star_id_num_retro_inner_disk), -1))
 
             if (blackholes_inner_disk.num > 0):
                 # FIX THIS: Return the new evolved bh_orb_ecc_inner_disk as they decay inwards.
@@ -1291,6 +1349,33 @@ def main():
                     agn_redshift
                 )
 
+            if (stars_inner_disk.num > 0):
+                # FIX THIS: Return the new evolved bh_orb_ecc_inner_disk as they decay inwards.
+                # Potentially move inner disk behaviour to module that is not dynamics (e.g inner disk module)
+                stars_inner_disk.orb_a = dynamics.bh_near_smbh( # BUG KN: is this BH specific? If not should we change the name?
+                    opts.smbh_mass,
+                    stars_inner_disk.orb_a,
+                    stars_inner_disk.mass,
+                    stars_inner_disk.orb_ecc,
+                    opts.timestep_duration_yr,
+                    opts.inner_disk_outer_radius,
+                    opts.disk_inner_stable_circ_orb,
+                )
+
+                # On 1st run through define old GW freqs (at say 9.e-7 Hz, since evolution change is 1e-6Hz)
+                if stars_tdes.num == 0:
+                    old_gw_freq = 9.e-7*np.ones(stars_inner_disk.num)
+                if (stars_tdes.num > 0):
+                    old_gw_freq = emri_gw_freq
+
+                tde_gw_strain, tde_gw_freq = emri.evolve_emri_gw( # BUG KN: is this BH/EMRI specific? If not should we change the name?
+                    stars_inner_disk,
+                    opts.timestep_duration_yr,
+                    old_gw_freq,
+                    opts.smbh_mass,
+                    agn_redshift
+                )
+
             if blackholes_inner_disk.num > 0:
                 blackholes_emris.add_blackholes(new_mass=blackholes_inner_disk.mass,
                                                 new_spin=blackholes_inner_disk.spin,
@@ -1307,8 +1392,29 @@ def main():
                                                 new_time_passed=np.full(emri_gw_freq.size, time_passed),
                                                 new_id_num=blackholes_inner_disk.id_num)
 
+            if stars_inner_disk.num > 0:
+                stars_tdes.add_stars(new_mass=stars_inner_disk.mass,
+                                     new_radius=stars_inner_disk.radius,
+                                     new_X=stars_inner_disk.star_X,
+                                     new_Y=stars_inner_disk.star_Y,
+                                     new_Z=stars_inner_disk.star_Z,
+                                     new_spin=stars_inner_disk.spin,
+                                     new_spin_angle=stars_inner_disk.spin_angle,
+                                     new_orb_a=stars_inner_disk.orb_a,
+                                     new_orb_inc=stars_inner_disk.orb_inc,
+                                     new_orb_ang_mom=stars_inner_disk.orb_ang_mom,
+                                     new_orb_ecc=stars_inner_disk.orb_ecc,
+                                     new_orb_arg_periapse=stars_inner_disk.orb_arg_periapse,
+                                     new_gw_freq=tde_gw_freq,
+                                     new_gw_strain=tde_gw_strain,
+                                     new_gen=stars_inner_disk.gen,
+                                     new_galaxy=np.full(tde_gw_freq.size, galaxy),
+                                     new_time_passed=np.full(tde_gw_freq.size, time_passed),
+                                     new_id_num=stars_inner_disk.id_num)
+
             #merger_dist = 1.0
             emri_merger_id_num = blackholes_inner_disk.id_num[blackholes_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
+            tde_merger_id_num = stars_inner_disk.id_num[stars_inner_disk.orb_a <= opts.disk_inner_stable_circ_orbit]
 
             # if mergers occurs, remove from inner_disk arrays and stop evolving
             # still getting some nans, but I think that's bc there's retros that should have been
@@ -1318,6 +1424,11 @@ def main():
                 blackholes_inner_disk.remove_id_num(emri_merger_id_num)
                 # Remove merged EMRIs from filing_cabinet
                 filing_cabinet.remove_id_num(emri_merger_id_num)
+
+            if np.size(tde_merger_id_num) > 0:
+                blackholes_inner_disk.remove_id_num(tde_merger_id_num)
+                # Remove merged TDEs from filing_cabinet
+                filing_cabinet.remove_id_num(tde_merger_id_num)
 
             # Here is where we need to move retro to prograde if they've flipped in this timestep
             # If they're IN the disk prograde, OR if they've circularized:
@@ -1347,7 +1458,35 @@ def main():
                 filing_cabinet.update(id_num=bh_id_num_flip_to_pro,
                                       attr="direction",
                                       new_info=np.ones(bh_id_num_flip_to_pro.size))
-                
+
+            star_id_num_flip_to_pro = stars_retro.id_num[np.where((np.abs(stars_retro.orb_inc) <= inc_threshhold) | (stars_retro.orb_ecc == 0.0))]
+            if (star_id_num_flip_to_pro.size > 0):
+                # add to prograde arrays
+                stars_pro.add_blackholes(
+                    new_mass=stars_retro.at_id_num(star_id_num_flip_to_pro, "mass"),
+                    new_radius=stars_retro.at_id_num(star_id_num_flip_to_pro, "radius"),
+                    new_X=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_X"),
+                    new_Y=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Y"),
+                    new_Z=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Z"),
+                    new_orb_a=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_a"),
+                    new_spin=stars_retro.at_id_num(star_id_num_flip_to_pro, "spin"),
+                    new_spin_angle=stars_retro.at_id_num(star_id_num_flip_to_pro, "spin_angle"),
+                    new_orb_inc=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_inc"),
+                    new_orb_ang_mom=np.ones(star_id_num_flip_to_pro.size),
+                    new_orb_ecc=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_ecc"),
+                    new_orb_arg_periapse=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_arg_periapse"),
+                    new_galaxy=stars_retro.at_id_num(star_id_num_flip_to_pro, "galaxy"),
+                    new_time_passed=stars_retro.at_id_num(star_id_num_flip_to_pro, "time_passed"),
+                    new_gen=stars_retro.at_id_num(star_id_num_flip_to_pro, "gen"),
+                    new_id_num=stars_retro.at_id_num(star_id_num_flip_to_pro, "id_num")
+                )
+                # delete from retro arrays
+                stars_retro.remove_id_num(id_num_remove=star_id_num_flip_to_pro)
+                # Update filing_cabinet
+                filing_cabinet.update(id_num=star_id_num_flip_to_pro,
+                                      attr="direction",
+                                      new_info=np.ones(star_id_num_flip_to_pro.size))
+
             # Iterate the time step
             time_passed = time_passed + opts.timestep_duration_yr
             # Print time passed every 10 timesteps for now
