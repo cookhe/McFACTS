@@ -32,7 +32,7 @@ SEED=3456789108
 FNAME_INI= ${HERE}/recipes/model_choice_old.ini
 
 HC_EXP_NAME = retro_binaries
-HC_RUN_NAME = sg_fret0p5
+HC_RUN_NAME = sg_f
 HC_WKDIR = ../mcfacts_research/paper2_qXeff/${HC_EXP_NAME}/${HC_RUN_NAME}/
 HC_INPUT_FILE = ../recipes/paper2/${HC_EXP_NAME}/paper2_${HC_RUN_NAME}.ini
 
