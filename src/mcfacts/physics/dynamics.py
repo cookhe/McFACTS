@@ -900,16 +900,17 @@ def bin_spheroid_encounter(
         # Ratio of L3/Lbin =(m3/M_bin)*sqrt(R3/R_com)
         L_ratio = (mass_3 / bin_mass[chances_of_encounter < enc_rate]) * np.sqrt(radius_3 / bin_orb_a)
 
+        excluded_angles = np.full(num_encounters, -100.5)
+        
         # If time_passed < crit_time then gradually decrease angles i3 available at a < 1000r_g
         if (time_passed < crit_time):
             # Set up arrays for angles
-            excluded_angles = np.full(num_encounters, -100.5)
             excluded_angles[radius_3 < crit_radius] = (time_passed/crit_time) * 180
 
             # If radius_3 > crit_radius make grind down much slower at >1000r_g (say all captured in 20 Myr for < 5e4r_g)
             excluded_angles[radius_3 > crit_radius] = 0.05 * (time_passed/crit_time) * 180
 
-        elif time_passed > crit_time:
+        elif time_passed >= crit_time:
             # No encounters inside R < 10^3 r_g
             excluded_angles[radius_3 < crit_radius] = 360
 
