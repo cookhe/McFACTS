@@ -862,9 +862,7 @@ def bin_spheroid_encounter(
 
     # Based on estimated encounter rate, calculate if binary actually has a spheroid encounter
     chances_of_encounter = rng.uniform(size=blackholes_binary.num)
-    #chances_of_encounter = rng_enc_arr
     num_encounters = np.sum(chances_of_encounter < enc_rate)
-    #num_encounters = len(rng_enc_arr)
 
     if (num_encounters > 0):
 
@@ -883,9 +881,7 @@ def bin_spheroid_encounter(
         # NOTE: Stars should be most common sph component. Switch to BH after some long time.
         mode_star = 2.0
         mass_3 = (rng.pareto(nsc_bh_imf_powerlaw_index, size=num_encounters) + 1) * mode_star
-        #mass_3 = (rng_mss_arr + 1) * mode_star
         radius_3 = bin_orb_a * (10 ** (-0.5 + rng.uniform(size=num_encounters)))
-        #radius_3 = bin_orb_a * (10 ** (rng_rad_arr))
         # K.E_3 in Joules
         # Keplerian velocity of ecc prograde orbiter around SMBH (=c/sqrt(a/r_g))
         velocity_3 = scipy.constants.c / np.sqrt(radius_3)
@@ -896,16 +892,17 @@ def bin_spheroid_encounter(
         # Ratio of L3/Lbin =(m3/M_bin)*sqrt(R3/R_com)
         L_ratio = (mass_3 / bin_mass[chances_of_encounter < enc_rate]) * np.sqrt(radius_3 / bin_orb_a)
 
+        excluded_angles = np.full(num_encounters, -100.5)
+
         # If time_passed < crit_time then gradually decrease angles i3 available at a < 1000r_g
         if (time_passed < crit_time):
             # Set up arrays for angles
-            excluded_angles = np.full(num_encounters, -100.5)
             excluded_angles[radius_3 < crit_radius] = (time_passed/crit_time) * 180
 
             # If radius_3 > crit_radius make grind down much slower at >1000r_g (say all captured in 20 Myr for < 5e4r_g)
             excluded_angles[radius_3 > crit_radius] = 0.05 * (time_passed/crit_time) * 180
 
-        elif time_passed > crit_time:
+        elif time_passed >= crit_time:
             # No encounters inside R < 10^3 r_g
             excluded_angles[radius_3 < crit_radius] = 360
 
@@ -922,7 +919,6 @@ def bin_spheroid_encounter(
         # where 0 deg = disk mid-plane prograde, 180 deg= disk mid-plane retrograde,
         # 90deg = aligned with L_disk, 270 deg = anti-aligned with disk)
         i3 = rng.randint(low=excluded_angles, high=360-excluded_angles)
-        #i3 = rng_ii3_arr
         # Convert i3 to radians
         i3_rad = np.radians(i3)
 
@@ -960,6 +956,7 @@ def bin_spheroid_encounter(
 
     return (blackholes_binary)
 
+
 def bin_recapture(blackholes_binary, timestep_duration_yr):
     """Recapture BBH that has orbital inclination >0 post spheroid encounter
 
@@ -990,7 +987,7 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
 
     if (idx_gtr_0.shape[0] == 0):
         return (blackholes_binary)
-    
+
     bin_orb_inc = blackholes_binary.bin_orb_inc[idx_gtr_0]
     bin_mass = blackholes_binary.mass_1[idx_gtr_0] + blackholes_binary.mass_2[idx_gtr_0]
     bin_orb_a = blackholes_binary.bin_orb_a[idx_gtr_0]
@@ -1006,6 +1003,7 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
 
     return (blackholes_binary)
 
+
 def bh_near_smbh(
         smbh_mass,
         disk_bh_pro_orbs_a,
@@ -1016,7 +1014,7 @@ def bh_near_smbh(
         disk_inner_stable_circ_orb,
         ):
     """Evolve semi-major axis of single BH near SMBH according to Peters64
-    
+
     Test whether there are any BH near SMBH. 
     Flag if anything within min_safe_distance (default=50r_g) of SMBH.
     Time to decay into SMBH can be parameterized from Peters(1964) as:
@@ -1056,7 +1054,7 @@ def bh_near_smbh(
     decay_time_arr = time_of_orbital_shrinkage(
         smbh_mass*astropy_units.solMass,
         disk_bh_pro_masses*astropy_units.solMass,
-        si_from_r_g(smbh_mass*astropy_units.solMass,disk_bh_pro_orbs_a),
+        si_from_r_g(smbh_mass*astropy_units.solMass, disk_bh_pro_orbs_a),
         0*astropy_units.m,
     )
     # Estimate the number of timesteps to decay
@@ -1064,12 +1062,12 @@ def bh_near_smbh(
     # Estimate decrement
     decrement_arr = (1.0-(1./decay_timesteps))
     # Fix decrement
-    decrement_arr[decay_timesteps==0.] = 0.
+    decrement_arr[decay_timesteps == 0.] = 0.
     # Estimate new location
     new_location_r_g = decrement_arr * disk_bh_pro_orbs_a
     # Check location
     new_location_r_g[new_location_r_g < 1.] = 1.
     # Only update when less than min_safe_distance
     new_disk_bh_pro_orbs_a[disk_bh_pro_orbs_a < min_safe_distance] = new_location_r_g
-    
+
     return new_disk_bh_pro_orbs_a
