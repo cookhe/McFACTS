@@ -178,7 +178,10 @@ def main():
     opts = arg()
     # Disk surface density (in kg/m^2) is a function of radius, where radius is in r_g
     # Disk aspect ratio is a function of radius, where radius is in r_g
-    disk_surface_density, disk_aspect_ratio, disk_opacity = \
+    # Disk opacity ...
+    # Disk sound speed [m/s] is a function of radius, where radius is in r_g
+    # Disk density [kg/m^3] is a function of radius, where radius is in r_g
+    disk_surface_density, disk_aspect_ratio, disk_opacity, sound_speed, disk_density = \
         ReadInputs.construct_disk_interp(opts.smbh_mass,
                                          opts.disk_radius_outer,
                                          opts.disk_model_name,
@@ -1414,7 +1417,7 @@ def main():
 
             #merger_dist = 1.0
             emri_merger_id_num = blackholes_inner_disk.id_num[blackholes_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
-            tde_merger_id_num = stars_inner_disk.id_num[stars_inner_disk.orb_a <= opts.disk_inner_stable_circ_orbit]
+            tde_merger_id_num = stars_inner_disk.id_num[stars_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
 
             # if mergers occurs, remove from inner_disk arrays and stop evolving
             # still getting some nans, but I think that's bc there's retros that should have been
