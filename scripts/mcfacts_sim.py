@@ -181,7 +181,7 @@ def main():
     # Disk opacity ...
     # Disk sound speed [m/s] is a function of radius, where radius is in r_g
     # Disk density [kg/m^3] is a function of radius, where radius is in r_g
-    disk_surface_density, disk_aspect_ratio, disk_opacity, sound_speed, disk_density = \
+    disk_surface_density, disk_aspect_ratio, disk_opacity, disk_sound_speed, disk_density = \
         ReadInputs.construct_disk_interp(opts.smbh_mass,
                                          opts.disk_radius_outer,
                                          opts.disk_model_name,
@@ -589,10 +589,15 @@ def main():
                 opts.timestep_duration_yr
             )
 
+            disk_star_luminosity_factor = 4. # Hardcoded from Cantiello+2021 and Fabj+2024
             stars_pro.mass = accretion.change_star_mass(
                 stars_pro.mass,
-                opts.disk_star_eddington_ratio,
-                disk_bh_eddington_mass_growth_rate,  # BUG does this need to be different for stars?
+                stars_pro.orb_a,
+                stars_pro.orb_ecc,
+                disk_star_luminosity_factor,
+                opts.smbh_mass,
+                disk_sound_speed,
+                disk_density,
                 opts.timestep_duration_yr
             )
 

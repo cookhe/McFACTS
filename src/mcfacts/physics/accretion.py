@@ -3,16 +3,21 @@ Module for calculating change of mass, spin magnitude, and spin angle due to acc
 """
 
 import numpy as np
+import astropy.constants as astropy_const
+import astropy.units as astropy_units
 
 
 def change_star_mass(disk_star_pro_masses,
-                     disk_star_eddington_ratio,
-                     mdisk_star_eddington_mass_growth_rate,
+                     disk_star_pro_orbs_a,
+                     disk_star_pro_eccs,
+                     disk_star_luminosity_factor,
+                     smbh_mass,
+                     disk_sound_speed,
+                     disk_density,
                      timestep_duration_yr):
-    """Adds mass according to chosen stellar mass accretion prescription
+    """Adds mass according to Fabj+2024 accretion rate
 
-    Takes initial star masses at start of timestep and adds mass according to
-    chosen stellar mass accretion prescription
+    Takes initial star masses at start of timestep and adds mass according to Fabj+2024.
 
     Parameters
     ----------
@@ -32,11 +37,55 @@ def change_star_mass(disk_star_pro_masses,
     -------
     disk_star_pro_new_masses : numpy.ndarray
         Masses [M_sun] of stars after accreting at prescribed rate for one timestep [M_sun] with :obj:`float` type
+
+    Notes
+    -----
+    Calculate Bondi radius: R_B = (2 G M_*)/(c_s **2) and Hill radius: R_Hill \\approx a(1-e)(M_*/(3(M_* + M_SMBH)))^(1/3).
+    Accretion rate is Mdot = (pi/f) * rho * c_s * min[R_B, R_Hill]**2
+    with f ~ 4 as luminosity dependent factor that accounts for the decrease of the accretion rate onto the star as it
+    approaches the Eddington luminosity (see Cantiello+2021), rho as the disk density, and c_s as the sound speed.
     """
 
-    # Mass grows exponentially for length of timestep:
-    disk_star_pro_new_masses = disk_star_pro_masses*np.exp(mdisk_star_eddington_mass_growth_rate*disk_star_eddington_ratio*timestep_duration_yr)
+    # Put things in SI units
+    star_masses_si = disk_star_pro_masses * astropy_units.solMass
+    disk_sound_speed_si = disk_sound_speed(disk_star_pro_orbs_a) * astropy_units.meter/astropy_units.second
+    disk_density_si = disk_density(disk_star_pro_orbs_a) * (astropy_units.kg / (astropy_units.m ** 3))
+    timestep_duration_yr_si = timestep_duration_yr * astropy_units.year
+    rg_in_meters = (astropy_const.G.to("m^3 / kg s^2") * (astropy_units.solMass * smbh_mass) / (astropy_const.c ** 2.0)).to("meter")
 
+    # Calculate Bondi and Hill radii
+    r_bondi = (2 * astropy_const.G.to("m^3 / kg s^2") * star_masses_si / (disk_sound_speed_si ** 2)).to("meter")
+    r_hill_rg = (disk_star_pro_orbs_a * (1 - disk_star_pro_eccs) * ((disk_star_pro_masses / (3 * (disk_star_pro_masses + smbh_mass))) ** (1./3.)))
+    r_hill_m = r_hill_rg * rg_in_meters
+
+    # Determine which is smaller for each star
+    min_radius = np.minimum(r_bondi, r_hill_m)
+
+    # Calculate the mass accretion rate
+    mdot = ((np.pi / disk_star_luminosity_factor) * disk_density_si * disk_sound_speed_si * (min_radius ** 2))#.to("kg/yr")
+    print("mdot",mdot)
+
+    # Accrete mass onto stars
+    disk_star_pro_new_masses = ((star_masses_si + mdot * timestep_duration_yr_si).to("Msun")).value
+
+    accreted_mass = ((mdot * timestep_duration_yr_si).to("Msun")).value
+    accrete_mask = accreted_mass > 100
+    if(np.sum(accrete_mask) > 0):
+        print("LOTS OF ACCRETING")
+        print("r_hill_rg",r_hill_rg[accrete_mask])
+        print("r_hill_m",r_hill_m[accrete_mask])
+        print("r_bondi_m",r_bondi[accrete_mask])
+        print("r_bondi_rg",r_bondi[accrete_mask]/rg_in_meters)
+        print("disk density",disk_density(disk_star_pro_orbs_a)[accrete_mask])
+        print("disk sound speed",disk_sound_speed(disk_star_pro_orbs_a)[accrete_mask])
+        print("prev mass",star_masses_si[accrete_mask])
+        print("accreted mass",accreted_mass[accrete_mask])
+        print("mdot",mdot[accrete_mask].to("Msun/yr"))
+        print("disk_star_pro_orbs_a",disk_star_pro_orbs_a[accrete_mask])
+        print(ff)
+
+    # Stars can't accrete over 300Msun
+    disk_star_pro_new_masses[disk_star_pro_new_masses > 300.] = 300.
     return disk_star_pro_new_masses
 
 
