@@ -595,6 +595,7 @@ def main():
                 stars_pro.orb_a,
                 stars_pro.orb_ecc,
                 disk_star_luminosity_factor,
+                opts.disk_star_initial_mass_cutoff,
                 opts.smbh_mass,
                 disk_sound_speed,
                 disk_density,
