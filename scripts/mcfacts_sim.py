@@ -19,6 +19,7 @@ from mcfacts.physics import emri
 from mcfacts.physics import feedback
 from mcfacts.physics import gw
 from mcfacts.physics import migration
+from mcfacts.physics import stellar_interpolation
 
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
@@ -316,7 +317,7 @@ def main():
                                    new_category=np.full(stars.num, 1),
                                    new_orb_a=stars.orb_a,
                                    new_mass=stars.mass,
-                                   new_size=stars.radius,
+                                   new_size=10 ** (stars.log_radius),
                                    new_direction=np.zeros(stars.num),
                                    new_disk_inner_outer=np.zeros(stars.num))
 
@@ -589,7 +590,7 @@ def main():
                 opts.timestep_duration_yr
             )
 
-            disk_star_luminosity_factor = 4. # Hardcoded from Cantiello+2021 and Fabj+2024
+            disk_star_luminosity_factor = 4.  # Hardcoded from Cantiello+2021 and Fabj+2024
             stars_pro.mass = accretion.change_star_mass(
                 stars_pro.mass,
                 stars_pro.orb_a,
@@ -601,6 +602,9 @@ def main():
                 disk_density,
                 opts.timestep_duration_yr
             )
+
+            # Change stars' radii, luminosity, and temp
+            stars_pro.log_radius, stars_pro.log_luminosity, stars_pro.log_teff = stellar_interpolation.interp_star_params(stars_pro.mass)
 
             # Spin up
             blackholes_pro.spin = accretion.change_bh_spin_magnitudes(
@@ -1199,11 +1203,13 @@ def main():
                 star_X_captured, star_Y_captured, star_Z_captured = setupdiskstars.setup_disk_stars_comp(star_num=num_star_captured,
                                                                                                          star_ZAMS_metallicity=opts.nsc_star_metallicity_z_init,
                                                                                                          star_ZAMS_helium=opts.nsc_star_metallicity_y_init)
-                star_radius_captured = setupdiskstars.setup_disk_stars_radius(star_mass_captured)
+                star_log_radius_captured, star_log_luminosity_captured, star_log_teff_captured = stellar_interpolation.interp_star_params(star_mass_captured)
                 # Append captured stars to stars_pro array. Assume prograde and 1st gen.
                 stars_pro.add_stars(new_mass=star_mass_captured,
                                     new_orb_a=star_orb_a_captured,
-                                    new_radius=star_radius_captured,
+                                    new_log_radius=star_log_radius_captured,
+                                    new_log_luminosity=star_log_luminosity_captured,
+                                    new_log_teff=star_log_teff_captured,
                                     new_X=star_X_captured,
                                     new_Y=star_Y_captured,
                                     new_Z=star_Z_captured,
@@ -1256,7 +1262,9 @@ def main():
                 # Add BH to inner_disk_arrays
                 stars_inner_disk.add_stars(
                     new_mass=stars_pro.at_id_num(star_id_num_pro_inner_disk, "mass"),
-                    new_radius=stars_pro.at_id_num(star_id_num_inner_disk, "radius"),
+                    new_log_radius=stars_pro.at_id_num(star_id_num_inner_disk, "log_radius"),
+                    new_log_teff=stars_pro.at_id_num(star_id_num_inner_disk, "log_teff"),
+                    new_log_luminosity=stars_pro.at_id_num(star_id_num_inner_disk, "log_luminosity"),
                     new_X=stars_pro.at_id_num(star_id_num_inner_disk, "star_X"),
                     new_Y=stars_pro.at_id_num(star_id_num_inner_disk, "star_Y"),
                     new_Z=stars_pro.at_id_num(star_id_num_inner_disk, "star_Z"),
@@ -1309,7 +1317,7 @@ def main():
                 # Add BH to inner_disk_arrays
                 blackholes_inner_disk.add_blackholes(
                     new_mass=stars_retro.at_id_num(star_id_num_retro_inner_disk, "mass"),
-                    new_radius=stars_retro.at_id_num(star_id_num_retro_inner_disk, "radius"),
+                    new_log_radius=stars_retro.at_id_num(star_id_num_retro_inner_disk, "log_radius"),
                     new_X=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_X"),
                     new_Y=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Y"),
                     new_Z=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Z"),
@@ -1403,7 +1411,9 @@ def main():
 
             if stars_inner_disk.num > 0:
                 stars_tdes.add_stars(new_mass=stars_inner_disk.mass,
-                                     new_radius=stars_inner_disk.radius,
+                                     new_log_radius=stars_inner_disk.log_radius,
+                                     new_log_teff=stars_inner_disk.log_teff,
+                                     new_log_luminosity=stars_inner_disk.log_luminosity,
                                      new_X=stars_inner_disk.star_X,
                                      new_Y=stars_inner_disk.star_Y,
                                      new_Z=stars_inner_disk.star_Z,
@@ -1473,7 +1483,7 @@ def main():
                 # add to prograde arrays
                 stars_pro.add_blackholes(
                     new_mass=stars_retro.at_id_num(star_id_num_flip_to_pro, "mass"),
-                    new_radius=stars_retro.at_id_num(star_id_num_flip_to_pro, "radius"),
+                    new_log_radius=stars_retro.at_id_num(star_id_num_flip_to_pro, "log_radius"),
                     new_X=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_X"),
                     new_Y=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Y"),
                     new_Z=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Z"),
