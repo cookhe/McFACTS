@@ -6,11 +6,55 @@ import numpy as np
 import astropy.constants as astropy_const
 import astropy.units as astropy_units
 
+# This is definitely the wrong and lazy way to go about things
+# 0: mass
+# 1: log(R)
+# 2: log(L)
+# 3: log(Teff)
+interpolation_data = np.loadtxt("src/mcfacts/inputs/data/stellar_grid/stellar_grid.txt")
+interpolation_masses = interpolation_data[:, 0]
+
+
+def interpolate_values(mhigh_value, mlow_value, ratio):
+
+    diffs = np.abs(mhigh_value - mlow_value)*ratio
+
+    new_values = np.full(len(ratio), -100.5)
+
+    new_values[(mlow_value - mhigh_value) > 0] = mlow_value[(mlow_value - mhigh_value) > 0] - diffs[(mlow_value - mhigh_value) > 0]
+    new_values[(mlow_value - mhigh_value) < 0] = mlow_value[(mlow_value - mhigh_value) < 0] + diffs[(mlow_value - mhigh_value) < 0]
+
+    return (new_values)
+
+
+def change_star_params(disk_star_masses,
+                       disk_star_logradius,
+                       disk_star_logteff,
+                       disk_star_loglum):
+
+    new_radius = np.full(len(disk_star_masses), -100.5)
+    new_logl = np.full(len(disk_star_masses), -100.5)
+    new_logteff = np.full(len(disk_star_masses), -100.5)
+
+    # Need to implement homology relations for stars with masses < 0.8Msun
+
+    for i in range(0, len(interpolation_masses) - 1):
+        mass_range_idx = np.asarray((disk_star_masses > interpolation_masses[i]) & (disk_star_masses < interpolation_masses[i + 1])).nonzero()[0]
+
+        ratio = np.log10(disk_star_masses[mass_range_idx] / interpolation_masses[i]) / np.log10(interpolation_masses[i + 1] / interpolation_masses[i])
+
+        new_radius[mass_range_idx] = interpolate_values(interpolation_data[i + 1][1], interpolation_data[i][1], ratio)
+        new_logl[mass_range_idx] = interpolate_values(interpolation_data[i + 1][2], interpolation_data[i][2], ratio)
+        new_logteff[mass_range_idx] = interpolate_values(interpolation_data[i + 1][3], interpolation_data[i][3], ratio)
+
+    return (new_radius, new_logl, new_logteff)
+
 
 def change_star_mass(disk_star_pro_masses,
                      disk_star_pro_orbs_a,
                      disk_star_pro_eccs,
                      disk_star_luminosity_factor,
+                     disk_star_initial_mass_cutoff,
                      smbh_mass,
                      disk_sound_speed,
                      disk_density,
@@ -62,30 +106,13 @@ def change_star_mass(disk_star_pro_masses,
     min_radius = np.minimum(r_bondi, r_hill_m)
 
     # Calculate the mass accretion rate
-    mdot = ((np.pi / disk_star_luminosity_factor) * disk_density_si * disk_sound_speed_si * (min_radius ** 2))#.to("kg/yr")
-    print("mdot",mdot)
+    mdot = ((np.pi / disk_star_luminosity_factor) * disk_density_si * disk_sound_speed_si * (min_radius ** 2)).to("kg/yr")
 
     # Accrete mass onto stars
     disk_star_pro_new_masses = ((star_masses_si + mdot * timestep_duration_yr_si).to("Msun")).value
 
-    accreted_mass = ((mdot * timestep_duration_yr_si).to("Msun")).value
-    accrete_mask = accreted_mass > 100
-    if(np.sum(accrete_mask) > 0):
-        print("LOTS OF ACCRETING")
-        print("r_hill_rg",r_hill_rg[accrete_mask])
-        print("r_hill_m",r_hill_m[accrete_mask])
-        print("r_bondi_m",r_bondi[accrete_mask])
-        print("r_bondi_rg",r_bondi[accrete_mask]/rg_in_meters)
-        print("disk density",disk_density(disk_star_pro_orbs_a)[accrete_mask])
-        print("disk sound speed",disk_sound_speed(disk_star_pro_orbs_a)[accrete_mask])
-        print("prev mass",star_masses_si[accrete_mask])
-        print("accreted mass",accreted_mass[accrete_mask])
-        print("mdot",mdot[accrete_mask].to("Msun/yr"))
-        print("disk_star_pro_orbs_a",disk_star_pro_orbs_a[accrete_mask])
-        print(ff)
-
-    # Stars can't accrete over 300Msun
-    disk_star_pro_new_masses[disk_star_pro_new_masses > 300.] = 300.
+    # Stars can't accrete over disk_star_initial_mass_cutoff
+    disk_star_pro_new_masses[disk_star_pro_new_masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
     return disk_star_pro_new_masses
 
 
