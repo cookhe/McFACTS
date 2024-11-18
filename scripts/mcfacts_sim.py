@@ -196,6 +196,8 @@ def main():
     blackholes_merged_pop = AGNMergedBlackHole()
     emris_pop = AGNBlackHole()
     blackholes_binary_gw_pop = AGNBinaryBlackHole()
+    stars_pop = AGNStar()
+    tdes_pop = AGNStar()
 
     # tdes_pop = AGNStar()
 
@@ -739,7 +741,7 @@ def main():
                 # SF: I believe this step is handling an error checking thing that may have been
                 #     set up in the previous timeloop if e.g. a binary either merged or was ionized?
                 #     Please explain what this is and how it works right here?
-                bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary=blackholes_binary)
+                bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary)
                 if bh_binary_id_num_unphysical.size > 0:
 
                     # One of the key parameter (mass or location is zero). Not real. Delete binary. Remove column at index = ionization_flag
@@ -852,7 +854,7 @@ def main():
                     )
 
                 if (opts.flag_dynamic_enc > 0):
-                    # Recapture bins out of disk plane. 
+                    # Recapture bins out of disk plane.
                     # FIX THIS: Replace this with orb_inc_damping but for binary bhbh OBJECTS (KN)
                     blackholes_binary = dynamics.bin_recapture(
                         blackholes_binary,
@@ -1174,7 +1176,7 @@ def main():
                                               new_id_num=np.arange(filing_cabinet.id_max+1, len(bh_mass_captured) + filing_cabinet.id_max+1, 1))
 
                 # Update filing cabinet
-                filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max+1, len(bh_mass_captured) + filing_cabinet.id_max+1,1),
+                filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max+1, len(bh_mass_captured) + filing_cabinet.id_max+1, 1),
                                            new_category=np.array([0.0]),
                                            new_orb_a=bh_orb_a_captured,
                                            new_mass=bh_mass_captured,
@@ -1224,6 +1226,14 @@ def main():
                                     new_time_passed=np.full(num_star_captured, time_passed),
                                     new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1)
                                     )
+                # Update filing cabinet
+                filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1), 
+                                           new_category=np.ones(num_star_captured),
+                                           new_orb_a=star_orb_a_captured,
+                                           new_mass=star_mass_captured,
+                                           new_size=10 ** star_log_radius_captured,
+                                           new_direction=np.ones(num_star_captured),
+                                           new_disk_inner_outer=np.zeros(num_star_captured))
 
             # Test if any BH or BBH are in the danger-zone (<mininum_safe_distance, default =50r_g) from SMBH.
             # Potential EMRI/BBH EMRIs.
@@ -1546,7 +1556,7 @@ def main():
 
         # Update filing_cabinet
         filing_cabinet.add_objects(
-            new_id_num=np.arange(filing_cabinet.id_max+1, filing_cabinet.id_max + 1 + blackholes_binary.num * 2, 1),
+            new_id_num=np.arange(filing_cabinet.id_max + 1, filing_cabinet.id_max + 1 + blackholes_binary.num * 2, 1),
             new_category=np.zeros(blackholes_binary.num * 2),
             new_orb_a=np.concatenate([blackholes_binary.orb_a_1, blackholes_binary.orb_a_2]),
             new_mass=np.concatenate([blackholes_binary.mass_1, blackholes_binary.mass_1]),
@@ -1554,9 +1564,36 @@ def main():
             new_direction=np.ones(blackholes_binary.num * 2),
             new_disk_inner_outer=np.zeros(blackholes_binary.num * 2)
         )
-
         blackholes_binary.remove_id_num(blackholes_binary.id_num)
         filing_cabinet.remove_id_num(blackholes_binary.id_num)
+
+        # Assume that all immortal stars become BHs
+        stars_to_bh_id_nums = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
+        star_to_bh_spin = setupdiskblackholes.setup_disk_blackholes_spins(len(stars_to_bh_id_nums),
+                                                                          opts.nsc_bh_spin_dist_mu, opts.nsc_bh_spin_dist_sigma)
+        star_to_bh_spin_angle = setupdiskblackholes.setup_disk_blackholes_spin_angles(len(stars_to_bh_id_nums), star_to_bh_spin)
+        star_to_bh_orb_ang_mom = setupdiskblackholes.setup_disk_blackholes_orb_ang_mom(len(stars_to_bh_id_nums))
+        star_to_bh_inc = setupdiskblackholes.setup_disk_blackholes_incl(len(stars_to_bh_id_nums), stars_pro.at_id_num(stars_to_bh_id_nums, "orb_a"), star_to_bh_orb_ang_mom, disk_aspect_ratio)
+        blackholes_pro.add_blackholes(new_mass=stars_pro.at_id_num(stars_to_bh_id_nums, "mass"),
+                                      new_id_num=stars_to_bh_id_nums,
+                                      new_orb_ang_mom=star_to_bh_orb_ang_mom,
+                                      new_spin=star_to_bh_spin,
+                                      new_spin_angle=star_to_bh_spin_angle,
+                                      new_orb_a=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_a"),
+                                      new_orb_inc=star_to_bh_inc,
+                                      new_orb_ecc=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_ecc"),
+                                      new_orb_arg_periapse=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_arg_periapse"),
+                                      new_galaxy=stars_pro.at_id_num(stars_to_bh_id_nums, "galaxy"),
+                                      new_gen=stars_pro.at_id_num(stars_to_bh_id_nums, "gen"),
+                                      new_time_passed=stars_pro.at_id_num(stars_to_bh_id_nums, "time_passed"))
+        # Update filing cabinet
+        filing_cabinet.update(id_num=stars_to_bh_id_nums,
+                              attr="category",
+                              new_info=np.zeros(len(stars_to_bh_id_nums)))
+        filing_cabinet.update(id_num=stars_to_bh_id_nums,
+                              attr="size",
+                              new_info=np.full(len(stars_to_bh_id_nums), -1.5))
+        stars_pro.remove_id_num(stars_to_bh_id_nums)
 
         # Add merged BH to the population level object
         blackholes_merged_pop.add_blackholes(new_id_num=blackholes_merged.id_num,
@@ -1622,13 +1659,53 @@ def main():
                                  new_time_passed=blackholes_emris.time_passed,
                                  new_gw_freq=blackholes_emris.gw_freq,
                                  new_gw_strain=blackholes_emris.gw_strain)
-
+        
+        tdes_pop.add_stars(new_id_num=stars_tdes.id_num,
+                           new_mass=stars_tdes.mass,
+                           new_log_radius=stars_tdes.log_radius,
+                           new_log_teff=stars_tdes.log_teff,
+                           new_log_luminosity=stars_tdes.log_luminosity,
+                           new_X=stars_tdes.star_X,
+                           new_Y=stars_tdes.star_Y,
+                           new_Z=stars_tdes.star_Z,
+                           new_orb_a=stars_tdes.orb_a,
+                           new_spin=stars_tdes.spin,
+                           new_orb_inc=stars_tdes.orb_inc,
+                           new_spin_angle=stars_tdes.spin_angle,
+                           new_orb_ang_mom=stars_tdes.orb_ang_mom,
+                           new_orb_ecc=stars_tdes.orb_ecc,
+                           new_orb_arg_periapse=stars_tdes.orb_arg_periapse,
+                           new_galaxy=stars_tdes.galaxy,
+                           new_gen=stars_tdes.gen,
+                           new_time_passed=stars_tdes.time_passed)
+        
+        stars_pop.add_stars(new_id_num=stars_pro.id_num,
+                            new_mass=stars_pro.mass,
+                            new_log_radius=stars_pro.log_radius,
+                            new_log_teff=stars_pro.log_teff,
+                            new_log_luminosity=stars_pro.log_luminosity,
+                            new_X=stars_pro.star_X,
+                            new_Y=stars_pro.star_Y,
+                            new_Z=stars_pro.star_Z,
+                            new_orb_a=stars_pro.orb_a,
+                            new_spin=stars_pro.spin,
+                            new_spin_angle=stars_pro.spin_angle,
+                            new_orb_ang_mom=stars_pro.orb_ang_mom,
+                            new_orb_ecc=stars_pro.orb_ecc,
+                            new_orb_inc=stars_pro.orb_inc,
+                            new_orb_arg_periapse=stars_pro.orb_arg_periapse,
+                            new_galaxy=stars_pro.galaxy,
+                            new_gen=stars_pro.gen,
+                            new_time_passed=stars_pro.time_passed)
+        
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
     population_save_name = f"{basename}_population{extension}"
     survivors_save_name = f"{basename}_survivors{extension}"
     emris_save_name = f"{basename}_emris{extension}"
+    tdes_save_name = f"{basename}_tdes{extension}"
     gws_save_name = f"{basename}_lvk{extension}"
+    stars_save_name = f"{basename}_stars{extension}"
 
     # Define columns to write
     emri_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "gw_strain", "gw_freq", "id_num"]
@@ -1637,20 +1714,28 @@ def main():
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
                        "gen_1", "gen_2", "time_merged", "chi_p"]
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
+    stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_a", "spin", "spin_angle", "star_X", "star_Y", "star_Z", "gen", "id_num"]
+    tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_a", "spin", "spin_angle", "star_X", "star_Y", "star_Z", "gen", "id_num"]
 
     # Save things
     emris_pop.to_txt(os.path.join(opts.work_directory, emris_save_name),
                      cols=emri_cols)
 
+    tdes_pop.to_txt(os.path.join(opts.work_directory, tdes_save_name),
+                     cols=tde_cols)
+
     blackholes_pro.to_txt(os.path.join(opts.work_directory, survivors_save_name),
                           cols=bh_surviving_cols)
+    
+    blackholes_binary_gw_pop.to_txt(os.path.join(opts.work_directory, gws_save_name),
+                                    cols=binary_gw_cols)
 
     # Include initial seed in header
     blackholes_merged_pop.to_txt(os.path.join(opts.work_directory, population_save_name),
                                  cols=population_cols, extra_header=f"Initial seed: {opts.seed}\n")
-
-    blackholes_binary_gw_pop.to_txt(os.path.join(opts.work_directory, gws_save_name),
-                                    cols=binary_gw_cols)
+    
+    stars_pop.to_txt(os.path.join(opts.work_directory, stars_save_name),
+                                    cols=stars_cols, extra_header=f"Initial seed: {opts.seed}\n")
 
 
 if __name__ == "__main__":
