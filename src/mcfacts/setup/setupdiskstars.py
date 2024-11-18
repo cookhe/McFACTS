@@ -81,11 +81,12 @@ def setup_disk_stars_radius(masses):
 
     Returns
     -------
-    radii : numpy.ndarray
-        stellar radii
+    star_log_radius : numpy.ndarray
+        log of stellar radii
     """
     star_radius_initial = (masses**0.8)
-    return (star_radius_initial)
+    star_log_radius = np.log10(star_radius_initial)
+    return (star_log_radius)
 
 
 def setup_disk_stars_comp(star_num,
