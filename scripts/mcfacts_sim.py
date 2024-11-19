@@ -608,6 +608,11 @@ def main():
             # Change stars' radii, luminosity, and temp
             stars_pro.log_radius, stars_pro.log_luminosity, stars_pro.log_teff = stellar_interpolation.interp_star_params(stars_pro.mass)
 
+            # Update filing cabinet
+            filing_cabinet.update(id_num=stars_pop.id_num,
+                                  attr="size",
+                                  new_info=10 ** stars_pro.log_radius)
+
             # Spin up
             blackholes_pro.spin = accretion.change_bh_spin_magnitudes(
                 blackholes_pro.spin,
