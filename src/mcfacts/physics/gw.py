@@ -95,7 +95,7 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
         strain_factor[nu_gw > (1e-6) * u.Hz] = np.sqrt((nu_squared[nu_gw > (1e-6) * u.Hz] / delta_nu_delta_timestep[nu_gw > (1e-6) * u.Hz]) / 8.)
     # Condition from evolve_gw
     elif (flag_include_old_gw_freq == 0):
-        strain_factor[nu_gw > (1e-6) * u.Hz] = np.full(np.sum(nu_gw > (1e-6) * u.Hz), 4.e3)
+        strain_factor[nu_gw > (1e-6) * u.Hz] = 4.e3
     char_strain = strain_factor*strain
 
     return (char_strain.value, nu_gw.value)

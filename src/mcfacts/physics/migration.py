@@ -55,12 +55,9 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     # Otherwise no change in semi-major axis (orb_a).
     # Get indices of objects with orb_ecc <= ecc_crit so we can only update orb_a for those.
     migration_indices = np.asarray(orbs_ecc <= orb_ecc_crit).nonzero()[0]
+
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        # BUG it shouldn't work like this
-        # epsilon is disk_radius_outer * Hill sphere of BH at outer edge of disk * random number
-        epsilon = disk_radius_outer * ((masses[orbs_a > disk_radius_outer] / (3 * (masses[orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(orbs_a > disk_radius_outer))
-        orbs_a[orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
         return (orbs_a)
 
     # If things will migrate then copy over the orb_a of objects that will migrate
@@ -137,9 +134,6 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
-    # BUG should not work like this, check should only be for orbs_a set in this function
-    epsilon = disk_radius_outer * ((masses[orbs_a > disk_radius_outer] / (3 * (masses[orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(orbs_a > disk_radius_outer))
-    orbs_a[orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
     return (orbs_a)
 
 

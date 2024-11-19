@@ -236,7 +236,7 @@ def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func
     mask3 = (blackholes_binary.bin_orb_ecc > disk_bh_pro_orb_ecc_crit) & (blackholes_binary.bin_orb_ecc > (2 * disk_aspect_ratio))
     new_bin_orb_ecc[mask3] = blackholes_binary.bin_orb_ecc[mask3] * np.exp(-large_timescale_ratio[mask3])
 
-    new_bin_orb_ecc[new_bin_orb_ecc < disk_bh_pro_orb_ecc_crit] = np.full(np.sum(new_bin_orb_ecc < disk_bh_pro_orb_ecc_crit), disk_bh_pro_orb_ecc_crit)
+    new_bin_orb_ecc[new_bin_orb_ecc < disk_bh_pro_orb_ecc_crit] = disk_bh_pro_orb_ecc_crit
     # Check output
     assert np.isfinite(new_bin_orb_ecc).all(), \
         "Finite check failed for new_bin_orb_ecc"
