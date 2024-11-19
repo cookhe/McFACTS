@@ -1532,6 +1532,7 @@ def main():
             print(blackholes_pro.orb_a)
         print("Number of binaries = ", blackholes_binary.num)
         print("Total number of mergers = ", blackholes_merged.num)
+        print("Total number of immortal stars = ", len(stars_pro.mass[stars_pro.mass == opts.disk_star_initial_mass_cutoff]))
         print("Nbh_disk", disk_bh_num)
 
         # Write out all singletons after AGN episode so we can use as input to another AGN phase
