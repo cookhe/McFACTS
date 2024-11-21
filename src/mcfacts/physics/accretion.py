@@ -68,13 +68,6 @@ def change_star_mass(disk_star_pro_masses,
     # Accrete mass onto stars
     disk_star_pro_new_masses = ((star_masses_si + mdot * timestep_duration_yr_si).to("Msun")).value
 
-    mass_mask = (mdot * timestep_duration_yr_si).to("Msun").value > 10
-    if(np.sum(mass_mask) > 0):
-        print(star_masses_si[mass_mask].to("Msun"))
-        print((mdot * timestep_duration_yr_si).to("Msun")[mass_mask])
-
-    #print("mdot * timestep_duration_yr_si).to('Msun')",(mdot * timestep_duration_yr_si).to("Msun"))
-
     # Stars can't accrete over disk_star_initial_mass_cutoff
     disk_star_pro_new_masses[disk_star_pro_new_masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
 
