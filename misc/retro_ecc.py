@@ -1,7 +1,7 @@
 """ The module provides methods for calculating the eccentricity and semi major latus of retrograde orbiters."""
 import numpy as np
 import scipy
-import mcfacts.constants as mc_const
+import astropy.units as u
 
 
 def retro_semi_lat(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_retro_orbs_ecc,
@@ -45,9 +45,9 @@ def retro_semi_lat(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_b
 
     # throw most things into SI units (that's right, ENGINEER UNITS!)
     #    or more locally convenient variable names
-    smbh_mass = smbh_mass * mc_const.KgPerMsun  # kg
+    smbh_mass = smbh_mass * u.Msun.to("kg")  # kg
     semi_maj_axis = disk_bh_retro_orbs_a * scipy.constants.G * smbh_mass / (scipy.constants.c) ** 2  # m
-    retro_mass = disk_bh_retro_masses * mc_const.KgPerMsun  # kg
+    retro_mass = disk_bh_retro_masses * u.Msun.to("kg")  # kg
     omega = disk_bh_retro_arg_periapse  # radians
     ecc = disk_bh_retro_orbs_ecc  # unitless
     inc = disk_bh_retro_orbs_inc  # radians

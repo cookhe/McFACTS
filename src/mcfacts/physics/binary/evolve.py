@@ -541,7 +541,7 @@ def bin_reality_check(blackholes_binary):
     mass_2_id_num = blackholes_binary.id_num[blackholes_binary.mass_2 == 0]
     orb_a_1_id_num = blackholes_binary.id_num[blackholes_binary.orb_a_1 == 0]
     orb_a_2_id_num = blackholes_binary.id_num[blackholes_binary.orb_a_2 == 0]
-    bin_ecc_id_num = blackholes_binary.id_num[blackholes_binary.bin_ecc > 1]
+    bin_ecc_id_num = blackholes_binary.id_num[blackholes_binary.bin_ecc >= 1]
 
     id_nums = np.concatenate([mass_1_id_num, mass_2_id_num,
                              orb_a_1_id_num, orb_a_2_id_num, bin_ecc_id_num])
