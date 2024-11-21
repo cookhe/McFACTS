@@ -702,7 +702,8 @@ def main():
                 stars_retro.orb_arg_periapse,
                 opts.disk_inner_stable_circ_orb,
                 disk_surface_density,
-                opts.timestep_duration_yr
+                opts.timestep_duration_yr,
+                opts.disk_radius_outer
             )
 
             # Check for bin_ecc unphysical

@@ -152,13 +152,13 @@ def circular_singles_encounters_prograde(
     # Find the e< crit_ecc. population. These are the (circularized) population that can form binaries.
     circ_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
-    ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
+    ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc >= disk_bh_pro_orb_ecc_crit).nonzero()[0]
 
     # Get locations for circ population
     circ_prograde_population_locations = disk_bh_pro_orbs_a[circ_prograde_population_indices]
 
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
-    epsilon = disk_radius_outer * ((disk_bh_pro_masses / (3 * (disk_bh_pro_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(disk_bh_pro_masses))
+    epsilon = disk_radius_outer * ((disk_bh_pro_masses[circ_prograde_population_indices] / (3 * (disk_bh_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
 
     # T_orb = pi (R/r_g)^1.5 (GM_smbh/c^2) = pi (R/r_g)^1.5 (GM_smbh*2e30/c^2)
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
@@ -192,12 +192,9 @@ def circular_singles_encounters_prograde(
                             disk_bh_pro_orbs_a[circ_idx] = disk_bh_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_bh_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[circ_idx]
+                                disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
                             disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
                             disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
-                            # Catch for if orb_a > disk_radius_outer
-                            if (disk_bh_pro_orbs_a[ecc_idx] > disk_radius_outer):
-                                disk_bh_pro_orbs_a[ecc_idx] = disk_radius_outer - epsilon[ecc_idx]
                     num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
