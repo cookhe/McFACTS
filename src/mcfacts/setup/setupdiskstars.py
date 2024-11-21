@@ -25,8 +25,8 @@ def setup_disk_stars_orb_a(star_num, disk_radius_outer, disk_inner_stable_circ_o
     """
 
     # Generating star locations in an x^2 distribution
-    x_vals = rng.uniform(low=disk_inner_stable_circ_orb/disk_radius_outer, high=1, size=star_num)
-    star_orb_a_initial = np.sqrt(x_vals * disk_radius_outer)
+    x_vals = rng.uniform(low=(disk_inner_stable_circ_orb/disk_radius_outer) ** 2, high=1, size=star_num)
+    star_orb_a_initial = np.sqrt(x_vals) * disk_radius_outer
 
     return (star_orb_a_initial)
 
