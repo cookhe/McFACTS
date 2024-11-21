@@ -5,6 +5,7 @@ Module for calculating change of mass, spin magnitude, and spin angle due to acc
 import numpy as np
 import astropy.constants as astropy_const
 import astropy.units as astropy_units
+from mcfacts.physics.point_masses import si_from_r_g
 
 
 def change_star_mass(disk_star_pro_masses,
@@ -52,12 +53,11 @@ def change_star_mass(disk_star_pro_masses,
     disk_sound_speed_si = disk_sound_speed(disk_star_pro_orbs_a) * astropy_units.meter/astropy_units.second
     disk_density_si = disk_density(disk_star_pro_orbs_a) * (astropy_units.kg / (astropy_units.m ** 3))
     timestep_duration_yr_si = timestep_duration_yr * astropy_units.year
-    rg_in_meters = (astropy_const.G.to("m^3 / kg s^2") * (astropy_units.solMass * smbh_mass) / (astropy_const.c ** 2.0)).to("meter")
 
     # Calculate Bondi and Hill radii
     r_bondi = (2 * astropy_const.G.to("m^3 / kg s^2") * star_masses_si / (disk_sound_speed_si ** 2)).to("meter")
     r_hill_rg = (disk_star_pro_orbs_a * (1 - disk_star_pro_eccs) * ((disk_star_pro_masses / (3 * (disk_star_pro_masses + smbh_mass))) ** (1./3.)))
-    r_hill_m = r_hill_rg * rg_in_meters
+    r_hill_m = si_from_r_g(smbh_mass, r_hill_rg)
 
     # Determine which is smaller for each star
     min_radius = np.minimum(r_bondi, r_hill_m)
@@ -68,8 +68,16 @@ def change_star_mass(disk_star_pro_masses,
     # Accrete mass onto stars
     disk_star_pro_new_masses = ((star_masses_si + mdot * timestep_duration_yr_si).to("Msun")).value
 
+    mass_mask = (mdot * timestep_duration_yr_si).to("Msun").value > 10
+    if(np.sum(mass_mask) > 0):
+        print(star_masses_si[mass_mask].to("Msun"))
+        print((mdot * timestep_duration_yr_si).to("Msun")[mass_mask])
+
+    #print("mdot * timestep_duration_yr_si).to('Msun')",(mdot * timestep_duration_yr_si).to("Msun"))
+
     # Stars can't accrete over disk_star_initial_mass_cutoff
     disk_star_pro_new_masses[disk_star_pro_new_masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
+
     return disk_star_pro_new_masses
 
 
