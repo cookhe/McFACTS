@@ -118,10 +118,11 @@ mstar_runs:
 		#--timestep_num 1000 \
 	#python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
 
-kaila_stars: mcfacts_sim
+kaila_stars: plots
 	cd runs; \
 	python ../${STARS_PLOTS} \
 	--runs-directory ${wd} \
+	--fname-stars ${wd}/output_mergers_stars.dat \
 	--plots-directory ${wd}
 		
 
