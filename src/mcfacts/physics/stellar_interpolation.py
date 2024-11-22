@@ -86,8 +86,8 @@ def interp_star_params(disk_star_masses):
 
     # Using homology relations for stars with masses <= 0.8Msun
     # From K&W, mu relations go away because chemical comp is the same
-    # Eqn 20.20: L/L' = (M/M')^3 (mu/mu')^4
-    # Eqn 20.21: R/R' = (M/M')^z1 (mu/mu')^z2
+    # Eqn 20.20: L/L' = (M/M')^3 (mu/mu')^4 --> logL = log10((M/M')^3 * L')
+    # Eqn 20.21: R/R' = (M/M')^z1 (mu/mu')^z2 --> logR = log10((M/M')^z1 * R')
     # Eqn 20.22: Teff^4 = L/(4 pi sigma_sb R^2)
     # z1 ~ 0.43 for nu = 4.
     # X = 0.7064, Y = 0.2735, and Z = 0.02
@@ -102,8 +102,8 @@ def interp_star_params(disk_star_masses):
     if (np.sum(mass_mask) > 0):
         z1 = 0.43
 
-        new_logL[mass_mask] = (disk_star_masses[mass_mask] / interpolation_masses.min()) ** 3.
-        new_logR[mass_mask] = (disk_star_masses[mass_mask] / interpolation_masses.min()) ** z1
+        new_logL[mass_mask] = np.log10(((disk_star_masses[mass_mask] / interpolation_masses.min()) ** 3.) * (10 ** interpolation_data[0][2]))
+        new_logR[mass_mask] = np.log10(((disk_star_masses[mass_mask] / interpolation_masses.min()) ** z1) * (10 ** interpolation_data[0][1]))
         L_units = (10 ** new_logL[mass_mask]) * astropy_const.L_sun
         R_units = (10 ** new_logR[mass_mask]) * astropy_const.R_sun
         lowmass_Teff = ((L_units / (4. * np.pi * astropy_const.sigma_sb * (R_units ** 2))) ** (1./4.)).to("Kelvin")
