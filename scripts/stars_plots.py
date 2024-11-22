@@ -107,6 +107,36 @@ def main():
     plt.savefig(opts.plots_directory + "/star_mass_v_radius.png", format='png')
     plt.close()
 
+    # ========================================
+    # HRD
+    # ========================================
+
+    fig = plt.figure(figsize=plotting.set_size(figsize))
+
+    plt.scatter(stars[:, 5], stars[:, 6],
+                s=styles.markersize_gen1,
+                marker=styles.marker_gen1,
+                edgecolor=styles.color_gen1,
+                facecolors="none",
+                alpha=styles.markeralpha_gen1,
+                label="1g-1g")
+
+    plt.gca().invert_xaxis()
+    plt.ylabel(r"$\log L/L_\odot$")
+    plt.xlabel(r"$\log T_\mathrm{eff}/\mathrm{K}$")
+
+    if figsize == 'apj_col':
+        plt.legend(fontsize=6)
+    elif figsize == 'apj_page':
+        plt.legend()
+
+    svf_ax = plt.gca()
+    svf_ax.set_axisbelow(True)
+    plt.grid(True, color='gray', ls='dashed')
+    plt.savefig(opts.plots_directory + "/star_hrd.png", format='png')
+    plt.close()
+
+
 
 ######## Execution ########
 if __name__ == "__main__":
