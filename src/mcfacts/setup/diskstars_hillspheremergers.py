@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def mass_threshold_merger(disk_star_num, disk_stars_mass_min, smbh_mass, P_m, P_r, disk_stars_orb_a, disk_radius_trap):
+def mass_threshold_merger(disk_star_num, disk_stars_mass_min, smbh_mass, P_m, P_r, disk_stars_orb_a, disk_radius_outer):
     """
     disk_star_num : int
         number of stars in the initial draw
@@ -12,11 +12,11 @@ def mass_threshold_merger(disk_star_num, disk_stars_mass_min, smbh_mass, P_m, P_
     P_m : float
         exponent for mass cdf, assuming it is in the form P(> m_min) = (m_min/m)^P_m
     P_r : float
-        exponent for disk orb_aation cdf, assuming the form P(r) = (r_orb_aation/disk_radius_trap)^P_r
+        exponent for disk orb_aation cdf, assuming the form P(r) = (r_orb_aation/disk_radius_outer)^P_r
     r_orb_aation : numpy array
         semi-major axis of stellar orbit around SMBH, R_sun (for now?)
-    disk_radius_trap : float
-        trap radius of disk, R_sun (for now?)
+    disk_radius_outer : float
+        Outer radius [r_{g,SMBH}] of disk
 
     Returns:
     mass_threshold : numpy.ndarray
@@ -25,7 +25,7 @@ def mass_threshold_merger(disk_star_num, disk_stars_mass_min, smbh_mass, P_m, P_
     Notes
     -----
     Eqn is
-    (M_min^(P_m/(P_m - 1/3))) / ((3*M_smbh)^(1/3(P_m - 1/3))) * (N_star * P_r)^(1/(P_m - 1/3)) * (orb_a/R_trap)^(P_r/(P_m - 1/3))
+    (M_min^(P_m/(P_m - 1/3))) / ((3*M_smbh)^(1/3(P_m - 1/3))) * (N_star * P_r)^(1/(P_m - 1/3)) * (orb_a/R)^(P_r/(P_m - 1/3))
     """
     exp1_top = P_m/(P_m - (1./3.))
     exp1_bottom = 1./(3*(P_m - (1./3.)))
@@ -35,14 +35,14 @@ def mass_threshold_merger(disk_star_num, disk_stars_mass_min, smbh_mass, P_m, P_
     frac2 = (disk_star_num*P_r)**exp2
 
     exp3 = P_r/(P_m - (1./3.))
-    frac3 = (disk_stars_orb_a/disk_radius_trap)**exp3
+    frac3 = (disk_stars_orb_a/disk_radius_outer)**exp3
 
     mass_threshold = frac1*frac2*frac3
 
     return (mass_threshold)
 
 
-def hill_sphere_orb_a(orbs_a_sorted, mass_threshold, smbh_mass, disk_radius_trap):
+def hill_sphere_orb_a(orbs_a_sorted, mass_threshold, smbh_mass, disk_radius_outer):
     """Find location of edge of Hill sphere for stars
 
     Parameters
@@ -53,8 +53,8 @@ def hill_sphere_orb_a(orbs_a_sorted, mass_threshold, smbh_mass, disk_radius_trap
         Minimum mass [M_sun] to not merge, as a function of orbs_a_sorted with :obj:`float` type
     smbh_mass : float
         Mass [M_sun] of supermassive black hole
-    disk_radius_trap : float
-        Trap radius [r_{g,SMBH}] of the disk
+    disk_radius_outer : float
+        Outer radius [r_{g,SMBH}] of the disk
 
     Returns
     -------
@@ -71,7 +71,7 @@ def hill_sphere_orb_a(orbs_a_sorted, mass_threshold, smbh_mass, disk_radius_trap
     # Hill sphere radius for the star closest to the SMBH
     orb_a = orbs_a_sorted[0]*((mass_threshold[0]/(3.*smbh_mass))**(1./3.)) + orbs_a_sorted[0]
     delta_orbs_a.append(orb_a)
-    while orb_a < disk_radius_trap:
+    while orb_a < disk_radius_outer:
         # Find the next star closest to the edge of the Hill sphere radius
         idx = (np.abs(orb_a - orbs_a_sorted)).argmin()
         # Calculate its Hill sphere radius and add it to orb_a counter
@@ -81,7 +81,7 @@ def hill_sphere_orb_a(orbs_a_sorted, mass_threshold, smbh_mass, disk_radius_trap
     return (delta_orbs_a)
 
 
-def hillsphere_mergers(n_stars, masses_initial_sorted, orbs_a_initial_sorted, min_initial_star_mass, disk_radius, smbh_mass, P_m, P_r):
+def hillsphere_mergers(n_stars, masses_initial_sorted, orbs_a_initial_sorted, min_initial_star_mass, disk_radius_outer, smbh_mass, P_m, P_r):
     # P_m and P_r need to be added to opts
 
     # Get the minimum mass for stars to not merge for every orb_a
@@ -91,10 +91,10 @@ def hillsphere_mergers(n_stars, masses_initial_sorted, orbs_a_initial_sorted, mi
                                            P_m=P_m,
                                            P_r=P_r,
                                            disk_stars_orb_a=orbs_a_initial_sorted,
-                                           disk_radius_trap=disk_radius)
+                                           disk_radius_outer=disk_radius_outer)
 
     # Get locations of Hill spheres for each threshold mass
-    delta_orbs_a = hill_sphere_orb_a(orbs_a_initial_sorted, mass_threshold, smbh_mass, disk_radius)
+    delta_orbs_a = hill_sphere_orb_a(orbs_a_initial_sorted, mass_threshold, smbh_mass, disk_radius_outer)
 
     # Set up arrays for final masses and orb_a
     new_masses = []
@@ -109,7 +109,7 @@ def hillsphere_mergers(n_stars, masses_initial_sorted, orbs_a_initial_sorted, mi
                                             P_m=1.35,
                                             P_r=1.,
                                             disk_stars_orb_a=r_range,
-                                            disk_radius_trap=disk_radius)
+                                            disk_radius_outer=disk_radius_outer)
             mass_range_merge = mass_range[mass_range <= mt_temp]
 
             mass_range_static = mass_range[mass_range > mt_temp]
