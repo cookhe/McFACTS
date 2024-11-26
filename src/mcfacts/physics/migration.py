@@ -90,7 +90,7 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     migration_distance = new_orbs_a.copy() * dt
 
     # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
-    #epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
+    epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
 
     # Get masks for if objects are inside or outside the trap radius
     mask_out_trap = new_orbs_a > disk_radius_trap
@@ -101,14 +101,14 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     if (np.sum(mask_mig_in) > 0):
         # If outside trap migrate inwards
         temp_orbs_a = new_orbs_a[mask_mig_in & mask_out_trap] - migration_distance[mask_mig_in & mask_out_trap] * (1 - disk_feedback_ratio[mask_mig_in & mask_out_trap])
-        # If migration takes object inside trap, fix at trap #BUG 
-        temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap #- epsilon_trap_radius[mask_mig_in & mask_out_trap][temp_orbs_a <= disk_radius_trap]
+        # If migration takes object inside trap, fix at trap
+        temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_mig_in & mask_out_trap][temp_orbs_a <= disk_radius_trap]
         new_orbs_a[mask_mig_in & mask_out_trap] = temp_orbs_a
 
         # If inside trap, migrate outwards
         temp_orbs_a = new_orbs_a[mask_mig_in & mask_in_trap] + migration_distance[mask_mig_in & mask_in_trap] * (1 - disk_feedback_ratio[mask_mig_in & mask_in_trap])
         # If migration takes object outside trap, fix at trap
-        temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap #+ epsilon_trap_radius[mask_mig_in & mask_in_trap][temp_orbs_a >= disk_radius_trap]
+        temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_mig_in & mask_in_trap][temp_orbs_a >= disk_radius_trap]
         new_orbs_a[mask_mig_in & mask_in_trap] = temp_orbs_a
 
     # Get mask for objects where feedback_ratio > 1: these migrate outwards
@@ -122,13 +122,13 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
         # If outside trap migrate inwards
         temp_orbs_a = new_orbs_a[mask_mig_stay & mask_out_trap] - migration_distance[mask_mig_stay & mask_out_trap]
         # If migration takes object inside trap, fix at trap
-        temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap #- epsilon_trap_radius[mask_mig_stay & mask_out_trap][temp_orbs_a <= disk_radius_trap]
+        temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_mig_stay & mask_out_trap][temp_orbs_a <= disk_radius_trap]
         new_orbs_a[mask_mig_stay & mask_out_trap] = temp_orbs_a
 
         # If inside trap migrate outwards
         temp_orbs_a = new_orbs_a[mask_mig_stay & mask_in_trap] + migration_distance[mask_mig_stay & mask_in_trap]
         # If migration takes object outside trap, fix at trap
-        temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap #+ epsilon_trap_radius[mask_mig_stay & mask_in_trap][temp_orbs_a >= disk_radius_trap]
+        temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_mig_stay & mask_in_trap][temp_orbs_a >= disk_radius_trap]
         new_orbs_a[mask_mig_stay & mask_in_trap] = temp_orbs_a
 
     # Assert that things cannot migrate out of the disk

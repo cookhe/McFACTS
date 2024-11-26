@@ -721,6 +721,7 @@ def main():
 
             # Perturb eccentricity via dynamical encounters
             if opts.flag_dynamic_enc > 0:
+
                 blackholes_pro.orb_a, blackholes_pro.orb_ecc = dynamics.circular_singles_encounters_prograde(
                     opts.smbh_mass,
                     blackholes_pro.orb_a,
@@ -779,6 +780,7 @@ def main():
                     # Harden/soften binaries via dynamical encounters
                     # Harden binaries due to encounters with circular singletons (e.g. Leigh et al. 2018)
                     # FIX THIS: RETURN perturbed circ singles (orb_a, orb_ecc)
+
                     blackholes_binary = dynamics.circular_binaries_encounters_circ_prograde(
                         opts.smbh_mass,
                         blackholes_pro.orb_a,
@@ -980,8 +982,7 @@ def main():
                 if bh_binary_id_num_ionization.size > 0:
                     # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
                     # For now add 2 new orb ecc term of 0.01. inclination is 0.0 as well. TO DO: calculate v_kick and resulting perturbation to orb ecc.
-                    #new_orb_ecc = eccentricity.ionized_orb_ecc(bh_binary_id_num_ionization.size * 2, opts.disk_bh_orb_ecc_max_init)
-                    new_orb_ecc = eccentricity.ionized_orb_ecc(bh_binary_id_num_ionization.size * 2, 0.1)
+                    new_orb_ecc = eccentricity.ionized_orb_ecc(bh_binary_id_num_ionization.size * 2, opts.disk_bh_orb_ecc_max_init)
                     blackholes_pro.add_blackholes(
                         new_mass=np.concatenate([
                             blackholes_binary.at_id_num(bh_binary_id_num_ionization, "mass_1"),
@@ -1171,7 +1172,8 @@ def main():
                     filing_cabinet.id_max,
                     opts.fraction_bin_retro,
                     opts.smbh_mass,
-                    agn_redshift
+                    agn_redshift,
+                    opts.disk_bh_pro_orb_ecc_crit
                 )
 
                 # Add new binaries to filing cabinet and delete prograde singleton black holes
@@ -1217,7 +1219,6 @@ def main():
                                               new_galaxy=np.full(len(bh_mass_captured),galaxy),
                                               new_time_passed=np.full(len(bh_mass_captured),time_passed),
                                               new_id_num=np.arange(filing_cabinet.id_max+1, len(bh_mass_captured) + filing_cabinet.id_max+1, 1))
-
                 # Update filing cabinet
                 filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max+1, len(bh_mass_captured) + filing_cabinet.id_max+1, 1),
                                            new_category=np.array([0.0]),

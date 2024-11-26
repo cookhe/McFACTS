@@ -158,8 +158,8 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     spin_angle_1_after = spin_angle_1_before - spin_angle_change_factor
     spin_angle_2_after = spin_angle_2_before - spin_angle_change_factor
 
-    spin_angle_1_after[spin_angle_1_after < spin_minimum_resolution] = np.zeros(np.sum(spin_angle_1_after < spin_minimum_resolution))
-    spin_angle_2_after[spin_angle_2_after < spin_minimum_resolution] = np.zeros(np.sum(spin_angle_2_after < spin_minimum_resolution))
+    spin_angle_1_after[spin_angle_1_after < spin_minimum_resolution] = 0.0
+    spin_angle_2_after[spin_angle_2_after < spin_minimum_resolution] = 0.0
 
     blackholes_binary.spin_angle_1[idx_non_mergers] = spin_angle_1_after
     blackholes_binary.spin_angle_2[idx_non_mergers] = spin_angle_2_after
@@ -226,12 +226,12 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
     else:
         raise AttributeError("disk_surface_density is a float")
 
-    # Define kappa (or set up a function to call). 
+    # Define kappa (or set up a function to call).
     disk_opacity = disk_opacity_func(blackholes_binary.bin_orb_a)
 
     ratio_heat_mig_torques_bin_com = 0.07 * (1 / disk_opacity) * np.power(disk_alpha_viscosity, -1.5) * disk_bh_eddington_ratio * np.sqrt(blackholes_binary.bin_orb_a) / disk_surface_density_at_location
 
-    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = np.ones(np.sum(blackholes_binary.bin_orb_a > disk_radius_outer))
+    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = 1.0
 
     return (ratio_heat_mig_torques_bin_com)
 

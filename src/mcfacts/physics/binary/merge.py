@@ -284,8 +284,4 @@ def merged_orb_ecc(bin_orbs_a, v_kicks, smbh_mass):
 
     merged_ecc = v_kicks/v_kep
 
-    merged_ecc = rng.uniform(low=0.0, high=v_kicks/v_kep, size=v_kicks.size)
-
-    #print("merged_ecc",merged_ecc)
-
     return (merged_ecc)

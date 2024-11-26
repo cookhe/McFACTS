@@ -378,8 +378,8 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
 
     # Anything outside the disk is brought back in
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
-    #epsilon_orb_a = disk_radius_outer * ((disk_bh_retro_masses / (3 * (disk_bh_retro_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(disk_bh_retro_masses))
-    disk_bh_retro_orbs_a_new[disk_bh_retro_orbs_a_new > disk_radius_outer] = disk_radius_outer #- epsilon_orb_a[disk_bh_retro_orbs_a_new > disk_radius_outer]
+    epsilon_orb_a = disk_radius_outer * ((disk_bh_retro_masses / (3 * (disk_bh_retro_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(disk_bh_retro_masses))
+    disk_bh_retro_orbs_a_new[disk_bh_retro_orbs_a_new > disk_radius_outer] = disk_radius_outer - epsilon_orb_a[disk_bh_retro_orbs_a_new > disk_radius_outer]
 
     return disk_bh_retro_orbs_ecc_new, disk_bh_retro_orbs_a_new, disk_bh_retro_orbs_inc_new
 

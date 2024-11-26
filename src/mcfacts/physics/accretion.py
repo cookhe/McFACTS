@@ -151,7 +151,7 @@ def change_star_spin_magnitudes(disk_star_pro_spins,
     timestep_duration_yr_normalized = timestep_duration_yr/1.e4
     disk_star_torque_condition_normalized = disk_star_torque_condition/0.1
 
-    spin_iteration = (1.e-3*disk_bh_eddington_ratio_normalized*disk_star_torque_condition_normalized*timestep_duration_yr_normalized)
+    spin_iteration = ((1.e-3)*disk_bh_eddington_ratio_normalized*disk_star_torque_condition_normalized*timestep_duration_yr_normalized)
 
     disk_star_pro_spins_new = disk_star_pro_spins
 
