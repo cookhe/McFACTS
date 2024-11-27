@@ -180,7 +180,7 @@ def setup_disk_stars_spin_angles(star_num, star_spins_initial):
     return (star_spin_angles_initial)
 
 
-def setup_disk_stars_orb_ang_mom(star_num,
+def setup_disk_stars_orb_ang_mom_full(star_num,
                                  mass, smbh_mass,
                                  orb_a, orb_inc,):
     """
@@ -208,11 +208,30 @@ def setup_disk_stars_orb_ang_mom(star_num,
     """
     mass_total = mass + smbh_mass
     mass_reduced = (mass * smbh_mass) / mass_total
-    random_uniform_number = rng.uniform(size=star_num)
-    star_orb_ang_mom_initial_sign = (2.0*np.around(random_uniform_number)) - 1.0
+    star_orb_ang_mom_initial_sign = rng.choice(a=[1., -1.], size=star_num)
     star_orb_ang_mom_initial_value = mass_reduced*np.sqrt(G.to('m^3/(M_sun s^2)').value*mass_total*orb_a*(1-orb_inc**2))
     star_orb_ang_mom_initial = star_orb_ang_mom_initial_sign*star_orb_ang_mom_initial_value
     return (star_orb_ang_mom_initial)
+
+
+def setup_disk_stars_orb_ang_mom(star_num):
+    """Generates disk star initial orbital angular momenta [unitless]
+
+    Assume either initially fully prograde (+1) or retrograde (-1)
+
+    Parameters
+    ----------
+        star_num : int
+            Integer number of BH initially embedded in disk
+
+    Returns
+    -------
+        disk_bh_initial_orb_ang_mom : numpy.ndarray
+            Initial BH orb ang mom [unitless] with :obj:`float` type. No units because it is an on/off switch.
+    """
+
+    disk_star_initial_orb_ang_mom = rng.choice(a=[1.,-1.],size=star_num)
+    return disk_star_initial_orb_ang_mom
 
 
 def setup_disk_stars_arg_periapse(star_num):
@@ -240,8 +259,7 @@ def setup_disk_stars_arg_periapse(star_num):
         arguments for orbital periapse
     """
 
-    random_uniform_number = rng.uniform(size=star_num)
-    star_orb_arg_periapse_initial = 0.5 * np.pi * np.around(random_uniform_number)
+    star_orb_arg_periapse_initial = rng.choice(a=[0., 0.5*np.pi],size=star_num)
 
     return (star_orb_arg_periapse_initial)
 
@@ -274,7 +292,7 @@ def setup_disk_stars_eccentricity_thermal(star_num):
     return (star_orb_ecc_initial)
 
 
-def setup_disk_stars_eccentricity_uniform(star_num):
+def setup_disk_stars_eccentricity_uniform(star_num, disk_star_orb_ecc_max_init):
     """
     Return an array of star orbital eccentricities
     For a uniform initial distribution of eccentricities, select from
@@ -298,7 +316,7 @@ def setup_disk_stars_eccentricity_uniform(star_num):
         orbital eccentricities
     """
     random_uniform_number = rng.uniform(size=star_num)
-    star_orb_ecc_initial = random_uniform_number
+    star_orb_ecc_initial = random_uniform_number * disk_star_orb_ecc_max_init
     return (star_orb_ecc_initial)
 
 
@@ -407,7 +425,7 @@ def setup_disk_stars_circularized(star_num, crit_ecc):
 
     # For now, inclinations are zeros
     # Try zero eccentricities
-    star_orb_ecc_initial = crit_ecc*np.zeros(shape=star_num, dtype=float)
+    star_orb_ecc_initial = crit_ecc*np.ones(shape=star_num, dtype=float)
     return (star_orb_ecc_initial)
 
 
@@ -433,7 +451,7 @@ def setup_disk_stars_num(nsc_mass, nsc_ratio_bh_num_star_num, nsc_ratio_mbh_mass
             NSC density powerlaw index in outer regions. Set by user. 
             NSC density n(r) is assumed to consist of a broken powerlaw distribution,
             with one powerlaw in inner regions (Bahcall-Wolf, r^{-7/4} usually) and one in the outer regions.
-            This is the outer region NSC powerlaw density index. Default is :math:`n(r) \propto r^{-5/2}`
+            This is the outer region NSC powerlaw density index. Default is :math:`n(r) \\propto r^{-5/2}`
         smbh_mass : float
             Mass of the SMBH [M_sun]. Set by user. Default is 1.e8M_sun.
         disk_radius_outer : float
