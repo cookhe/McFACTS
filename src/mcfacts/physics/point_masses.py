@@ -163,7 +163,7 @@ def si_from_r_g(smbh_mass, distance_rg):
     # Calculate r_g in SI
     r_g = G*smbh_mass/(c ** 2)
     # Calculate distance
-    distance = distance_rg * r_g
+    distance = (distance_rg * r_g).to("meter")
     return distance
 
 
@@ -195,5 +195,9 @@ def r_g_from_units(smbh_mass, distance):
     # Calculate r_g in SI
     r_g = G*smbh_mass/(c ** 2)
     # Calculate distance
-    distance_rg = distance / r_g
+    distance_rg = distance.to("meter") / r_g
+
+    # Check to make sure units are okay.
+    assert astropy_units.dimensionless_unscaled == distance_rg.unit, "distance_rg is not dimensionless. Check your input is a astropy Quantity, not an astropy Unit."
+
     return distance_rg
