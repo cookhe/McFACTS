@@ -171,12 +171,8 @@ def change_star_spin_magnitudes(disk_star_pro_spins,
     disk_star_pro_spin_max = 0.98
     disk_star_pro_spin_min = -0.98
 
-    for i in range(len(disk_star_pro_spins)):
-        if (disk_star_pro_spins_new[i] < disk_star_pro_spin_min):
-            disk_star_pro_spins_new[i] = disk_star_pro_spin_min
-
-        if (disk_star_pro_spins_new[i] > disk_star_pro_spin_max):
-            disk_star_pro_spins_new[i] = disk_star_pro_spin_max
+    disk_star_pro_spins_new[disk_star_pro_spins_new < disk_star_pro_spin_min] = disk_star_pro_spin_min
+    disk_star_pro_spins_new[disk_star_pro_spins_new > disk_star_pro_spin_max] = disk_star_pro_spin_max
 
     return disk_star_pro_spins_new
 
@@ -225,11 +221,11 @@ def change_star_spin_angles(prograde_stars_spin_angles,
 
     """
     # Calculate change in spin angle due to accretion during timestep
-    disk_bh_eddington_ratio_normalized = disk_star_eddington_ratio/1.0
-    timestep_duration_yr_normalized = timestep_duration_yr/1.e4
-    disk_star_torque_condition_normalized = disk_star_torque_condition/0.1
+    normalized_Eddington_ratio = disk_star_eddington_ratio/1.0
+    normalized_timestep = timestep_duration_yr/1.e4
+    normalized_spin_torque_condition = disk_star_torque_condition/0.1
 
-    spin_torque_iteration = (6.98e-3*disk_bh_eddington_ratio_normalized*disk_star_torque_condition_normalized*timestep_duration_yr_normalized)
+    spin_torque_iteration = (6.98e-3*normalized_Eddington_ratio*normalized_spin_torque_condition*normalized_timestep)
 
     # Assume same angles as before to start
     disk_star_spin_angles_new = prograde_stars_spin_angles
@@ -315,12 +311,8 @@ def change_bh_spin_magnitudes(disk_bh_pro_spins,
     disk_bh_pro_spin_max = 0.98
     disk_bh_pro_spin_min = -0.98
 
-    for i in range(len(disk_bh_pro_spins)):
-        if (disk_bh_pro_spins_new[i] < disk_bh_pro_spin_min):
-            disk_bh_pro_spins_new[i] = disk_bh_pro_spin_min
-
-        if (disk_bh_pro_spins_new[i] > disk_bh_pro_spin_max):
-            disk_bh_pro_spins_new[i] = disk_bh_pro_spin_max
+    disk_bh_pro_spins_new[disk_bh_pro_spins_new < disk_bh_pro_spin_min] = disk_bh_pro_spin_min
+    disk_bh_pro_spins_new[disk_bh_pro_spins_new > disk_bh_pro_spin_max] = disk_bh_pro_spin_max
 
     return disk_bh_pro_spins_new
 
