@@ -125,7 +125,7 @@ class AGNObject(object):
                  spin_angle=empty_arr,  # angle between J and orbit around SMBH for binary
                  orb_a=empty_arr,  # location
                  orb_inc=empty_arr,  # of CoM for binary around SMBH
-                 # orb_ang_mom = None,  # redundant, should be computed from keplerian orbit formula for L in terms of mass, a, eccentricity
+                 orb_ang_mom=empty_arr,  # redundant, should be computed from keplerian orbit formula for L in terms of mass, a, eccentricity
                  orb_ecc=empty_arr,
                  orb_arg_periapse=empty_arr,
                  galaxy=empty_arr,
@@ -147,6 +147,8 @@ class AGNObject(object):
             orbital semi-major axis with respect to the SMBH in R_g
         orb_inc : numpy array
             orbital inclination with respect to the SMBH
+        orb_ang_mom : numpy array
+            orbital angular momentum with respect to the SMBH
         orb_ecc : numpy array
             orbital eccentricity with respect to the SMBH
         orb_arg_periapse : numpy array
@@ -172,6 +174,7 @@ class AGNObject(object):
         self.spin_angle = spin_angle
         self.orb_a = orb_a
         self.orb_inc = orb_inc
+        self.orb_ang_mom = orb_ang_mom
         self.orb_ecc = orb_ecc
         self.orb_arg_periapse = orb_arg_periapse
         self.gen = np.full(obj_num, 1)
@@ -581,13 +584,13 @@ class AGNStar(AGNObject):
 
     def __init__(self,
                  mass=empty_arr,
-                 orb_a=empty_arr,
-                 orb_inc=empty_arr,
+                 log_radius=empty_arr,
+                 log_luminosity=empty_arr,
+                 log_teff=empty_arr,
                  star_X=empty_arr,
                  star_Y=empty_arr,
                  star_Z=empty_arr,
                  star_num=0,
-                 smbh_mass=None,
                  **kwargs):
         """Creates an instance of the AGNStar class. This is a subclass
            of the AGNObject class. AGNStar adds additional star-specific
@@ -600,6 +603,8 @@ class AGNStar(AGNObject):
             star mass
         orb_a : numpy array
             star orbital semi-major axis with respect to the SMBH
+        radius : numpy array
+            log of star radius in Rsun
         orb_inc : numpy array
             star orbital inclination with respect to the SMBH
         star_Y : numpy array
@@ -621,19 +626,18 @@ class AGNStar(AGNObject):
 
         assert mass.shape == (star_num,), "star_num must match the number of objects"
 
-        if mass is empty_arr:
-            self.log_radius = empty_arr
-            self.orb_ang_mom = empty_arr
-            self.log_teff = empty_arr
-            self.log_luminosity = empty_arr
-        else:
-            self.log_radius = setupdiskstars.setup_disk_stars_radius(masses=mass)
-            self.orb_ang_mom = setupdiskstars.setup_disk_stars_orb_ang_mom(star_num=star_num,
-                                                                           mass=mass,
-                                                                           smbh_mass=smbh_mass,
-                                                                           orb_a=orb_a,
-                                                                           orb_inc=orb_inc)
-            self.log_radius, self.log_luminosity, self.log_teff = stellar_interpolation.interp_star_params(mass)
+        self.log_radius = log_radius
+        self.log_luminosity = log_luminosity
+        self.log_teff = log_teff
+
+        # if mass is empty_arr:
+        #     self.log_radius = empty_arr
+        #     self.log_teff = empty_arr
+        #     self.log_luminosity = empty_arr
+        # else:
+        #     self.log_radius = log_radius
+        #     #self.orb_ang_mom = setupdiskstars.setup_disk_stars_orb_ang_mom(star_num=star_num)
+        #     self.log_radius, self.log_luminosity, self.log_teff = stellar_interpolation.interp_star_params(mass)
 
         if (np.any(star_X + star_Y + star_Z > 1.)):
             raise ValueError("star_X, star_Y, and star_Z must sum to 1 or less.")
@@ -642,7 +646,7 @@ class AGNStar(AGNObject):
         self.star_Y = star_Y
         self.star_Z = star_Z
 
-        super(AGNStar, self).__init__(mass=mass, orb_a=orb_a, orb_inc=orb_inc, obj_num=star_num, **kwargs)  # calls top level functions
+        super(AGNStar, self).__init__(mass=mass, obj_num=star_num, **kwargs)  # calls top level functions
 
     def __repr__(self):
         """
@@ -730,15 +734,15 @@ class AGNBlackHole(AGNObject):
         assert mass.shape == (bh_num,), "bh_num must match the number of objects"
 
         if mass is empty_arr:
-            self.orb_ang_mom = empty_arr
+            #self.orb_ang_mom = empty_arr
             self.gw_freq = empty_arr
             self.gw_strain = empty_arr
         else:
-            self.orb_ang_mom = setupdiskblackholes.setup_disk_blackholes_orb_ang_mom(bh_num)
+            #self.orb_ang_mom = setupdiskblackholes.setup_disk_blackholes_orb_ang_mom(bh_num)
 
             if ((gw_freq is empty_arr) and (gw_strain is empty_arr)):
                 self.gw_freq = np.full(bh_num, -1.5)
-                self.gw_strain =np.full(bh_num, -1.5)
+                self.gw_strain = np.full(bh_num, -1.5)
 
             elif ((gw_freq is not empty_arr) and (gw_strain is not empty_arr)):
                 self.gw_freq = gw_freq
