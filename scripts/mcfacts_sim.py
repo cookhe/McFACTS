@@ -291,6 +291,7 @@ def main():
         blackholes = AGNBlackHole(mass=bh_mass_initial,
                                   spin=bh_spin_initial,
                                   spin_angle=bh_spin_angle_initial,
+                                  orb_ang_mom=bh_orb_ang_mom_initial,
                                   orb_a=bh_orb_a_initial,
                                   orb_inc=bh_orb_inc_initial,
                                   orb_ecc=bh_orb_ecc_initial,
@@ -309,17 +310,16 @@ def main():
 
         # Initialize stars
         if opts.flag_add_stars:
-            stars, disk_star_num = initializediskstars.init_single_stars(opts, id_start_val=filing_cabinet.id_max+1)
+            stars, disk_star_num = initializediskstars.init_single_stars(opts, disk_aspect_ratio, id_start_val=filing_cabinet.id_max+1)
         else:
             stars, disk_star_num = AGNStar(), 0
 
         print('disk_bh_num = {}, disk_star_num = {}'.format(disk_bh_num, disk_star_num))
-        print("number of stars",stars.num)
         filing_cabinet.add_objects(new_id_num=stars.id_num,
                                    new_category=np.full(stars.num, 1),
                                    new_orb_a=stars.orb_a,
                                    new_mass=stars.mass,
-                                   new_size=10 ** (stars.log_radius),
+                                   new_size=(10 ** stars.log_radius),
                                    new_direction=np.zeros(stars.num),
                                    new_disk_inner_outer=np.zeros(stars.num))
 
@@ -354,9 +354,6 @@ def main():
             stars.remove_id_num(star_to_bh_id_num)
             # Update filing cabinet
             filing_cabinet.update(star_to_bh_id_num, "category", np.full(len(star_to_bh_id_num), 0))
-
-        # For now remove all other stars
-        stars.remove_id_num(stars.id_num)
 
         # Generate initial inner disk arrays for objects that end up in the inner disk. 
         # This is to track possible EMRIs--we're tossing things in these arrays
@@ -506,7 +503,7 @@ def main():
                 blackholes_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_pro_{timestep_current_num}.dat"))
                 blackholes_retro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_retro_{timestep_current_num}.dat"))
                 if opts.flag_add_stars:
-                    stars_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_stars_single_pro{timestep_current_num}.dat"))
+                    stars_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_stars_single_pro_{timestep_current_num}.dat"))
                     stars_retro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_stars_single_retro_{timestep_current_num}.dat"))
                 blackholes_binary.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_binary_{timestep_current_num}.dat"),
                                          cols=binary_cols)
@@ -709,13 +706,13 @@ def main():
             # Check for bin_ecc unphysical
             bh_retro_id_num_unphysical_ecc = blackholes_retro.id_num[blackholes_retro.orb_ecc >= 1.]
             if bh_retro_id_num_unphysical_ecc.size > 0:
-                # The binary has unphysical eccentricity. Delete
+                # The BH has unphysical eccentricity. Delete
                 blackholes_retro.remove_id_num(bh_retro_id_num_unphysical_ecc)
                 filing_cabinet.remove_id_num(bh_retro_id_num_unphysical_ecc)
 
             star_retro_id_num_unphysical_ecc = stars_retro.id_num[stars_retro.orb_ecc >= 1.]
             if star_retro_id_num_unphysical_ecc.size > 0:
-                # The binary has unphysical eccentricity. Delete
+                # The star has unphysical eccentricity. Delete
                 stars_retro.remove_id_num(star_retro_id_num_unphysical_ecc)
                 filing_cabinet.remove_id_num(star_retro_id_num_unphysical_ecc)
 
@@ -811,7 +808,7 @@ def main():
                         blackholes_binary,
                         opts.disk_radius_outer
                     )
-                   
+
                     # Update filing cabinet with new bin_sep
                     filing_cabinet.update(id_num=blackholes_binary.id_num,
                                           attr="size",
@@ -1227,57 +1224,58 @@ def main():
                                            new_size=np.array([-1]),
                                            new_direction=np.array([1.0]),
                                            new_disk_inner_outer=np.array([0.0]))
-                
+
             # Starter code for stars being captured
             # Conditions copy BH capture right now, but need to incorporate WZL2024 conditions
-            capture_stars = time_passed % opts.capture_time_yr
-            if capture_stars == 0:
-                num_star_captured = 2
-                star_mass_captured = setupdiskstars.setup_disk_stars_masses(star_num=num_star_captured,
-                                                                            disk_star_mass_min_init=opts.disk_star_mass_min_init,
-                                                                            disk_star_mass_max_init=opts.disk_star_mass_max_init,
-                                                                            nsc_imf_star_powerlaw_index=opts.nsc_imf_star_powerlaw_index)
-                star_orb_a_captured = setupdiskstars.setup_disk_stars_orb_a(star_num=num_star_captured,
-                                                                            disk_radius_outer=opts.disk_radius_outer,
-                                                                            disk_inner_stable_circ_orb=opts.disk_inner_stable_circ_orb)
-                star_spin_captured = setupdiskstars.setup_disk_stars_spins(num_star_captured, opts.nsc_star_spin_dist_mu, opts.nsc_star_spin_dist_sigma)
-                star_spin_angle_captured = setupdiskstars.setup_disk_stars_spin_angles(num_star_captured, star_spin_captured)
-                star_orb_inc_captured = np.full(num_star_captured, 0.0)  # setupdiskstars.setup_disk_stars_inclination(num_star_captured)
-                star_orb_ang_mom_captured = setupdiskstars.setup_disk_stars_orb_ang_mom(num_star_captured, star_mass_captured, opts.smbh_mass, star_orb_a_captured, star_orb_inc_captured)
-                star_orb_arg_periapse_captured = setupdiskstars.setup_disk_stars_arg_periapse(num_star_captured)
-                star_orb_ecc = np.full(num_star_captured, 0.0)
-                star_X_captured, star_Y_captured, star_Z_captured = setupdiskstars.setup_disk_stars_comp(star_num=num_star_captured,
-                                                                                                         star_ZAMS_metallicity=opts.nsc_star_metallicity_z_init,
-                                                                                                         star_ZAMS_helium=opts.nsc_star_metallicity_y_init)
-                star_log_radius_captured, star_log_luminosity_captured, star_log_teff_captured = stellar_interpolation.interp_star_params(star_mass_captured)
-                # Append captured stars to stars_pro array. Assume prograde and 1st gen.
-                stars_pro.add_stars(new_mass=star_mass_captured,
-                                    new_orb_a=star_orb_a_captured,
-                                    new_log_radius=star_log_radius_captured,
-                                    new_log_luminosity=star_log_luminosity_captured,
-                                    new_log_teff=star_log_teff_captured,
-                                    new_X=star_X_captured,
-                                    new_Y=star_Y_captured,
-                                    new_Z=star_Z_captured,
-                                    new_spin=star_spin_captured,
-                                    new_spin_angle=star_spin_angle_captured,
-                                    new_orb_inc=star_orb_inc_captured,
-                                    new_orb_ang_mom=star_orb_ang_mom_captured,
-                                    new_orb_ecc=star_orb_ecc,
-                                    new_orb_arg_periapse=star_orb_arg_periapse_captured,
-                                    new_gen=np.full(num_star_captured, 1),
-                                    new_galaxy=np.full(num_star_captured, galaxy),
-                                    new_time_passed=np.full(num_star_captured, time_passed),
-                                    new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1)
-                                    )
-                # Update filing cabinet
-                filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1), 
-                                           new_category=np.ones(num_star_captured),
-                                           new_orb_a=star_orb_a_captured,
-                                           new_mass=star_mass_captured,
-                                           new_size=10 ** star_log_radius_captured,
-                                           new_direction=np.ones(num_star_captured),
-                                           new_disk_inner_outer=np.zeros(num_star_captured))
+            if opts.flag_add_stars:
+                capture_stars = time_passed % opts.capture_time_yr
+                if capture_stars == 0:
+                    num_star_captured = 2
+                    star_mass_captured = setupdiskstars.setup_disk_stars_masses(star_num=num_star_captured,
+                                                                                disk_star_mass_min_init=opts.disk_star_mass_min_init,
+                                                                                disk_star_mass_max_init=opts.disk_star_mass_max_init,
+                                                                                nsc_imf_star_powerlaw_index=opts.nsc_imf_star_powerlaw_index)
+                    star_orb_a_captured = setupdiskstars.setup_disk_stars_orb_a(star_num=num_star_captured,
+                                                                                disk_radius_outer=opts.disk_radius_outer,
+                                                                                disk_inner_stable_circ_orb=opts.disk_inner_stable_circ_orb)
+                    star_spin_captured = setupdiskstars.setup_disk_stars_spins(num_star_captured, opts.nsc_star_spin_dist_mu, opts.nsc_star_spin_dist_sigma)
+                    star_spin_angle_captured = setupdiskstars.setup_disk_stars_spin_angles(num_star_captured, star_spin_captured)
+                    star_orb_inc_captured = np.full(num_star_captured, 0.0)  # setupdiskstars.setup_disk_stars_inclination(num_star_captured)
+                    star_orb_ang_mom_captured = setupdiskstars.setup_disk_stars_orb_ang_mom(num_star_captured)
+                    star_orb_arg_periapse_captured = setupdiskstars.setup_disk_stars_arg_periapse(num_star_captured)
+                    star_orb_ecc_captured = np.full(num_star_captured, 0.0)
+                    star_X_captured, star_Y_captured, star_Z_captured = setupdiskstars.setup_disk_stars_comp(star_num=num_star_captured,
+                                                                                                            star_ZAMS_metallicity=opts.nsc_star_metallicity_z_init,
+                                                                                                            star_ZAMS_helium=opts.nsc_star_metallicity_y_init)
+                    star_log_radius_captured, star_log_luminosity_captured, star_log_teff_captured = stellar_interpolation.interp_star_params(star_mass_captured)
+                    # Append captured stars to stars_pro array. Assume prograde and 1st gen.
+                    stars_pro.add_stars(new_mass=star_mass_captured,
+                                        new_orb_a=star_orb_a_captured,
+                                        new_log_radius=star_log_radius_captured,
+                                        new_log_luminosity=star_log_luminosity_captured,
+                                        new_log_teff=star_log_teff_captured,
+                                        new_X=star_X_captured,
+                                        new_Y=star_Y_captured,
+                                        new_Z=star_Z_captured,
+                                        new_spin=star_spin_captured,
+                                        new_spin_angle=star_spin_angle_captured,
+                                        new_orb_inc=star_orb_inc_captured,
+                                        new_orb_ang_mom=star_orb_ang_mom_captured,
+                                        new_orb_ecc=star_orb_ecc_captured,
+                                        new_orb_arg_periapse=star_orb_arg_periapse_captured,
+                                        new_gen=np.full(num_star_captured, 1),
+                                        new_galaxy=np.full(num_star_captured, galaxy),
+                                        new_time_passed=np.full(num_star_captured, time_passed),
+                                        new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1)
+                                        )
+                    # Update filing cabinet
+                    filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1), 
+                                               new_category=np.ones(num_star_captured),
+                                               new_orb_a=star_orb_a_captured,
+                                               new_mass=star_mass_captured,
+                                               new_size=(10 ** star_log_radius_captured),
+                                               new_direction=np.ones(num_star_captured),
+                                               new_disk_inner_outer=np.zeros(num_star_captured))
 
             # Test if any BH or BBH are in the danger-zone (<mininum_safe_distance, default =50r_g) from SMBH.
             # Potential EMRI/BBH EMRIs.
@@ -1369,9 +1367,11 @@ def main():
             star_id_num_retro_inner_disk = stars_retro.id_num[stars_retro.orb_a < opts.inner_disk_outer_radius]
             if (star_id_num_retro_inner_disk.size > 0):
                 # Add BH to inner_disk_arrays
-                blackholes_inner_disk.add_blackholes(
+                stars_inner_disk.add_stars(
                     new_mass=stars_retro.at_id_num(star_id_num_retro_inner_disk, "mass"),
                     new_log_radius=stars_retro.at_id_num(star_id_num_retro_inner_disk, "log_radius"),
+                    new_log_luminosity=stars_retro.at_id_num(star_id_num_retro_inner_disk, "log_luminosity"),
+                    new_log_teff=stars_retro.at_id_num(star_id_num_retro_inner_disk, "log_teff"),
                     new_X=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_X"),
                     new_Y=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Y"),
                     new_Z=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Z"),
@@ -1435,14 +1435,14 @@ def main():
 
                 # On 1st run through define old GW freqs (at say 9.e-7 Hz, since evolution change is 1e-6Hz)
                 if stars_tdes.num == 0:
-                    old_gw_freq = 9.e-7*np.ones(stars_inner_disk.num)
+                    old_gw_tde_freq = 9.e-7*np.ones(stars_inner_disk.num)
                 if (stars_tdes.num > 0):
-                    old_gw_freq = emri_gw_freq
+                    old_gw_tde_freq = tde_gw_freq
 
                 tde_gw_strain, tde_gw_freq = emri.evolve_emri_gw( # BUG KN: is this BH/EMRI specific? If not should we change the name?
                     stars_inner_disk,
                     opts.timestep_duration_yr,
-                    old_gw_freq,
+                    old_gw_tde_freq,
                     opts.smbh_mass,
                     agn_redshift
                 )
@@ -1535,9 +1535,11 @@ def main():
             star_id_num_flip_to_pro = stars_retro.id_num[np.where((np.abs(stars_retro.orb_inc) <= inc_threshhold) | (stars_retro.orb_ecc == 0.0))]
             if (star_id_num_flip_to_pro.size > 0):
                 # add to prograde arrays
-                stars_pro.add_blackholes(
+                stars_pro.add_stars(
                     new_mass=stars_retro.at_id_num(star_id_num_flip_to_pro, "mass"),
                     new_log_radius=stars_retro.at_id_num(star_id_num_flip_to_pro, "log_radius"),
+                    new_log_luminosity=stars_retro.at_id_num(star_id_num_flip_to_pro, "log_luminosity"),
+                    new_log_teff=stars_retro.at_id_num(star_id_num_flip_to_pro, "log_teff"),
                     new_X=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_X"),
                     new_Y=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Y"),
                     new_Z=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Z"),
@@ -1766,7 +1768,8 @@ def main():
     emris_pop.to_txt(os.path.join(opts.work_directory, emris_save_name),
                      cols=emri_cols)
 
-    tdes_pop.to_txt(os.path.join(opts.work_directory, tdes_save_name),
+    if opts.flag_add_stars:
+        tdes_pop.to_txt(os.path.join(opts.work_directory, tdes_save_name),
                      cols=tde_cols)
 
     blackholes_pro.to_txt(os.path.join(opts.work_directory, survivors_save_name),
@@ -1779,7 +1782,8 @@ def main():
     blackholes_merged_pop.to_txt(os.path.join(opts.work_directory, population_save_name),
                                  cols=population_cols, extra_header=f"Initial seed: {opts.seed}\n")
     
-    stars_pop.to_txt(os.path.join(opts.work_directory, stars_save_name),
+    if opts.flag_add_stars:
+        stars_pop.to_txt(os.path.join(opts.work_directory, stars_save_name),
                                     cols=stars_cols, extra_header=f"Initial seed: {opts.seed}\n")
 
 
