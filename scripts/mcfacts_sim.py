@@ -6,6 +6,7 @@ from os.path import isfile, isdir
 from pathlib import Path
 
 import numpy as np
+from astropy import units as astropy_units
 
 from mcfacts.physics.binary import evolve
 from mcfacts.physics.binary import formation
@@ -20,6 +21,7 @@ from mcfacts.physics import feedback
 from mcfacts.physics import gw
 from mcfacts.physics import migration
 from mcfacts.physics import stellar_interpolation
+from mcfacts.physics import point_masses
 
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
@@ -319,7 +321,7 @@ def main():
                                    new_category=np.full(stars.num, 1),
                                    new_orb_a=stars.orb_a,
                                    new_mass=stars.mass,
-                                   new_size=(10 ** stars.log_radius),
+                                   new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** stars.log_radius) * astropy_units.Rsun).value,
                                    new_direction=np.zeros(stars.num),
                                    new_disk_inner_outer=np.zeros(stars.num))
 
@@ -608,7 +610,7 @@ def main():
             # Update filing cabinet
             filing_cabinet.update(id_num=stars_pro.id_num,
                                   attr="size",
-                                  new_info=(10 ** stars_pro.log_radius))
+                                  new_info=point_masses.r_g_from_units(opts.smbh_mass, (10 ** stars_pro.log_radius) * astropy_units.Rsun).value)
 
             # Spin up
             blackholes_pro.spin = accretion.change_bh_spin_magnitudes(
@@ -1273,7 +1275,7 @@ def main():
                                                new_category=np.ones(num_star_captured),
                                                new_orb_a=star_orb_a_captured,
                                                new_mass=star_mass_captured,
-                                               new_size=(10 ** star_log_radius_captured),
+                                               new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** star_log_radius_captured) * astropy_units.Rsun).value,
                                                new_direction=np.ones(num_star_captured),
                                                new_disk_inner_outer=np.zeros(num_star_captured))
 

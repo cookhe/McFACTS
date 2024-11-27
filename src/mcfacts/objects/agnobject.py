@@ -1489,7 +1489,7 @@ class AGNFilingCabinet(AGNObject):
         mass : numpy array
             masses of the objects (for binaries this is total mass)
         size : numpy array
-            for BH this is set to -1, for stars this is set to the radius in Rsun,
+            for BH this is set to -1, for stars this is set to the stellar radius in R_g,
             for binaries this is the binary's semi-major axis (aka separation)
             in R_g
         direction : numpy array
@@ -1594,9 +1594,8 @@ class AGNFilingCabinet(AGNObject):
 
         getattr(self, attr)[np.isin(getattr(self, "id_num"), id_num)] = new_info
 
-
     def add_objects(self, new_id_num, new_category, new_orb_a,
-                    new_mass, new_size, new_direction, new_disk_inner_outer,fc_num=0):
+                    new_mass, new_size, new_direction, new_disk_inner_outer, fc_num=0):
         """
         Append objects to the AGNFilingCabinet.
 
@@ -1623,7 +1622,7 @@ class AGNFilingCabinet(AGNObject):
 
         if (fc_num == 0):
             fc_num = new_mass.shape[0]
-        
+
         self.id_num = np.concatenate([self.id_num, new_id_num])
         self.category = np.concatenate([self.category, new_category])
         self.orb_a = np.concatenate([self.orb_a, new_orb_a])
