@@ -1489,8 +1489,8 @@ class AGNFilingCabinet(AGNObject):
         mass : numpy array
             masses of the objects (for binaries this is total mass)
         size : numpy array
-            for BH this is set to -1, for stars this is set to the stellar radius in R_g,
-            for binaries this is the binary's semi-major axis (aka separation)
+            for BH this is set to -1.5, for stars this is set to the stellar radius in R_g,
+            for binaries this is the binary's semi-major axis (aka separation) in R_g
             in R_g
         direction : numpy array
             direction of the orbit of the objects, optional
