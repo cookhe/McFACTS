@@ -285,7 +285,6 @@ def main():
         else:
             bh_orb_ecc_initial = setupdiskblackholes.setup_disk_blackholes_circularized(disk_bh_num, opts.disk_bh_pro_orb_ecc_crit)
 
-        # KN: should the inclination function be called in AGNBlackhole init since it takes other parameters of the BHs?
         bh_orb_inc_initial = setupdiskblackholes.setup_disk_blackholes_incl(disk_bh_num, bh_orb_a_initial, bh_orb_ang_mom_initial, disk_aspect_ratio)
         bh_orb_arg_periapse_initial = setupdiskblackholes.setup_disk_blackholes_arg_periapse(disk_bh_num)
 
@@ -307,7 +306,7 @@ def main():
                                           category=np.full(blackholes.num, 0),
                                           orb_a=blackholes.orb_a,
                                           mass=blackholes.mass,
-                                          size=np.full(blackholes.num, -1),
+                                          size=np.full(blackholes.num, -1.5),
                                           )
 
         # Initialize stars
@@ -316,7 +315,7 @@ def main():
         else:
             stars, disk_star_num = AGNStar(), 0
 
-        print('disk_bh_num = {}, disk_star_num = {}'.format(disk_bh_num, disk_star_num))
+        print(f"{disk_bh_num} black holes, {disk_star_num} stars")
         filing_cabinet.add_objects(new_id_num=stars.id_num,
                                    new_category=np.full(stars.num, 1),
                                    new_orb_a=stars.orb_a,
@@ -355,7 +354,12 @@ def main():
             # Remove from stars array
             stars.remove_id_num(star_to_bh_id_num)
             # Update filing cabinet
-            filing_cabinet.update(star_to_bh_id_num, "category", np.full(len(star_to_bh_id_num), 0))
+            filing_cabinet.update(star_to_bh_id_num,
+                                  "category",
+                                  np.full(len(star_to_bh_id_num), 0))
+            filing_cabinet.update(star_to_bh_id_num,
+                                  "size",
+                                  np.full(len(star_to_bh_id_num), -1.5))
 
         # Generate initial inner disk arrays for objects that end up in the inner disk. 
         # This is to track possible EMRIs--we're tossing things in these arrays
@@ -1136,7 +1140,7 @@ def main():
                                               new_info=np.full(bh_binary_id_num_merger.size, 0))
                         filing_cabinet.update(id_num=bh_binary_id_num_merger,
                                               attr="size",
-                                              new_info=np.full(bh_binary_id_num_merger.size, -1))
+                                              new_info=np.full(bh_binary_id_num_merger.size, -1.5))
                         blackholes_binary.remove_id_num(bh_binary_id_num_merger)
 
                     if opts.verbose:
@@ -1179,7 +1183,7 @@ def main():
                 filing_cabinet.add_objects(new_id_num=bh_binary_id_num_new,
                                            new_category=np.full(bh_binary_id_num_new.size, 2),
                                            new_orb_a=blackholes_binary.at_id_num(bh_binary_id_num_new, "bin_orb_a"),
-                                           new_mass=blackholes_binary.at_id_num(bh_binary_id_num_new, "mass_1") + blackholes_binary.at_id_num(bh_binary_id_num_new, "mass_2"),#blackholes_binary.at_id_num(bh_binary_id_num_new, "mass_total"),
+                                           new_mass=blackholes_binary.at_id_num(bh_binary_id_num_new, "mass_1") + blackholes_binary.at_id_num(bh_binary_id_num_new, "mass_2"),
                                            new_size=blackholes_binary.at_id_num(bh_binary_id_num_new, "bin_sep"),
                                            new_direction=np.full(bh_binary_id_num_new.size, 1),
                                            new_disk_inner_outer=np.full(bh_binary_id_num_new.size, 1))
@@ -1247,8 +1251,8 @@ def main():
                     star_orb_arg_periapse_captured = setupdiskstars.setup_disk_stars_arg_periapse(num_star_captured)
                     star_orb_ecc_captured = np.full(num_star_captured, 0.0)
                     star_X_captured, star_Y_captured, star_Z_captured = setupdiskstars.setup_disk_stars_comp(star_num=num_star_captured,
-                                                                                                            star_ZAMS_metallicity=opts.nsc_star_metallicity_z_init,
-                                                                                                            star_ZAMS_helium=opts.nsc_star_metallicity_y_init)
+                                                                                                             star_ZAMS_metallicity=opts.nsc_star_metallicity_z_init,
+                                                                                                             star_ZAMS_helium=opts.nsc_star_metallicity_y_init)
                     star_log_radius_captured, star_log_luminosity_captured, star_log_teff_captured = stellar_interpolation.interp_star_params(star_mass_captured)
                     # Append captured stars to stars_pro array. Assume prograde and 1st gen.
                     stars_pro.add_stars(new_mass=star_mass_captured,
@@ -1271,7 +1275,7 @@ def main():
                                         new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1)
                                         )
                     # Update filing cabinet
-                    filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1), 
+                    filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1),
                                                new_category=np.ones(num_star_captured),
                                                new_orb_a=star_orb_a_captured,
                                                new_mass=star_mass_captured,
@@ -1501,7 +1505,7 @@ def main():
                 filing_cabinet.remove_id_num(emri_merger_id_num)
 
             if np.size(tde_merger_id_num) > 0:
-                blackholes_inner_disk.remove_id_num(tde_merger_id_num)
+                stars_inner_disk.remove_id_num(tde_merger_id_num)
                 # Remove merged TDEs from filing_cabinet
                 filing_cabinet.remove_id_num(tde_merger_id_num)
 
