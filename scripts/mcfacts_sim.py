@@ -1621,32 +1621,32 @@ def main():
         filing_cabinet.remove_id_num(blackholes_binary.id_num)
 
         # Assume that all immortal stars become BHs
-        stars_to_bh_id_nums = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
-        star_to_bh_spin = setupdiskblackholes.setup_disk_blackholes_spins(len(stars_to_bh_id_nums),
-                                                                          opts.nsc_bh_spin_dist_mu, opts.nsc_bh_spin_dist_sigma)
-        star_to_bh_spin_angle = setupdiskblackholes.setup_disk_blackholes_spin_angles(len(stars_to_bh_id_nums), star_to_bh_spin)
-        star_to_bh_orb_ang_mom = setupdiskblackholes.setup_disk_blackholes_orb_ang_mom(len(stars_to_bh_id_nums))
-        star_to_bh_inc = setupdiskblackholes.setup_disk_blackholes_incl(len(stars_to_bh_id_nums), stars_pro.at_id_num(stars_to_bh_id_nums, "orb_a"), star_to_bh_orb_ang_mom, disk_aspect_ratio)
-        blackholes_pro.add_blackholes(new_mass=stars_pro.at_id_num(stars_to_bh_id_nums, "mass"),
-                                      new_id_num=stars_to_bh_id_nums,
-                                      new_orb_ang_mom=star_to_bh_orb_ang_mom,
-                                      new_spin=star_to_bh_spin,
-                                      new_spin_angle=star_to_bh_spin_angle,
-                                      new_orb_a=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_a"),
-                                      new_orb_inc=star_to_bh_inc,
-                                      new_orb_ecc=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_ecc"),
-                                      new_orb_arg_periapse=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_arg_periapse"),
-                                      new_galaxy=stars_pro.at_id_num(stars_to_bh_id_nums, "galaxy"),
-                                      new_gen=stars_pro.at_id_num(stars_to_bh_id_nums, "gen"),
-                                      new_time_passed=stars_pro.at_id_num(stars_to_bh_id_nums, "time_passed"))
+        # stars_to_bh_id_nums = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
+        # star_to_bh_spin = setupdiskblackholes.setup_disk_blackholes_spins(len(stars_to_bh_id_nums),
+        #                                                                   opts.nsc_bh_spin_dist_mu, opts.nsc_bh_spin_dist_sigma)
+        # star_to_bh_spin_angle = setupdiskblackholes.setup_disk_blackholes_spin_angles(len(stars_to_bh_id_nums), star_to_bh_spin)
+        # star_to_bh_orb_ang_mom = setupdiskblackholes.setup_disk_blackholes_orb_ang_mom(len(stars_to_bh_id_nums))
+        # star_to_bh_inc = setupdiskblackholes.setup_disk_blackholes_incl(len(stars_to_bh_id_nums), stars_pro.at_id_num(stars_to_bh_id_nums, "orb_a"), star_to_bh_orb_ang_mom, disk_aspect_ratio)
+        # blackholes_pro.add_blackholes(new_mass=stars_pro.at_id_num(stars_to_bh_id_nums, "mass"),
+        #                               new_id_num=stars_to_bh_id_nums,
+        #                               new_orb_ang_mom=star_to_bh_orb_ang_mom,
+        #                               new_spin=star_to_bh_spin,
+        #                               new_spin_angle=star_to_bh_spin_angle,
+        #                               new_orb_a=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_a"),
+        #                               new_orb_inc=star_to_bh_inc,
+        #                               new_orb_ecc=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_ecc"),
+        #                               new_orb_arg_periapse=stars_pro.at_id_num(stars_to_bh_id_nums, "orb_arg_periapse"),
+        #                               new_galaxy=stars_pro.at_id_num(stars_to_bh_id_nums, "galaxy"),
+        #                               new_gen=stars_pro.at_id_num(stars_to_bh_id_nums, "gen"),
+        #                               new_time_passed=stars_pro.at_id_num(stars_to_bh_id_nums, "time_passed"))
         # Update filing cabinet
-        filing_cabinet.update(id_num=stars_to_bh_id_nums,
-                              attr="category",
-                              new_info=np.zeros(len(stars_to_bh_id_nums)))
-        filing_cabinet.update(id_num=stars_to_bh_id_nums,
-                              attr="size",
-                              new_info=np.full(len(stars_to_bh_id_nums), -1.5))
-        stars_pro.remove_id_num(stars_to_bh_id_nums)
+        # filing_cabinet.update(id_num=stars_to_bh_id_nums,
+        #                       attr="category",
+        #                       new_info=np.zeros(len(stars_to_bh_id_nums)))
+        # filing_cabinet.update(id_num=stars_to_bh_id_nums,
+        #                       attr="size",
+        #                       new_info=np.full(len(stars_to_bh_id_nums), -1.5))
+        # stars_pro.remove_id_num(stars_to_bh_id_nums)
 
         # Add merged BH to the population level object
         blackholes_merged_pop.add_blackholes(new_id_num=blackholes_merged.id_num,
