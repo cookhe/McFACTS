@@ -1469,31 +1469,31 @@ def main():
                                                 new_time_passed=np.full(emri_gw_freq.size, time_passed),
                                                 new_id_num=blackholes_inner_disk.id_num)
 
-            if stars_inner_disk.num > 0:
-                stars_tdes.add_stars(new_mass=stars_inner_disk.mass,
-                                     new_log_radius=stars_inner_disk.log_radius,
-                                     new_log_teff=stars_inner_disk.log_teff,
-                                     new_log_luminosity=stars_inner_disk.log_luminosity,
-                                     new_X=stars_inner_disk.star_X,
-                                     new_Y=stars_inner_disk.star_Y,
-                                     new_Z=stars_inner_disk.star_Z,
-                                     new_spin=stars_inner_disk.spin,
-                                     new_spin_angle=stars_inner_disk.spin_angle,
-                                     new_orb_a=stars_inner_disk.orb_a,
-                                     new_orb_inc=stars_inner_disk.orb_inc,
-                                     new_orb_ang_mom=stars_inner_disk.orb_ang_mom,
-                                     new_orb_ecc=stars_inner_disk.orb_ecc,
-                                     new_orb_arg_periapse=stars_inner_disk.orb_arg_periapse,
-                                     #new_gw_freq=tde_gw_freq,
-                                     #new_gw_strain=tde_gw_strain,
-                                     new_gen=stars_inner_disk.gen,
-                                     new_galaxy=np.full(tde_gw_freq.size, galaxy),
-                                     new_time_passed=np.full(tde_gw_freq.size, time_passed),
-                                     new_id_num=stars_inner_disk.id_num)
+            # if stars_inner_disk.num > 0:
+            #     stars_tdes.add_stars(new_mass=stars_inner_disk.mass,
+            #                          new_log_radius=stars_inner_disk.log_radius,
+            #                          new_log_teff=stars_inner_disk.log_teff,
+            #                          new_log_luminosity=stars_inner_disk.log_luminosity,
+            #                          new_X=stars_inner_disk.star_X,
+            #                          new_Y=stars_inner_disk.star_Y,
+            #                          new_Z=stars_inner_disk.star_Z,
+            #                          new_spin=stars_inner_disk.spin,
+            #                          new_spin_angle=stars_inner_disk.spin_angle,
+            #                          new_orb_a=stars_inner_disk.orb_a,
+            #                          new_orb_inc=stars_inner_disk.orb_inc,
+            #                          new_orb_ang_mom=stars_inner_disk.orb_ang_mom,
+            #                          new_orb_ecc=stars_inner_disk.orb_ecc,
+            #                          new_orb_arg_periapse=stars_inner_disk.orb_arg_periapse,
+            #                          #new_gw_freq=tde_gw_freq,
+            #                          #new_gw_strain=tde_gw_strain,
+            #                          new_gen=stars_inner_disk.gen,
+            #                          new_galaxy=np.full(tde_gw_freq.size, galaxy),
+            #                          new_time_passed=np.full(tde_gw_freq.size, time_passed),
+            #                          new_id_num=stars_inner_disk.id_num)
 
             #merger_dist = 1.0
             emri_merger_id_num = blackholes_inner_disk.id_num[blackholes_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
-            tde_merger_id_num = stars_inner_disk.id_num[stars_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
+            star_rlof_smbh_id_num = stars_inner_disk.id_num[stars_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
 
             # if mergers occurs, remove from inner_disk arrays and stop evolving
             # still getting some nans, but I think that's bc there's retros that should have been
@@ -1504,10 +1504,10 @@ def main():
                 # Remove merged EMRIs from filing_cabinet
                 filing_cabinet.remove_id_num(emri_merger_id_num)
 
-            if np.size(tde_merger_id_num) > 0:
-                stars_inner_disk.remove_id_num(tde_merger_id_num)
-                # Remove merged TDEs from filing_cabinet
-                filing_cabinet.remove_id_num(tde_merger_id_num)
+            # if np.size(star_rlof_smbh_id_num) > 0:
+            #     stars_inner_disk.remove_id_num(star_rlof_smbh_id_num)
+            #     # Remove merged TDEs from filing_cabinet
+            #     filing_cabinet.remove_id_num(star_rlof_smbh_id_num)
 
             # Here is where we need to move retro to prograde if they've flipped in this timestep
             # If they're IN the disk prograde, OR if they've circularized:
