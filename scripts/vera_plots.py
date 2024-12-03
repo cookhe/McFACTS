@@ -25,7 +25,8 @@ label_dict = {"chi_eff" : r"$\chi_\mathrm{eff}$",
               "final_mass": r"$M_\mathrm{final}$ [$M_\odot$]",
               "gen1" : r"Generation 1",
               "gen2" : r"Generation 2",
-              "time_merge": r"$t_\mathrm{merge}$ [yr]"}
+              "time_merge": r"$t_\mathrm{merge}$ [yr]",
+              "mc": "mc"}
 
 ######## Arg ########
 def arg():
