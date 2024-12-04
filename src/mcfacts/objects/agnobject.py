@@ -697,7 +697,7 @@ class AGNBlackHole(AGNObject):
     """
     A subclass of AGNObject for single black holes. It extends AGNObject and
     adds attributes for GW frequency and strain. This is only relevant for
-    EMRIs and BBH, so if a value is not passed these attributes are set to -1.
+    EMRIs and BBH, so if a value is not passed these attributes are set to -1.5.
     AGNBlackHole also calculates orbital angular momentum for black holes.
     """
     def __init__(self, mass=empty_arr,
@@ -1039,7 +1039,6 @@ class AGNBinaryBlackHole(AGNObject):
                  gw_freq=empty_arr,
                  gw_strain=empty_arr,
                  galaxy=empty_arr,
-                 time_passed=empty_arr,
                  bin_bh_num=0,
                  id_num=empty_arr):
 
@@ -1131,7 +1130,6 @@ class AGNBinaryBlackHole(AGNObject):
         self.gw_strain = gw_strain
         self.id_num = id_num
         self.galaxy = galaxy
-        #self.time_passed = time_passed
 
         if (bin_bh_num == 0):
             bin_bh_num = mass_1.shape[0]
