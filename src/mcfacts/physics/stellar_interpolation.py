@@ -72,7 +72,7 @@ def interp_star_params(disk_star_masses):
     new_logL = np.full(len(disk_star_masses), -100.5)
     new_logTeff = np.full(len(disk_star_masses), -100.5)
 
-    # Interpolates values for stars with masses between the grid (0.8Msun to 300Msun)
+    # Interpolates values for stars with masses between the grid (0.8Msun to 298.838913Msun [grid is not exact])
     for i in range(0, len(interpolation_masses) - 1):
         mass_range_idx = np.asarray((disk_star_masses > interpolation_masses[i]) & (disk_star_masses <= interpolation_masses[i + 1])).nonzero()[0]
 
@@ -97,7 +97,7 @@ def interp_star_params(disk_star_masses):
 
     #mean_mol_weight = 4./(6. * star_X + star_Y + 2.)
 
-    mass_mask = disk_star_masses <= interpolation_masses.min()
+    mass_mask = (disk_star_masses <= interpolation_masses.min()) | (disk_star_masses > interpolation_masses.max())
 
     if (np.sum(mass_mask) > 0):
         z1 = 0.43
@@ -108,5 +108,11 @@ def interp_star_params(disk_star_masses):
         R_units = (10 ** new_logR[mass_mask]) * astropy_const.R_sun
         lowmass_Teff = ((L_units / (4. * np.pi * astropy_const.sigma_sb * (R_units ** 2))) ** (1./4.)).to("Kelvin")
         new_logTeff[mass_mask] = np.log10(lowmass_Teff.value)
+
+    logl_mask = new_logL < -25
+    logr_mask = new_logR < -25
+    logt_mask = new_logTeff < -25
+    if (np.sum(logl_mask) > 0 | np.sum(logr_mask) > 0 | np.sum(logt_mask) > 0):
+        raise ValueError("Interpolated values are not being set properly!")
 
     return (new_logR, new_logL, new_logTeff)
