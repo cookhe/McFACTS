@@ -1407,7 +1407,7 @@ def main():
             if (stars_inner_disk.num > 0):
                 # FIX THIS: Return the new evolved bh_orb_ecc_inner_disk as they decay inwards.
                 # Potentially move inner disk behaviour to module that is not dynamics (e.g inner disk module)
-                stars_inner_disk.orb_a = dynamics.bh_near_smbh( # BUG KN: is this BH specific? If not should we change the name?
+                stars_inner_disk.orb_a = dynamics.bh_near_smbh( # KN: TDEs need their own method here bc drag
                     opts.smbh_mass,
                     stars_inner_disk.orb_a,
                     stars_inner_disk.mass,
@@ -1423,7 +1423,7 @@ def main():
                 if (stars_tdes.num > 0):
                     old_gw_tde_freq = tde_gw_freq
 
-                tde_gw_strain, tde_gw_freq = emri.evolve_emri_gw( # BUG KN: is this BH/EMRI specific? If not should we change the name?
+                tde_gw_strain, tde_gw_freq = emri.evolve_emri_gw( # KN: TDEs need their own method here bc drag
                     stars_inner_disk,
                     opts.timestep_duration_yr,
                     old_gw_tde_freq,
