@@ -15,7 +15,7 @@ attr_bh = ["id_num", "orb_a", "mass", "spin", "spin_angle",
            "gen", "galaxy", "time_passed",
            "gw_freq", "gw_strain"]
 
-attr_star = ["id_num", "orb_a", "mass", "spin", "spin_angle",
+attr_star = ["id_num", "orb_a", "mass",
              "orb_inc", "orb_ecc", "orb_arg_periapse", "orb_ang_mom",
              "gen", "galaxy", "time_passed",
              "star_X", "star_Y", "star_Z", "log_radius", "log_teff", "log_luminosity"]
@@ -167,7 +167,7 @@ class AGNObject(object):
         if (obj_num == 0):
             obj_num = mass.shape[0]
 
-        assert spin.shape == (obj_num,), "obj_num must match the number of objects"
+        assert orb_a.shape == (obj_num,), "obj_num must match the number of objects"
 
         self.mass = mass
         self.spin = spin
@@ -559,7 +559,7 @@ class AGNObject(object):
             for attr in attr_list:
                 print(f"{attr}.shape = {getattr(self, attr).shape}")
             raise AttributeError("Attributes are not all the same size")
-        
+
         if self.num != shape[0]:
             print(f"num = {self.num}, num objects = {shape[0]}")
             raise AttributeError("num does not match number of objects in AGNObject")
@@ -629,15 +629,6 @@ class AGNStar(AGNObject):
         self.log_radius = log_radius
         self.log_luminosity = log_luminosity
         self.log_teff = log_teff
-
-        # if mass is empty_arr:
-        #     self.log_radius = empty_arr
-        #     self.log_teff = empty_arr
-        #     self.log_luminosity = empty_arr
-        # else:
-        #     self.log_radius = log_radius
-        #     #self.orb_ang_mom = setupdiskstars.setup_disk_stars_orb_ang_mom(star_num=star_num)
-        #     self.log_radius, self.log_luminosity, self.log_teff = stellar_interpolation.interp_star_params(mass)
 
         if (np.any(star_X + star_Y + star_Z > 1.)):
             raise ValueError("star_X, star_Y, and star_Z must sum to 1 or less.")

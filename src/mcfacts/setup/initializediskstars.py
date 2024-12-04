@@ -51,8 +51,8 @@ def init_single_stars(opts, disk_aspect_ratio, id_start_val=None):
         masses_stars[masses_stars > opts.disk_star_initial_mass_cutoff] = opts.disk_star_initial_mass_cutoff
 
     #star_radius = setupdiskstars.setup_disk_stars_radius(masses_stars)
-    star_spin = setupdiskstars.setup_disk_stars_spins(star_num, opts.nsc_star_spin_dist_mu, opts.nsc_star_spin_dist_sigma)
-    star_spin_angle = setupdiskstars.setup_disk_stars_spin_angles(star_num, star_spin)
+    #star_spin = setupdiskstars.setup_disk_stars_spins(star_num, opts.nsc_star_spin_dist_mu, opts.nsc_star_spin_dist_sigma)
+    #star_spin_angle = setupdiskstars.setup_disk_stars_spin_angles(star_num, star_spin)
     star_orb_ang_mom = setupdiskstars.setup_disk_stars_orb_ang_mom(star_num)
     star_orb_inc = setupdiskstars.setup_disk_stars_inc(star_num, orbs_a_stars, star_orb_ang_mom, disk_aspect_ratio)
     star_orb_arg_periapse = setupdiskstars.setup_disk_stars_arg_periapse(star_num)
@@ -67,8 +67,8 @@ def init_single_stars(opts, disk_aspect_ratio, id_start_val=None):
     log_radius, log_luminosity, log_teff = stellar_interpolation.interp_star_params(masses_stars)
 
     stars = AGNStar(mass=masses_stars,
-                    spin=star_spin,
-                    spin_angle=star_spin_angle,
+                    #spin=star_spin,
+                    #spin_angle=star_spin_angle,
                     orb_a=orbs_a_stars,
                     orb_inc=star_orb_inc,
                     orb_ecc=star_orb_ecc,

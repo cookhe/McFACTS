@@ -17,6 +17,7 @@ from mcfacts.physics import disk_capture
 from mcfacts.physics import dynamics
 from mcfacts.physics import eccentricity
 from mcfacts.physics import emri
+from mcfacts.physics import tde
 from mcfacts.physics import feedback
 from mcfacts.physics import gw
 from mcfacts.physics import migration
@@ -626,15 +627,6 @@ def main():
                 opts.disk_bh_pro_orb_ecc_crit,
             )
 
-            stars_pro.spin = accretion.change_star_spin_magnitudes(
-                stars_pro.spin,
-                opts.disk_star_eddington_ratio,
-                opts.disk_star_torque_condition,
-                opts.timestep_duration_yr,
-                stars_pro.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit,
-            )
-
             # Torque spin angle
             blackholes_pro.spin_angle = accretion.change_bh_spin_angles(
                 blackholes_pro.spin_angle,
@@ -643,16 +635,6 @@ def main():
                 disk_bh_spin_resolution_min,
                 opts.timestep_duration_yr,
                 blackholes_pro.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit
-            )
-
-            stars_pro.spin_angle = accretion.change_star_spin_angles(
-                stars_pro.spin_angle,
-                opts.disk_star_eddington_ratio,
-                opts.disk_star_torque_condition,
-                disk_bh_spin_resolution_min,
-                opts.timestep_duration_yr,
-                stars_pro.orb_ecc,
                 opts.disk_bh_pro_orb_ecc_crit
             )
 
@@ -1002,7 +984,6 @@ def main():
                         new_gen=np.concatenate([
                             blackholes_binary.at_id_num(bh_binary_id_num_ionization, "gen_1"),
                             blackholes_binary.at_id_num(bh_binary_id_num_ionization, "gen_2")]),
-                        #new_orb_ecc=np.full(bh_binary_id_num_ionization.size * 2, 0.01),
                         new_orb_ecc=new_orb_ecc,
                         new_orb_inc=np.full(bh_binary_id_num_ionization.size * 2, 0.0),
                         new_orb_ang_mom=np.ones(bh_binary_id_num_ionization.size * 2),
@@ -1125,7 +1106,6 @@ def main():
                                                       new_spin_angle=np.zeros(bh_binary_id_num_merger.size),
                                                       new_orb_inc=np.zeros(bh_binary_id_num_merger.size),
                                                       new_orb_ang_mom=np.ones(bh_binary_id_num_merger.size),
-                                                      #new_orb_ecc=np.full(bh_binary_id_num_merger.size, 0.01),
                                                       new_orb_ecc=bh_orb_ecc_merged,
                                                       new_gen=np.maximum(blackholes_merged.at_id_num(bh_binary_id_num_merger, "gen_1"),
                                                                          blackholes_merged.at_id_num(bh_binary_id_num_merger, "gen_2")) + 1.0,
@@ -1381,8 +1361,6 @@ def main():
                     new_X=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_X"),
                     new_Y=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Y"),
                     new_Z=stars_retro.at_id_num(star_id_num_retro_inner_disk, "star_Z"),
-                    new_spin=stars_retro.at_id_num(star_id_num_retro_inner_disk, "spin"),
-                    new_spin_angle=stars_retro.at_id_num(star_id_num_retro_inner_disk, "spin_angle"),
                     new_orb_a=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_a"),
                     new_orb_inc=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_inc"),
                     new_orb_ang_mom=stars_retro.at_id_num(star_id_num_retro_inner_disk, "orb_ang_mom"),
@@ -1469,28 +1447,6 @@ def main():
                                                 new_time_passed=np.full(emri_gw_freq.size, time_passed),
                                                 new_id_num=blackholes_inner_disk.id_num)
 
-            # if stars_inner_disk.num > 0:
-            #     stars_tdes.add_stars(new_mass=stars_inner_disk.mass,
-            #                          new_log_radius=stars_inner_disk.log_radius,
-            #                          new_log_teff=stars_inner_disk.log_teff,
-            #                          new_log_luminosity=stars_inner_disk.log_luminosity,
-            #                          new_X=stars_inner_disk.star_X,
-            #                          new_Y=stars_inner_disk.star_Y,
-            #                          new_Z=stars_inner_disk.star_Z,
-            #                          new_spin=stars_inner_disk.spin,
-            #                          new_spin_angle=stars_inner_disk.spin_angle,
-            #                          new_orb_a=stars_inner_disk.orb_a,
-            #                          new_orb_inc=stars_inner_disk.orb_inc,
-            #                          new_orb_ang_mom=stars_inner_disk.orb_ang_mom,
-            #                          new_orb_ecc=stars_inner_disk.orb_ecc,
-            #                          new_orb_arg_periapse=stars_inner_disk.orb_arg_periapse,
-            #                          #new_gw_freq=tde_gw_freq,
-            #                          #new_gw_strain=tde_gw_strain,
-            #                          new_gen=stars_inner_disk.gen,
-            #                          new_galaxy=np.full(tde_gw_freq.size, galaxy),
-            #                          new_time_passed=np.full(tde_gw_freq.size, time_passed),
-            #                          new_id_num=stars_inner_disk.id_num)
-
             #merger_dist = 1.0
             emri_merger_id_num = blackholes_inner_disk.id_num[blackholes_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
             star_rlof_smbh_id_num = stars_inner_disk.id_num[stars_inner_disk.orb_a <= opts.disk_inner_stable_circ_orb]
@@ -1503,11 +1459,6 @@ def main():
                 blackholes_inner_disk.remove_id_num(emri_merger_id_num)
                 # Remove merged EMRIs from filing_cabinet
                 filing_cabinet.remove_id_num(emri_merger_id_num)
-
-            # if np.size(star_rlof_smbh_id_num) > 0:
-            #     stars_inner_disk.remove_id_num(star_rlof_smbh_id_num)
-            #     # Remove merged TDEs from filing_cabinet
-            #     filing_cabinet.remove_id_num(star_rlof_smbh_id_num)
 
             # Here is where we need to move retro to prograde if they've flipped in this timestep
             # If they're IN the disk prograde, OR if they've circularized:
@@ -1538,7 +1489,13 @@ def main():
                                       attr="direction",
                                       new_info=np.ones(bh_id_num_flip_to_pro.size))
 
-            star_id_num_flip_to_pro = stars_retro.id_num[np.where((np.abs(stars_retro.orb_inc) <= inc_threshhold) | (stars_retro.orb_ecc == 0.0))]
+            star_id_num_flip_to_pro_or_tde = stars_retro.id_num[np.where((np.abs(stars_retro.orb_inc) <= inc_threshhold) | (stars_retro.orb_ecc == 0.0))]
+            star_id_num_tde, star_id_num_flip_to_pro = tde.check_tde_or_flip(star_id_num_flip_to_pro_or_tde,
+                                                                             stars_retro.at_id_num(star_id_num_flip_to_pro_or_tde, "mass"),
+                                                                             stars_retro.at_id_num(star_id_num_flip_to_pro_or_tde, "log_radius"),
+                                                                             stars_retro.at_id_num(star_id_num_flip_to_pro_or_tde, "orb_ecc"),
+                                                                             stars_retro.at_id_num(star_id_num_flip_to_pro_or_tde, "orb_a"),
+                                                                             opts.smbh_mass)
             if (star_id_num_flip_to_pro.size > 0):
                 # add to prograde arrays
                 stars_pro.add_stars(
@@ -1550,8 +1507,6 @@ def main():
                     new_Y=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Y"),
                     new_Z=stars_retro.at_id_num(star_id_num_flip_to_pro, "star_Z"),
                     new_orb_a=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_a"),
-                    new_spin=stars_retro.at_id_num(star_id_num_flip_to_pro, "spin"),
-                    new_spin_angle=stars_retro.at_id_num(star_id_num_flip_to_pro, "spin_angle"),
                     new_orb_inc=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_inc"),
                     new_orb_ang_mom=np.ones(star_id_num_flip_to_pro.size),
                     new_orb_ecc=stars_retro.at_id_num(star_id_num_flip_to_pro, "orb_ecc"),
@@ -1567,6 +1522,29 @@ def main():
                 filing_cabinet.update(id_num=star_id_num_flip_to_pro,
                                       attr="direction",
                                       new_info=np.ones(star_id_num_flip_to_pro.size))
+
+            if (star_id_num_tde.size > 0):
+                # add to TDE arrays
+                stars_tdes.add_stars(
+                    new_mass=stars_retro.at_id_num(star_id_num_tde, "mass"),
+                    new_log_radius=stars_retro.at_id_num(star_id_num_tde, "log_radius"),
+                    new_log_luminosity=stars_retro.at_id_num(star_id_num_tde, "log_luminosity"),
+                    new_log_teff=stars_retro.at_id_num(star_id_num_tde, "log_teff"),
+                    new_X=stars_retro.at_id_num(star_id_num_tde, "star_X"),
+                    new_Y=stars_retro.at_id_num(star_id_num_tde, "star_Y"),
+                    new_Z=stars_retro.at_id_num(star_id_num_tde, "star_Z"),
+                    new_orb_a=stars_retro.at_id_num(star_id_num_tde, "orb_a"),
+                    new_orb_inc=stars_retro.at_id_num(star_id_num_tde, "orb_inc"),
+                    new_orb_ang_mom=np.ones(star_id_num_tde.size),
+                    new_orb_ecc=stars_retro.at_id_num(star_id_num_tde, "orb_ecc"),
+                    new_orb_arg_periapse=stars_retro.at_id_num(star_id_num_tde, "orb_arg_periapse"),
+                    new_galaxy=stars_retro.at_id_num(star_id_num_tde, "galaxy"),
+                    new_time_passed=stars_retro.at_id_num(star_id_num_tde, "time_passed"),
+                    new_gen=stars_retro.at_id_num(star_id_num_tde, "gen"),
+                    new_id_num=stars_retro.at_id_num(star_id_num_tde, "id_num")
+                )
+                # delete from retro arrays
+                stars_retro.remove_id_num(id_num_remove=star_id_num_tde)
 
             # Iterate the time step
             time_passed = time_passed + opts.timestep_duration_yr
@@ -1722,9 +1700,7 @@ def main():
                            new_Y=stars_tdes.star_Y,
                            new_Z=stars_tdes.star_Z,
                            new_orb_a=stars_tdes.orb_a,
-                           new_spin=stars_tdes.spin,
                            new_orb_inc=stars_tdes.orb_inc,
-                           new_spin_angle=stars_tdes.spin_angle,
                            new_orb_ang_mom=stars_tdes.orb_ang_mom,
                            new_orb_ecc=stars_tdes.orb_ecc,
                            new_orb_arg_periapse=stars_tdes.orb_arg_periapse,
@@ -1741,8 +1717,6 @@ def main():
                             new_Y=stars_pro.star_Y,
                             new_Z=stars_pro.star_Z,
                             new_orb_a=stars_pro.orb_a,
-                            new_spin=stars_pro.spin,
-                            new_spin_angle=stars_pro.spin_angle,
                             new_orb_ang_mom=stars_pro.orb_ang_mom,
                             new_orb_ecc=stars_pro.orb_ecc,
                             new_orb_inc=stars_pro.orb_inc,
@@ -1767,8 +1741,8 @@ def main():
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
                        "gen_1", "gen_2", "time_merged", "chi_p"]
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
-    stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_a", "spin", "spin_angle", "star_X", "star_Y", "star_Z", "gen", "id_num"]
-    tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_a", "spin", "spin_angle", "star_X", "star_Y", "star_Z", "gen", "id_num"]
+    stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_a", "star_X", "star_Y", "star_Z", "gen", "id_num"]
+    tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_a", "star_X", "star_Y", "star_Z", "gen", "id_num"]
 
     # Save things
     emris_pop.to_txt(os.path.join(opts.work_directory, emris_save_name),
