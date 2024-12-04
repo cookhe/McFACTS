@@ -1,7 +1,5 @@
 import numpy as np
 from copy import deepcopy
-from mcfacts.setup import setupdiskstars, setupdiskblackholes
-from mcfacts.physics import stellar_interpolation
 
 
 # TODO: dump_record_array writes every value as a float. Make dictionary with all attributes and datatypes? Or is a float fine?
@@ -781,7 +779,7 @@ class AGNBlackHole(AGNObject):
             self.gw_freq = np.concatenate([self.gw_freq, np.full(bh_num, -1.5)])
         else:
             self.gw_freq = np.concatenate([self.gw_freq, new_gw_freq])
-        
+
         if new_gw_strain is empty_arr:
             self.gw_strain = np.concatenate([self.gw_strain, np.full(bh_num, -1.5)])
         else:
