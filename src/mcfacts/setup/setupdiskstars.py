@@ -128,58 +128,6 @@ def setup_disk_stars_comp(star_num,
     return (star_X_initial, star_Y_initial, star_Z_initial)
 
 
-def setup_disk_stars_spins(star_num,
-                           nsc_star_spin_dist_mu, nsc_star_spin_dist_sigma):
-    """
-    Generate initial spins for stars.
-
-    Parameters
-    ----------
-    star_num : int
-        number of stars
-    nsc_star_spin_dist_mu : float
-        mean for Gaussian distribution
-    nsc_star_spin_dist_sigma : float
-        standard deviation for Gaussian distribution
-
-    Returns
-    -------
-    star_spins_initial : numpy array
-        initial spins for stars
-    """
-    star_spins_initial = rng.normal(loc=nsc_star_spin_dist_mu,
-                                    scale=nsc_star_spin_dist_sigma,
-                                    size=star_num)
-    return (star_spins_initial)
-
-
-def setup_disk_stars_spin_angles(star_num, star_spins_initial):
-    """
-    Return an array of star initial spin angles (in radians). Positive
-    (negative) spin magnitudes have spin angles
-    [0,1.57]([1.5701,3.14])rads. All star spin angles drawn
-    from [0,1.57]rads and +1.57rads to negative spin indices
-
-    Parameters
-    ----------
-    star_num : int
-        number of stars
-    star_spins_initial : numpy array
-        spins of stars
-
-    Returns
-    -------
-    star_spin_angles_initial : numpy array
-        spin angles of stars
-    """
-
-    star_initial_spin_indices = np.array(star_spins_initial)
-    negative_spin_indices = np.where(star_initial_spin_indices < 0.)
-    star_spin_angles_initial = rng.uniform(low=0., high=1.57, size=star_num)
-    star_spin_angles_initial[negative_spin_indices] = star_spin_angles_initial[negative_spin_indices] + 1.57
-    return (star_spin_angles_initial)
-
-
 def setup_disk_stars_orb_ang_mom_full(star_num,
                                  mass, smbh_mass,
                                  orb_a, orb_inc,):

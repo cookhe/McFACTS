@@ -1224,8 +1224,6 @@ def main():
                     star_orb_a_captured = setupdiskstars.setup_disk_stars_orb_a(star_num=num_star_captured,
                                                                                 disk_radius_outer=opts.disk_radius_outer,
                                                                                 disk_inner_stable_circ_orb=opts.disk_inner_stable_circ_orb)
-                    star_spin_captured = setupdiskstars.setup_disk_stars_spins(num_star_captured, opts.nsc_star_spin_dist_mu, opts.nsc_star_spin_dist_sigma)
-                    star_spin_angle_captured = setupdiskstars.setup_disk_stars_spin_angles(num_star_captured, star_spin_captured)
                     star_orb_inc_captured = np.full(num_star_captured, 0.0)  # setupdiskstars.setup_disk_stars_inclination(num_star_captured)
                     star_orb_ang_mom_captured = setupdiskstars.setup_disk_stars_orb_ang_mom(num_star_captured)
                     star_orb_arg_periapse_captured = setupdiskstars.setup_disk_stars_arg_periapse(num_star_captured)
@@ -1243,8 +1241,6 @@ def main():
                                         new_X=star_X_captured,
                                         new_Y=star_Y_captured,
                                         new_Z=star_Z_captured,
-                                        new_spin=star_spin_captured,
-                                        new_spin_angle=star_spin_angle_captured,
                                         new_orb_inc=star_orb_inc_captured,
                                         new_orb_ang_mom=star_orb_ang_mom_captured,
                                         new_orb_ecc=star_orb_ecc_captured,
@@ -1306,8 +1302,6 @@ def main():
                     new_X=stars_pro.at_id_num(star_id_num_pro_inner_disk, "star_X"),
                     new_Y=stars_pro.at_id_num(star_id_num_pro_inner_disk, "star_Y"),
                     new_Z=stars_pro.at_id_num(star_id_num_pro_inner_disk, "star_Z"),
-                    new_spin=stars_pro.at_id_num(star_id_num_pro_inner_disk, "spin"),
-                    new_spin_angle=stars_pro.at_id_num(star_id_num_pro_inner_disk, "spin_angle"),
                     new_orb_a=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_a"),
                     new_orb_inc=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_inc"),
                     new_orb_ang_mom=stars_pro.at_id_num(star_id_num_pro_inner_disk, "orb_ang_mom"),

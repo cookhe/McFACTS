@@ -807,10 +807,6 @@ class AGNBinaryStar(AGNObject):
                        star_Y2 = None,
                        star_Z1 = None,
                        star_Z2 = None,
-                       star_spin1 = None,
-                       star_spin2 = None,
-                       star_spin_angle1 = None,
-                       star_spin_angle2 = None,
                        bin_e = None,
                        bin_a = None,
                        bin_inc=None,
@@ -829,10 +825,6 @@ class AGNBinaryStar(AGNObject):
         if star_Y2 is None: raise AttributeError("star_Y2 is not included in inputs")
         if star_Z1 is None: raise AttributeError("star_Z1 is not included in inputs")
         if star_Z2 is None: raise AttributeError("star_Z2 is not included in inputs")
-        if star_spin1 is None: raise AttributeError("star_spin1 is not included in inputs")
-        if star_spin2 is None: raise AttributeError("star_spin2 is not included in inputs")
-        if star_spin_angle1 is None: raise AttributeError("star_spin_angle1 is not included in inputs")
-        if star_spin_angle2 is None: raise AttributeError("star_spin_angle2 is not included in inputs")
         if bin_e is None: raise AttributeError("bin_e is not included in inputs")
         if bin_a is None: raise AttributeError("bin_a is not included in inputs")
 
@@ -843,10 +835,6 @@ class AGNBinaryStar(AGNObject):
         assert star_mass2.shape == (obj_num,),"star_mass2: all arrays must be 1d and the same length"
         assert star_log_radius1.shape == (obj_num,),"star_log_radius1: all arrays must be 1d and the same length"
         assert star_log_radius2.shape == (obj_num,),"star_log_radius2: all arrays must be 1d and the same length"
-        assert star_spin1.shape == (obj_num,),"star_spin1: all arrays must be 1d and the same length"
-        assert star_spin2.shape == (obj_num,),"star_spin2: all arrays must be 1d and the same length"
-        assert star_spin_angle1.shape == (obj_num,),"star_spin_angle1: all arrays must be 1d and the same length"
-        assert star_spin_angle2.shape == (obj_num,),"star_spin_angle2: all arrays must be 1d and the same length"
         assert bin_e.shape == (obj_num,),"bin_e: all arrays must be 1d and the same length"
         assert bin_a.shape == (obj_num,),"bin_a: all arrays must be 1d and the same length"
 
@@ -885,10 +873,6 @@ class AGNBinaryStar(AGNObject):
         self.star_Y2 = star_Y2
         self.star_Z1 = star_Z1
         self.star_Z2 = star_Z2
-        self.star_spin1 = star_spin1
-        self.star_spin2 = star_spin2
-        self.star_spin_angle1 = star_spin_angle1
-        self.star_spin_angle2 = star_spin_angle2
         self.bin_e = bin_e
         self.bin_a = bin_a
         self.bin_inc = bin_inc
@@ -898,7 +882,7 @@ class AGNBinaryStar(AGNObject):
         total_spin = None # we will pass None for now, until we decide how to treat angular momentum
         total_spin_angle = None  # we will pass None for now, until we decide how to treat angular momentum
 
-        super(AGNBinaryStar,self).__init__(mass = total_mass, spin = star_spin_angle2, spin_angle = star_spin_angle2, orb_a = cm_orb_a, orb_inc = cm_orb_inc, orb_ecc = cm_orb_ecc, obj_num = obj_num)
+        super(AGNBinaryStar,self).__init__(mass = total_mass, orb_a = cm_orb_a, orb_inc = cm_orb_inc, orb_ecc = cm_orb_ecc, obj_num = obj_num)
         
 
     def __repr__(self):
@@ -912,10 +896,6 @@ class AGNBinaryStar(AGNObject):
                         new_star_Y2 = None,
                         new_star_Z1 = None,
                         new_star_Z2 = None,
-                        new_star_spin1 = None,
-                        new_star_spin2 = None,
-                        new_star_spin_angle1 = None,
-                        new_star_spin_angle2 = None,
                         new_star_orb_a1 = None,
                         new_star_orb_a2 = None,
                         new_bin_e = None,

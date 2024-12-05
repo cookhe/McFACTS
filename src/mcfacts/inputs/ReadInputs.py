@@ -74,13 +74,8 @@ Inifile
         Scale factor to go from number of BH to number of stars.
     "disk_star_initial_mass_cutoff" : float
         Cutoff for initial star behavior
-    "nsc_imf_star_mass_modex"       : float
+    "nsc_imf_star_mass_mode"       : float
         Mass mode for star IMF
-    "nsc_star_spin_dist_mu"         : float
-        Initial spin distribution for stars is assumed to be Gaussian
-    "nsc_star_spin_dist_sigma"      : float
-        Initial spin distribution for stars is assumed to be Gaussian
-        --standard deviation of spin dist
     "disk_star_torque_condition"    : float
         fraction of initial mass required to be accreted before star spin is torqued
         fully into alignment with the AGN disk. We don't know for sure but
@@ -177,8 +172,6 @@ INPUT_TYPES = {
     "disk_star_scale_factor"        : float,
     "disk_star_initial_mass_cutoff" : float,
     "nsc_imf_star_mass_mode"        : float,
-    "nsc_star_spin_dist_mu"         : float,
-    "nsc_star_spin_dist_sigma"      : float,
     "disk_star_torque_condition"    : float,
     "disk_star_eddington_ratio"     : float,
     "disk_star_orb_ecc_max_init"    : float,
