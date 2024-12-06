@@ -28,7 +28,7 @@ attr_binary_bh = ["id_num", "orb_a_1", "orb_a_2", "mass_1", "mass_2", #"mass_tot
 attr_merged_bh = ["id_num", "galaxy", "bin_orb_a", "mass_final",
                   "spin_final", "spin_angle_final",
                   "mass_1", "mass_2",
-                  "spin_1", "spin_2",
+                  "spin_1", "spin_2",   
                   "spin_angle_1", "spin_angle_2",
                   "gen_1", "gen_2",
                   "chi_eff", "chi_p", "time_merged"]
