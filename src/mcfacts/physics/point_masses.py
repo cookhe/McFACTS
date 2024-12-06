@@ -201,3 +201,28 @@ def r_g_from_units(smbh_mass, distance):
     assert astropy_units.dimensionless_unscaled == distance_rg.unit, "distance_rg is not dimensionless. Check your input is a astropy Quantity, not an astropy Unit."
 
     return distance_rg
+
+
+def r_schwarzschild_of_m(mass):
+    """Calculate the Schwarzschild radius from the mass of the object.
+
+    Parameters
+    ----------
+    mass : numpy.ndarray or float
+        Mass [Msun] of the object(s)
+
+    Returns
+    -------
+    r_sch : numpy.ndarray
+        Schwarzschild radius [m] with `astropy.units.quantity.Quantity`
+    """
+
+    # Assign units to mass
+    if hasattr(mass, 'unit'):
+        mass = mass.to('solMass')
+    else:
+        mass = mass * astropy_units.solMass
+
+    r_sch = (2. * astropy_constants.G * mass / (astropy_constants.c ** 2)).to("meter")
+
+    return (r_sch)
