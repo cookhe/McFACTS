@@ -316,8 +316,8 @@ def bin_contact_check(blackholes_binary, smbh_mass):
     """
 
     # We assume bh are not spinning when in contact. TODO: Consider spin in future.
-    contact_condition = point_masses.r_schwarzschild_of_m(blackholes_binary.mass_1) + \
-                        point_masses.r_schwarzschild_of_m(blackholes_binary.mass_2)
+    contact_condition = (point_masses.r_schwarzschild_of_m(blackholes_binary.mass_1) +
+                         point_masses.r_schwarzschild_of_m(blackholes_binary.mass_2))
     contact_condition = point_masses.r_g_from_units(smbh_mass, contact_condition)
     mask_condition = (blackholes_binary.bin_sep <= contact_condition)
 
@@ -397,7 +397,6 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
 
     # Only interested in BH that have not merged
     idx_non_mergers = np.where(blackholes_binary.flag_merging >= 0)[0]
-    print("idx_non_mergers",idx_non_mergers)
 
     # If all binaries have merged then nothing to do
     if (idx_non_mergers.shape[0] == 0):
@@ -425,8 +424,8 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
     scaled_num_orbits = num_orbits_in_timestep / 1000.0
 
     # Timescale for binary merger via GW emission alone, scaled to bin parameters
-    sep_crit = point_masses.r_schwarzschild_of_m(blackholes_binary.mass_1[idx_non_mergers]) + \
-               point_masses.r_schwarzschild_of_m(blackholes_binary.mass_2[idx_non_mergers])
+    sep_crit = (point_masses.r_schwarzschild_of_m(blackholes_binary.mass_1[idx_non_mergers]) +
+                point_masses.r_schwarzschild_of_m(blackholes_binary.mass_2[idx_non_mergers]))
     time_to_merger_gw = (point_masses.time_of_orbital_shrinkage(
         blackholes_binary.mass_1[idx_non_mergers] * astropy_units.Msun,
         blackholes_binary.mass_2[idx_non_mergers] * astropy_units.Msun,
