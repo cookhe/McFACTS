@@ -1013,7 +1013,7 @@ def main():
                     blackholes_binary.remove_id_num(bh_binary_id_num_ionization)
                     filing_cabinet.remove_id_num(bh_binary_id_num_ionization)
 
-                bh_binary_id_num_merger = blackholes_binary.id_num[np.nonzero(blackholes_binary.flag_merging)]
+                bh_binary_id_num_merger = blackholes_binary.id_num[blackholes_binary.flag_merging < 0]
 
                 if opts.verbose:
                     print("Merger ID numbers")
