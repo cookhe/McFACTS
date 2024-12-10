@@ -43,7 +43,7 @@ def check_tde_or_flip(star_retro_id_num, star_retro_mass, star_retro_log_radius,
     disk_radius_tidal_disruption = (star_radius * ((smbh_mass_units / star_mass) ** (1./3.))).to("meter")
 
     # Stars are TDEs if they are inside the TD radius and have eccentricity >= 0.8
-    tde_mask = ((star_orb_a * (1 - star_retro_orb_ecc)) <= disk_radius_tidal_disruption) & (star_retro_orb_ecc >= 0.8)
+    tde_mask = ((star_orb_a * (1. - star_retro_orb_ecc)) <= disk_radius_tidal_disruption) & (star_retro_orb_ecc >= 0.8)
 
     # Stars that don't become TDEs will flip to prograde
     tde_id_num = star_retro_id_num[tde_mask]
