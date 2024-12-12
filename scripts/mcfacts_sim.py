@@ -4,6 +4,7 @@ import warnings
 from importlib import resources as impresources
 from os.path import isfile, isdir
 from pathlib import Path
+import time
 
 import numpy as np
 
@@ -173,6 +174,7 @@ def arg():
 def main():
     """
     """
+    tic_perf = time.perf_counter()
     # Setting up automated input parameters
     # see IOdocumentation.txt for documentation of variable names/types/etc.
     opts = arg()
@@ -1460,6 +1462,8 @@ def main():
     blackholes_binary_gw_pop.to_txt(os.path.join(opts.work_directory, gws_save_name),
                                     cols=binary_gw_cols)
 
+    toc_wall = time.perf_counter()
+    print("Perf time: %0.2f"%(toc_perf - tic_perf))
 
 if __name__ == "__main__":
     main()

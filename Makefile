@@ -29,8 +29,10 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 SEED=3456789108
 #FNAME_INI= ${HERE}/recipes/p1_thompson.ini
 FNAME_INI= ${HERE}/recipes/model_choice_old.ini
-FNAME_INI_MSTAR= ${HERE}/recipes/p3_pAGN_on.ini
-MSTAR_RUNS_WKDIR = ${HERE}/runs_mstar_bins_pAGN
+FNAME_INI_MSTAR_PAGN= ${HERE}/recipes/p3_pAGN_on.ini
+FNAME_INI_MSTAR_FIXED= ${HERE}/recipes/p3_pAGN_off.ini
+MSTAR_RUNS_WKDIR_PAGN = ${HERE}/runs_mstar_bins_pAGN
+MSTAR_RUNS_WKDIR_FIXED = ${HERE}/runs_mstar_bins_fixed
 # NAL files might not exist unless you download them from
 # https://gitlab.com/xevra/nal-data
 # scripts that use NAL files might not work unless you install
@@ -106,9 +108,9 @@ vera_plots: mcfacts_sim
 		--cdf-fields chi_eff chi_p final_mass gen1 gen2 time_merge \
 		--verbose
 
-mstar_runs:
+mstar_runs_pagn:
 	python ${MSTAR_RUNS_EXE} \
-		--fname-ini ${FNAME_INI_MSTAR} \
+		--fname-ini ${FNAME_INI_MSTAR_PAGN} \
 		--timestep_num 1000 \
 		--bin_num_max 10000 \
 		--nbins 33 \
@@ -117,7 +119,25 @@ mstar_runs:
 		--mstar-max 1e13 \
 		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
-		--wkdir ${MSTAR_RUNS_WKDIR} \
+		--wkdir ${MSTAR_RUNS_WKDIR_PAGN} \
+		--truncate-opacity
+		#--nbins 33 
+		#--timestep_num 1000 \
+	#python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
+		
+
+mstar_runs_fixed:
+	python ${MSTAR_RUNS_EXE} \
+		--fname-ini ${FNAME_INI_MSTAR_FIXED} \
+		--timestep_num 1000 \
+		--bin_num_max 10000 \
+		--nbins 33 \
+		--galaxy_num 100 \
+		--mstar-min 1e9 \
+		--mstar-max 1e13 \
+		--scrub \
+		--fname-nal ${FNAME_GWTC2_NAL} \
+		--wkdir ${MSTAR_RUNS_WKDIR_FIXED} \
 		--truncate-opacity
 		#--nbins 33 
 		#--timestep_num 1000 \
