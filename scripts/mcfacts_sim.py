@@ -850,6 +850,12 @@ def main():
                     filing_cabinet.update(id_num=blackholes_binary.id_num,
                                           attr="orb_ecc",
                                           new_info=blackholes_binary.bin_orb_ecc)
+                    filing_cabinet.update(id_num=blackholes_pro.id_num,
+                                          attr="orb_a",
+                                          new_info=blackholes_pro.orb_a)
+                    filing_cabinet.update(id_num=blackholes_pro.id_num,
+                                          attr="orb_ecc",
+                                          new_info=blackholes_pro.orb_ecc)
 
                     # Soften/ ionize binaries due to encounters with eccentric singletons
                     # Return 3 things: perturbed biary_bh_array, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
@@ -872,6 +878,12 @@ def main():
                     filing_cabinet.update(id_num=blackholes_binary.id_num,
                                           attr="orb_ecc",
                                           new_info=blackholes_binary.bin_orb_ecc)
+                    filing_cabinet.update(id_num=blackholes_pro.id_num,
+                                          attr="orb_a",
+                                          new_info=blackholes_pro.orb_a)
+                    filing_cabinet.update(id_num=blackholes_pro.id_num,
+                                          attr="orb_ecc",
+                                          new_info=blackholes_pro.orb_ecc)
 
                 # Check for bin_ecc unphysical
                 # We need a second check here
