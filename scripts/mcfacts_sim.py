@@ -1462,7 +1462,7 @@ def main():
     blackholes_binary_gw_pop.to_txt(os.path.join(opts.work_directory, gws_save_name),
                                     cols=binary_gw_cols)
 
-    toc_wall = time.perf_counter()
+    toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
 
 if __name__ == "__main__":
