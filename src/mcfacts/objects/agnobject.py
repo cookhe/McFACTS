@@ -32,7 +32,7 @@ attr_merged_bh = ["id_num", "galaxy", "bin_orb_a", "mass_final",
                   "gen_1", "gen_2",
                   "chi_eff", "chi_p", "time_merged"]
 
-attr_filing_cabinet = ["id_num", "category", "orb_a", "mass", "size",
+attr_filing_cabinet = ["id_num", "category", "orb_a", "mass", "orb_ecc", "size",
                        "direction", "disk_inner_outer"]
 
 
@@ -1436,6 +1436,7 @@ class AGNFilingCabinet(AGNObject):
                  category,
                  orb_a,
                  mass,
+                 orb_ecc,
                  size,
                  direction=None,
                  disk_inner_outer=None,
@@ -1452,9 +1453,11 @@ class AGNFilingCabinet(AGNObject):
         category : numpy array of ints
             category (black hole, star, etc.) of the objects
         orb_a : numpy array
-            orbital semi-major axis with respect to the SMBH
+            orbital semi-major axis [r_{g,SMBH}] with respect to the SMBH
         mass : numpy array
-            masses of the objects (for binaries this is total mass)
+            masses [Msun] of the objects (for binaries this is total mass)
+        orb_ecc : numpy.ndarray
+            Orbital eccentricity with respect to the SMBH
         size : numpy array
             for BH this is set to -1.5, for stars this is set to the stellar radius in R_g,
             for binaries this is the binary's semi-major axis (aka separation) in R_g
@@ -1479,8 +1482,9 @@ class AGNFilingCabinet(AGNObject):
         self.category = category
         self.orb_a = orb_a
         self.mass = mass
-        # size is log radius for stars, -1 for BH, bin_a for binary BH
+        # size is radius for stars, -1 for BH, bin_sep for binary BH
         self.size = size
+        self.orb_ecc = orb_ecc
 
         # Set direction as 0 (undetermined) if not passed
         # Otherwise set as what is passed
@@ -1562,7 +1566,7 @@ class AGNFilingCabinet(AGNObject):
         getattr(self, attr)[np.isin(getattr(self, "id_num"), id_num)] = new_info
 
     def add_objects(self, new_id_num, new_category, new_orb_a,
-                    new_mass, new_size, new_direction, new_disk_inner_outer, fc_num=0):
+                    new_mass, new_orb_ecc, new_size, new_direction, new_disk_inner_outer, fc_num=0):
         """
         Append objects to the AGNFilingCabinet.
 
@@ -1576,6 +1580,8 @@ class AGNFilingCabinet(AGNObject):
             orbital semi-major axes to be added
         new_mass : numpy array
             masses to be added
+        new_orb_ecc : numpy array
+            new orbital eccentricities to be added
         new_size : numpy array
             sizes to be added (BH: -1, stars: radii in Rsun,
             binaries: separation in R_g)
@@ -1594,6 +1600,7 @@ class AGNFilingCabinet(AGNObject):
         self.category = np.concatenate([self.category, new_category])
         self.orb_a = np.concatenate([self.orb_a, new_orb_a])
         self.mass = np.concatenate([self.mass, new_mass])
+        self.orb_ecc = np.concatenate([self.orb_ecc, new_orb_ecc])
         self.size = np.concatenate([self.size, new_size])
         self.direction = np.concatenate([self.direction, new_direction])
         self.disk_inner_outer = np.concatenate([self.disk_inner_outer, new_disk_inner_outer])
