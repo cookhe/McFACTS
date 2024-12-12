@@ -137,8 +137,7 @@ mstar_runs_fixed:
 		--mstar-max 1e13 \
 		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
-		--wkdir ${MSTAR_RUNS_WKDIR_FIXED} \
-		--truncate-opacity
+		--wkdir ${MSTAR_RUNS_WKDIR_FIXED}
 		#--nbins 33 
 		#--timestep_num 1000 \
 	#python3 ${MSTAR_PLOT_EXE} --run-directory ${MSTAR_RUNS_WKDIR}
