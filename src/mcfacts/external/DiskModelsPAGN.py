@@ -141,14 +141,19 @@ class AGNGasDiskModel(object):
         pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
         prad = self.disk_model.tauV * ct.sigmaSB * self.disk_model.Teff4 / (2 * ct.c)
         ptot = pgas + prad
-        ln_ptot = np.log(ptot)
-        disk_pressure_func_log = scipy.interpolate.CubicSpline(
-                                                          np.log(R),
-                                                          ln_ptot,
-                                                          extrapolate=False
-                                                          )
-        disk_pressure_grad_func_log = disk_pressure_func_log.derivative()
-        disk_pressure_grad_func = lambda x, f=disk_pressure_grad_func_log, g=disk_pressure_func_log: f(np.log(x)) * np.exp(g(np.log(x)))/x * (1./point_masses.si_from_r_g(self.disk_model.Mbh * astropy_units.kg, 1.).value)
+        #ln_ptot = np.log(ptot)
+        #disk_pressure_func_log = scipy.interpolate.CubicSpline(
+        #                                                  np.log(R),
+        #                                                  ln_ptot,
+        #                                                  extrapolate=False
+        #                                                  )
+        #disk_pressure_grad_func_log = disk_pressure_func_log.derivative()
+        #disk_pressure_grad_func = lambda x, f=disk_pressure_grad_func_log, g=disk_pressure_func_log: f(np.log(x)) * np.exp(g(np.log(x)))/x * (1./point_masses.si_from_r_g(self.disk_model.Mbh * astropy_units.kg, 1.).value)
+        disk_pressure_grad_func_interp = scipy.interpolate.CubicSpline(
+                                                                self.disk_model.R,
+                                                                np.gradient(ptot/self.disk_model.R),
+                                                                extrapolate=False)
+        disk_pressure_grad_func = lambda x, f=disk_pressure_grad_func_interp: f(point_masses.si_from_r_g(self.disk_model.Mbh * astropy_units.kg, x).value)
 
         # Generate disk Omega interpolator function
         ln_omega = np.log(self.disk_model.Omega)
@@ -169,7 +174,7 @@ class AGNGasDiskModel(object):
         bonus_structures["T"] = self.disk_model.T
         bonus_structures["tauV"] = self.disk_model.tauV
 
-        return surf_dens_func, aspect_func, opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, bonus_structures
+        return surf_dens_func, aspect_func, opacity_func, sound_speed_func, disk_density_func, bonus_structures
 
 
 
