@@ -436,6 +436,8 @@ def circular_binaries_encounters_ecc_prograde(
                         blackholes_binary.bin_orb_ecc[i] = 1.0 - epsilon
 
     # TODO: ALSO return new array of singletons with changed params.
+    disk_bh_pro_orbs_a[ecc_prograde_population_indices] = ecc_prograde_population_locations
+    disk_bh_pro_orbs_ecc[ecc_prograde_population_indices] = ecc_prograde_population_eccentricities
 
     # Check finite
     assert np.isfinite(blackholes_binary.bin_sep).all(), \
@@ -446,7 +448,7 @@ def circular_binaries_encounters_ecc_prograde(
         "Finite check failure: bin_eccentricities"
     assert np.sum(blackholes_binary.bin_ecc > 1) == 0, "bin_ecc has values greater than 1"
 
-    return (blackholes_binary)
+    return (blackholes_binary, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
 
 def circular_binaries_encounters_circ_prograde(
@@ -680,7 +682,11 @@ def circular_binaries_encounters_circ_prograde(
                         blackholes_binary.bin_ecc[i] = 1.0 - epsilon
                     if (blackholes_binary.bin_orb_ecc[i] >= 1):
                         blackholes_binary.bin_orb_ecc[i] = 1.0 - epsilon
-    return (blackholes_binary)
+
+    disk_bh_pro_orbs_a[circ_prograde_population_indices] = circ_prograde_population_locations
+    disk_bh_pro_orbs_ecc[circ_prograde_population_indices] = circ_prograde_population_eccentricities
+
+    return (blackholes_binary, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
 
 def bin_spheroid_encounter(
