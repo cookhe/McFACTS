@@ -11,7 +11,7 @@ tests: mcfacts_sim
 # Alpha begins at 0.1.0
 # Feature-complete Alpha begins at 0.2.0
 # Beta begins at 0.3.0
-VERSION=0.1.0
+VERSION=0.2.1
 
 ### Should work for everyone ###
 # Current directory
