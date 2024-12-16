@@ -174,7 +174,7 @@ class AGNGasDiskModel(object):
         bonus_structures["T"] = self.disk_model.T
         bonus_structures["tauV"] = self.disk_model.tauV
 
-        return surf_dens_func, aspect_func, opacity_func, sound_speed_func, disk_density_func, bonus_structures
+        return surf_dens_func, aspect_func, opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, bonus_structures
 
 
 

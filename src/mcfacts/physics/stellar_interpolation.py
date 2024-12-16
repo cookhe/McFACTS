@@ -139,13 +139,13 @@ def ratio_star_torques(disk_density_func, disk_pressure_grad_func, disk_aspect_r
     print("disk_pressure_grad",disk_pressure_grad)
     print("(1./disk_density) * disk_pressure_grad",(1./disk_density) * disk_pressure_grad)
 
-    v_phi = (disk_radius_si * ((1./disk_density) * disk_pressure_grad + ((astropy_const.G * star_mass) / (disk_radius_si ** 2)))) ** 0.5
+    v_phi = (disk_radius_si * ((1./disk_density) * disk_pressure_grad + ((astropy_const.G * smbh_mass_si) / (disk_radius_si ** 2)))) ** 0.5
     v_phi = v_phi.to("m/s")
 
     v_kep = (astropy_const.G * smbh_mass_si / disk_radius_si) ** 0.5
     v_kep = v_kep.to("m/s")
 
-    v_rel = v_phi - v_kep
+    v_rel = np.abs(v_phi - v_kep)
 
     c_d = 1.
     drag_force = 0.5 * c_d * 4. * np.pi * (star_radius ** 2) * disk_density * (v_rel ** 2)
