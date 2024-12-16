@@ -1492,7 +1492,7 @@ class AGNFilingCabinet(AGNObject):
             self.direction = np.full(id_num.shape, 0)
         else:
             self.direction = direction
-        
+
         # Set disk_inner_outer as 0 (undetermined if not passed)
         # Otherwise set as what is passed
         if disk_inner_outer is None:
