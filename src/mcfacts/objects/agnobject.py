@@ -290,13 +290,16 @@ class AGNObject(object):
         if id_num_remove is None:
             return None
 
-        keep_mask = ~(np.isin(getattr(self, "id_num"), id_num_remove))
+        a, b = np.where(getattr(self, "id_num") == id_num_remove[:, None])
+        remove_idx = b[np.argsort(a)]
+        keep_idx = np.ones(len(self.mass), dtype=bool)
+        keep_idx[remove_idx] = False
         attr_list = get_attr_list(self)
         #for attr in vars(self).keys():
         for attr in attr_list:
-            setattr(self, attr, getattr(self, attr)[keep_mask])
+            setattr(self, attr, getattr(self, attr)[keep_idx])
 
-        self.num -= np.sum(~keep_mask)
+        self.num -= len(remove_idx)
 
         self.check_consistency()
 
@@ -336,12 +339,13 @@ class AGNObject(object):
         if id_num_keep is None:
             return None
 
-        keep_mask = (np.isin(getattr(self, "id_num"), id_num_keep))
+        a, b = np.where(getattr(self, "id_num") == id_num_keep[:, None])
+        keep_idx = b[np.argsort(a)]
         attr_list = get_attr_list(self)
         for attr in attr_list:
-            setattr(self, attr, getattr(self, attr)[keep_mask])
+            setattr(self, attr, getattr(self, attr)[keep_idx])
 
-        self.num -= np.sum(~keep_mask)
+        self.num = len(keep_idx)
 
         self.check_consistency()
 
@@ -1564,7 +1568,9 @@ class AGNFilingCabinet(AGNObject):
         except:
             raise AttributeError("{} is not an attribute of AGNFilingCabinet".format(attr))
 
-        getattr(self, attr)[np.isin(getattr(self, "id_num"), id_num)] = new_info
+        a, b = np.where(getattr(self, "id_num") == id_num[:, None])
+        id_mask = b[np.argsort(a)]
+        getattr(self, attr)[id_mask] = new_info
 
     def add_objects(self, new_id_num, new_category, new_orb_a,
                     new_mass, new_orb_ecc, new_size, new_direction, new_disk_inner_outer, fc_num=0):
