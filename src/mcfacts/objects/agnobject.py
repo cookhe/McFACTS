@@ -346,8 +346,7 @@ class AGNObject(object):
         self.check_consistency()
 
     def at_id_num(self, id_num, attr):
-        """
-        Returns the attribute at the specified ID numbers
+        """Returns the attribute at the specified ID numbers
 
         Parameters
         ----------
@@ -361,7 +360,9 @@ class AGNObject(object):
         val : numpy array
             specified attribute at specified ID numbers
         """
-        id_mask = (np.isin(getattr(self, "id_num"), id_num))
+        # Ensures that values are returned in the order of the original id_num array
+        a, b = np.where(getattr(self, "id_num") == id_num[:, None])
+        id_mask = b[np.argsort(a)]
 
         try:
             val = getattr(self, attr)[id_mask]
@@ -410,7 +411,7 @@ class AGNObject(object):
         """
 
         # sorted indices of the array to sort by
-        sort_idx = np.argsort(sort_attr)
+        sort_idx = np.argsort(getattr(self, sort_attr))
 
         # Each attribute is then sorted to be in this order
         attr_list = get_attr_list(self)
