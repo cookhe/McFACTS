@@ -289,10 +289,20 @@ class AGNObject(object):
 
         if id_num_remove is None:
             return None
-
-        a, b = np.where(getattr(self, "id_num") == id_num_remove[:, None])
+        # Check if passed id_num is a numpy array, if not we make it one
+        if isinstance(id_num_remove, np.ndarray):
+            id_num_remove_arr = id_num_remove
+        elif isinstance(id_num_remove, list):
+            id_num_remove_arr = np.array(id_num_remove)
+        elif (isinstance(id_num_remove, float) | isinstance(id_num_remove, (int, np.integer))) & (not isinstance(id_num_remove, bool)):
+            id_num_remove_arr = np.array([id_num_remove])
+        else:
+            print(id_num_remove, type(id_num_remove))
+            raise AttributeError("Passed id_num is not a valid type.")
+        # Ensures that values are returned in the order of the original id_num array
+        a, b = np.where(getattr(self, "id_num") == id_num_remove_arr[:, None])
         remove_idx = b[np.argsort(a)]
-        keep_idx = np.ones(len(self.mass), dtype=bool)
+        keep_idx = np.ones(self.num, dtype=bool)
         keep_idx[remove_idx] = False
         attr_list = get_attr_list(self)
         #for attr in vars(self).keys():
@@ -338,8 +348,18 @@ class AGNObject(object):
 
         if id_num_keep is None:
             return None
-
-        a, b = np.where(getattr(self, "id_num") == id_num_keep[:, None])
+        # Check if passed id_num is a numpy array, if not we make it one
+        if isinstance(id_num_keep, np.ndarray):
+            id_num_keep_arr = id_num_keep
+        elif isinstance(id_num_keep, list):
+            id_num_keep_arr = np.array(id_num_keep)
+        elif (isinstance(id_num_keep, float) | isinstance(id_num_keep, (int, np.integer))) & (not isinstance(id_num_keep, bool)):
+            id_num_keep_arr = np.array([id_num_keep])
+        else:
+            print(id_num_keep, type(id_num_keep))
+            raise AttributeError("Passed id_num is not a valid type.")
+        # Ensures that values are returned in the order of the original id_num array
+        a, b = np.where(getattr(self, "id_num") == id_num_keep_arr[:, None])
         keep_idx = b[np.argsort(a)]
         attr_list = get_attr_list(self)
         for attr in attr_list:
@@ -354,7 +374,7 @@ class AGNObject(object):
 
         Parameters
         ----------
-        id_num : numpy array
+        id_num : numpy array or float
             ID numbers of objects to return
         attr : str
             attribute to return
@@ -364,8 +384,18 @@ class AGNObject(object):
         val : numpy array
             specified attribute at specified ID numbers
         """
+        # Check if passed id_num is a numpy array, if not we make it one
+        if isinstance(id_num, np.ndarray):
+            id_num_arr = id_num
+        elif isinstance(id_num, list):
+            id_num_arr = np.array(id_num)
+        elif (isinstance(id_num, float) | isinstance(id_num, (int, np.integer))) & (not isinstance(id_num, bool)):
+            id_num_arr = np.array([id_num])
+        else:
+            print(id_num, type(id_num))
+            raise AttributeError("Passed id_num is not a valid type.")
         # Ensures that values are returned in the order of the original id_num array
-        a, b = np.where(getattr(self, "id_num") == id_num[:, None])
+        a, b = np.where(getattr(self, "id_num") == id_num_arr[:, None])
         id_mask = b[np.argsort(a)]
 
         try:
@@ -1567,8 +1597,18 @@ class AGNFilingCabinet(AGNObject):
             getattr(self, attr)
         except:
             raise AttributeError("{} is not an attribute of AGNFilingCabinet".format(attr))
-
-        a, b = np.where(getattr(self, "id_num") == id_num[:, None])
+        # Check if passed id_num is a numpy array, if not we make it one
+        if isinstance(id_num, np.ndarray):
+            id_num_arr = id_num
+        elif isinstance(id_num, list):
+            id_num_arr = np.array(id_num)
+        elif (isinstance(id_num, float) | isinstance(id_num, (int, np.integer))) & (not isinstance(id_num, bool)):
+            id_num_arr = np.array([id_num])
+        else:
+            print(id_num, type(id_num))
+            raise AttributeError("Passed id_num is not a valid type.")
+        # Ensures that values are returned in the order of the original id_num array
+        a, b = np.where(getattr(self, "id_num") == id_num_arr[:, None])
         id_mask = b[np.argsort(a)]
         getattr(self, attr)[id_mask] = new_info
 
