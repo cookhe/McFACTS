@@ -694,10 +694,6 @@ def main():
             filing_cabinet.update(id_num=stars_pro.id_num,
                                   attr="orb_ecc",
                                   new_info=stars_pro.orb_ecc)
-            if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                print(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc"))
-                print(filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))
-                print(ff)
 
             # Now do retrograde singles--change semi-major axis
             #   note this is dyn friction only, not true 'migration'
@@ -743,9 +739,6 @@ def main():
             filing_cabinet.update(id_num=stars_retro.id_num,
                                   attr="orb_a",
                                   new_info=stars_retro.orb_a)
-            
-            if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                print(ff)
 
             # Check for bin_ecc unphysical
             bh_retro_id_num_unphysical_ecc = blackholes_retro.id_num[blackholes_retro.orb_ecc >= 1.]
@@ -774,16 +767,119 @@ def main():
                     opts.disk_radius_outer
                 )
 
-                stars_pro.orb_a, stars_pro.orb_ecc = dynamics.circular_singles_encounters_prograde(
+                rstar_rhill_exponent = 2.0
+                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums = dynamics.circular_singles_encounters_prograde_stars(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
+                    stars_pro.log_radius,
                     stars_pro.orb_ecc,
+                    stars_pro.id_num,
+                    rstar_rhill_exponent,
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.delta_energy_strong,
                     opts.disk_radius_outer
                 )
+
+                if (star_touch_id_nums.size > 0):
+                    print(star_touch_id_nums)
+                    print(ff)
+                    # Star and star touch each other: stellar merger
+                    stars_pro, star_merged_id_num_new = star_interactions.add_merged_stars(star_touch_id_nums,
+                                                                                           stars_pro,
+                                                                                           filing_cabinet.id_max,
+                                                                                           opts.disk_bh_pro_orb_ecc_crit,
+                                                                                           opts.disk_star_initial_mass_cutoff)
+                    # Add new merged stars to filing cabinet and delete previous stars
+                    filing_cabinet.add_objects(new_id_num=star_merged_id_num_new,
+                                               new_category=np.ones(star_merged_id_num_new.size),
+                                               new_orb_a=stars_pro.at_id_num(star_merged_id_num_new, "orb_a"),
+                                               new_mass=stars_pro.at_id_num(star_merged_id_num_new, "mass"),
+                                               new_orb_ecc=stars_pro.at_id_num(star_merged_id_num_new, "orb_ecc"),
+                                               new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** stars_pro.at_id_num(star_merged_id_num_new, "log_radius")) * astropy_units.Rsun).value,
+                                               new_direction=np.ones(star_merged_id_num_new.size),
+                                               new_disk_inner_outer=np.ones(star_merged_id_num_new.size))
+                    filing_cabinet.remove_id_num(star_touch_id_nums.flatten())
+
+                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums = dynamics.circular_singles_encounters_prograde_star_bh(
+                    opts.smbh_mass,
+                    stars_pro.orb_a,
+                    stars_pro.mass,
+                    stars_pro.log_radius,
+                    stars_pro.orb_ecc,
+                    stars_pro.id_num,
+                    rstar_rhill_exponent,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.mass,
+                    blackholes_pro.orb_ecc,
+                    blackholes_pro.id_num,
+                    opts.timestep_duration_yr,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    opts.delta_energy_strong,
+                    opts.disk_radius_outer
+                )
+
+                if (bh_star_touch_id_nums.size > 0):
+
+                    # BH and star encounter: star blows up, BH accretes mass
+                    # Separate out into BH ID and star ID
+                    bh_star_touch_id_nums = bh_star_touch_id_nums.flatten()
+                    star_id_nums = bh_star_touch_id_nums[np.nonzero(filing_cabinet.at_id_num(bh_star_touch_id_nums, "category") == 1)]
+                    bh_id_nums = bh_star_touch_id_nums[np.nonzero(filing_cabinet.at_id_num(bh_star_touch_id_nums, "category") == 0)]
+                    stars_explode.add_stars(new_id_num=star_id_nums,
+                                            new_mass=stars_pro.at_id_num(star_id_nums, "mass"),
+                                            new_orb_a=stars_pro.at_id_num(star_id_nums, "orb_a"),
+                                            new_log_radius=stars_pro.at_id_num(star_id_nums, "log_radius"),
+                                            new_log_luminosity=stars_pro.at_id_num(star_id_nums, "log_luminosity"),
+                                            new_log_teff=stars_pro.at_id_num(star_id_nums, "log_teff"),
+                                            new_X=stars_pro.at_id_num(star_id_nums, "star_X"),
+                                            new_Y=stars_pro.at_id_num(star_id_nums, "star_Y"),
+                                            new_Z=stars_pro.at_id_num(star_id_nums, "star_Z"),
+                                            new_orb_inc=stars_pro.at_id_num(star_id_nums, "orb_inc"),
+                                            new_orb_ang_mom=stars_pro.at_id_num(star_id_nums, "orb_ang_mom"),
+                                            new_orb_ecc=stars_pro.at_id_num(star_id_nums, "orb_ecc"),
+                                            new_orb_arg_periapse=stars_pro.at_id_num(star_id_nums, "orb_arg_periapse"),
+                                            new_gen=stars_pro.at_id_num(star_id_nums, "gen"),
+                                            new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
+                                            new_time_passed=stars_pro.at_id_num(star_id_nums, "time_passed"),
+                                            )
+                    # Delete exploded stars from regular array and filing cabinet
+                    stars_pro.remove_id_num(star_id_nums)
+                    filing_cabinet.remove_id_num(star_id_nums)
+
+                    # BHs accrete mass and spin up
+                    a, b = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
+                    bh_id_mask = b[np.argsort(a)]
+                    blackholes_pro.mass[bh_id_mask] = accretion.change_bh_mass(
+                        blackholes_pro.mass[bh_id_mask],
+                        opts.disk_bh_eddington_ratio,
+                        disk_bh_eddington_mass_growth_rate,
+                        opts.timestep_duration_yr)
+
+                    blackholes_pro.spin[bh_id_mask] = accretion.change_bh_spin_magnitudes(
+                        blackholes_pro.spin[bh_id_mask],
+                        opts.disk_bh_eddington_ratio,
+                        opts.disk_bh_torque_condition,
+                        opts.timestep_duration_yr,
+                        blackholes_pro.orb_ecc[bh_id_mask],
+                        opts.disk_bh_pro_orb_ecc_crit,
+                    )
+
+                    blackholes_pro.spin_angle[bh_id_mask] = accretion.change_bh_spin_angles(
+                        blackholes_pro.spin_angle[bh_id_mask],
+                        opts.disk_bh_eddington_ratio,
+                        opts.disk_bh_torque_condition,
+                        disk_bh_spin_resolution_min,
+                        opts.timestep_duration_yr,
+                        blackholes_pro.orb_ecc[bh_id_mask],
+                        opts.disk_bh_pro_orb_ecc_crit
+                    )
+
+                    # Update filing cabinet
+                    filing_cabinet.update(id_num=bh_id_nums,
+                                          attr="mass",
+                                          new_info=blackholes_pro.mass[bh_id_mask])
 
                 # Update filing cabinet
                 filing_cabinet.update(id_num=blackholes_pro.id_num,
@@ -799,9 +895,6 @@ def main():
                 filing_cabinet.update(id_num=stars_pro.id_num,
                                       attr="orb_a",
                                       new_info=stars_pro.orb_a)
-                
-                if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                    print(ff)
 
             # Do things to the binaries--first check if there are any:
             if blackholes_binary.num > 0:
@@ -839,9 +932,6 @@ def main():
                 filing_cabinet.update(id_num=blackholes_binary.id_num,
                                       attr="orb_ecc",
                                       new_info=blackholes_binary.bin_orb_ecc)
-                
-                if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                    print(ff)
 
                 if (opts.flag_dynamic_enc > 0):
                     # Harden/soften binaries via dynamical encounters
@@ -873,8 +963,7 @@ def main():
                     filing_cabinet.update(id_num=blackholes_pro.id_num,
                                           attr="orb_ecc",
                                           new_info=blackholes_pro.orb_ecc)
-                    if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                        print(ff)
+
                     # Soften/ ionize binaries due to encounters with eccentric singletons
                     # Return 3 things: perturbed biary_bh_array, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
                     blackholes_binary, blackholes_pro.orb_a, blackholes_pro.orb_ecc = dynamics.circular_binaries_encounters_ecc_prograde(
@@ -902,9 +991,6 @@ def main():
                     filing_cabinet.update(id_num=blackholes_pro.id_num,
                                           attr="orb_ecc",
                                           new_info=blackholes_pro.orb_ecc)
-                    
-                    if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                        print(ff)
 
                 # Check for bin_ecc unphysical
                 # We need a second check here
@@ -986,8 +1072,6 @@ def main():
                     filing_cabinet.update(id_num=blackholes_binary.id_num,
                                           attr="orb_ecc",
                                           new_info=blackholes_binary.bin_orb_ecc)
-                    if(np.any(blackholes_pro.at_id_num(blackholes_pro.id_num, "orb_ecc") != filing_cabinet.at_id_num(blackholes_pro.id_num, "orb_ecc"))):
-                        print(ff)
 
                 if (opts.flag_dynamic_enc > 0):
                     # Recapture bins out of disk plane.
