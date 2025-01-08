@@ -413,9 +413,11 @@ def circular_singles_encounters_prograde_stars(
 
     # Check finite
     assert np.isfinite(disk_star_pro_orbs_a).all(), \
-        "Finite check failed for disk_bh_pro_orbs_a"
+        "Finite check failed for disk_star_pro_orbs_a"
     assert np.isfinite(disk_star_pro_orbs_ecc).all(), \
-        "Finite check failed for disk_bh_pro_orbs_ecc"
+        "Finite check failed for disk_star_pro_orbs_ecc"
+
+    # Put ID nums array into correct shape
     id_nums_touch = np.array(id_nums_touch)
     id_nums_touch = id_nums_touch.T
     return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch)
@@ -581,7 +583,6 @@ def circular_singles_encounters_prograde_star_bh(
 
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
     epsilon_star = disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
-    epsilon_bh = disk_radius_outer * ((disk_bh_pro_masses[ecc_prograde_population_indices] / (3 * (disk_bh_pro_masses[ecc_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=ecc_prograde_population_indices.size)
 
     # T_orb = pi (R/r_g)^1.5 (GM_smbh/c^2) = pi (R/r_g)^1.5 (GM_smbh*2e30/c^2)
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
@@ -632,9 +633,15 @@ def circular_singles_encounters_prograde_star_bh(
 
     # Check finite
     assert np.isfinite(disk_star_pro_orbs_a).all(), \
-        "Finite check failed for disk_bh_pro_orbs_a"
+        "Finite check failed for disk_star_pro_orbs_a"
     assert np.isfinite(disk_star_pro_orbs_ecc).all(), \
+        "Finite check failed for disk_star_pro_orbs_ecc"
+    assert np.isfinite(disk_bh_pro_orbs_a).all(), \
+        "Finite check failed for disk_bh_pro_orbs_a"
+    assert np.isfinite(disk_bh_pro_orbs_ecc).all(), \
         "Finite check failed for disk_bh_pro_orbs_ecc"
+
+    # Put ID nums array into correct shape
     id_nums_touch = np.array(id_nums_touch)
     id_nums_touch = id_nums_touch.T
     return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, id_nums_touch)
