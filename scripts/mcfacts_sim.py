@@ -756,6 +756,7 @@ def main():
             # Perturb eccentricity via dynamical encounters
             if opts.flag_dynamic_enc > 0:
 
+                # BH-BH encounters
                 blackholes_pro.orb_a, blackholes_pro.orb_ecc = dynamics.circular_singles_encounters_prograde(
                     opts.smbh_mass,
                     blackholes_pro.orb_a,
@@ -767,6 +768,7 @@ def main():
                     opts.disk_radius_outer
                 )
 
+                # Star-star encounters
                 rstar_rhill_exponent = 2.0
                 stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums = dynamics.circular_singles_encounters_prograde_stars(
                     opts.smbh_mass,
@@ -783,8 +785,6 @@ def main():
                 )
 
                 if (star_touch_id_nums.size > 0):
-                    print(star_touch_id_nums)
-                    print(ff)
                     # Star and star touch each other: stellar merger
                     stars_pro, star_merged_id_num_new = star_interactions.add_merged_stars(star_touch_id_nums,
                                                                                            stars_pro,
@@ -802,6 +802,7 @@ def main():
                                                new_disk_inner_outer=np.ones(star_merged_id_num_new.size))
                     filing_cabinet.remove_id_num(star_touch_id_nums.flatten())
 
+                # Star-BH encounters (circular stars and eccentric BH)
                 stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums = dynamics.circular_singles_encounters_prograde_star_bh(
                     opts.smbh_mass,
                     stars_pro.orb_a,
@@ -821,7 +822,6 @@ def main():
                 )
 
                 if (bh_star_touch_id_nums.size > 0):
-
                     # BH and star encounter: star blows up, BH accretes mass
                     # Separate out into BH ID and star ID
                     bh_star_touch_id_nums = bh_star_touch_id_nums.flatten()

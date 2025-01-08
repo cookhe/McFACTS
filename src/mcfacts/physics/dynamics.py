@@ -361,9 +361,6 @@ def circular_singles_encounters_prograde_stars(
     # Get locations for circ population
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
 
-    # Convert stellar radii into Rg
-    disk_star_pro_radius_rg = r_g_from_units(smbh_mass, (10 ** disk_star_pro_radius) * astropy_units.Rsun)
-
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
     epsilon = disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
 
@@ -391,39 +388,25 @@ def circular_singles_encounters_prograde_stars(
                         prob_enc_per_timestep = 1
                     random_uniform_number = rng.uniform(size=1)
                     if random_uniform_number < prob_enc_per_timestep:
-                        # See if stars touch
-                        rhill_circ_star = circ_prograde_population_locations[i] * np.sqrt(disk_star_pro_masses[circ_idx] / (3 * smbh_mass))
-                        rhill_ecc_star = disk_star_pro_orbs_a[ecc_idx] * np.sqrt(disk_star_pro_masses[ecc_idx] / (3 * smbh_mass))
-                        rstar_rhill_circ_star = disk_star_pro_radius_rg[circ_idx] / rhill_circ_star
-                        rstar_rhill_ecc_star = disk_star_pro_radius_rg[ecc_idx] / rhill_ecc_star
-                        rstar_rhill = np.maximum(rstar_rhill_circ_star, rstar_rhill_ecc_star) ** rstar_rhill_exponent
-                        # print("disk_star_pro_masses[circ_idx]",disk_star_pro_masses[circ_idx])
-                        # print("disk_star_pro_masses[ecc_idx]",disk_star_pro_masses[ecc_idx])
-                        # print("rhill_circ_star", rhill_circ_star)
-                        # print("rhill_ecc_star",rhill_ecc_star)
-                        # print("disk_star_pro_radius_rg[circ_idx]",disk_star_pro_radius_rg[circ_idx])
-                        # print("disk_star_pro_radius_rg[ecc_idx]",disk_star_pro_radius_rg[ecc_idx])
-                        # print("10 ** disk_star_pro_radius[circ_idx]", 10 ** disk_star_pro_radius[circ_idx])
-                        # print("10 ** disk_star_pro_radius[ecc_idx]", 10 ** disk_star_pro_radius[ecc_idx])
-                        # print("rstar_rhill",rstar_rhill)
-                        chance_of_touch = rng.uniform(size=1)
-                        # If they do touch then record the ID numbers and move onto the next pair
-                        if (chance_of_touch < rstar_rhill):
-                            id_nums_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_star_pro_id_nums[ecc_idx]]))
-                        # If they don't touch proceed as normal
-                        else:
-                            num_encounters = num_encounters + 1
-                            # if close encounter, pump ecc of circ orbiter to e=0.1 from near circular, and incr a_circ1 by 10%
-                            # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
-                            # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
-                            if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                                disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong
-                                disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
-                                # Catch for if orb_a > disk_radius_outer
-                                if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                    disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
-                                disk_star_pro_orbs_ecc[ecc_idx] = disk_star_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
-                                disk_star_pro_orbs_a[ecc_idx] = disk_star_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                        num_encounters = num_encounters + 1
+                        # if close encounter, pump ecc of circ orbiter to e=0.1 from near circular, and incr a_circ1 by 10%
+                        # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
+                        # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
+                        if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
+                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong
+                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
+                            # Catch for if orb_a > disk_radius_outer
+                            if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
+                                disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
+                            disk_star_pro_orbs_ecc[ecc_idx] = disk_star_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
+                            disk_star_pro_orbs_a[ecc_idx] = disk_star_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                            # Look for stars that are inside each other's Hill spheres and if so return them as mergers
+                            separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_star_pro_orbs_a[ecc_idx])
+                            center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_star_pro_orbs_a[ecc_idx]],
+                                                        weights=[disk_star_pro_masses[circ_idx], disk_star_pro_masses[ecc_idx]])
+                            rhill_poss_encounter = center_of_mass * ((disk_star_pro_masses[circ_idx] + disk_star_pro_masses[ecc_idx]) / (3. * smbh_mass)) ** (1./3.)
+                            if (separation - rhill_poss_encounter < 0):
+                                id_nums_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_star_pro_id_nums[ecc_idx]]))
                     num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
@@ -587,79 +570,62 @@ def circular_singles_encounters_prograde_star_bh(
                 e_bin -> e_bin + de
             and remove da_bin worth of binary energy from eccentricity of m3.
     """
+    # We are comparing the CIRCULARIZED stars and the ECCENTRIC black holes
     # Find the e< crit_ecc. population. These are the (circularized) population that can form binaries.
-    #circ_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
+    circ_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
-    #ecc_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
-
-    # Find e < ecc_crit population for stars and BH. These are the circularized ones that we will have interact.
-    circ_bh_indices = np.asarray(disk_bh_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
-    circ_star_indices = np.asarray(disk_star_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
-
-    # Get locations for bh and stars
-    circ_bh_locations = disk_bh_pro_orbs_a[circ_bh_indices]
-    circ_star_locations = disk_star_pro_orbs_a[circ_star_indices]
+    ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
 
     # Get locations for circ population
-    #circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
-
-    # Convert stellar radii into Rg
-    disk_star_pro_radius_rg = r_g_from_units(smbh_mass, (10 ** disk_star_pro_radius) * astropy_units.Rsun)
+    circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
 
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
-    epsilon_bh = disk_radius_outer * ((disk_bh_pro_masses[circ_bh_indices] / (3 * (disk_bh_pro_masses[circ_bh_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_bh_indices.size)
-    epsilon_star = disk_radius_outer * ((disk_star_pro_masses[circ_star_indices] / (3 * (disk_star_pro_masses[circ_star_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_star_indices.size)
+    epsilon_star = disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
+    epsilon_bh = disk_radius_outer * ((disk_bh_pro_masses[ecc_prograde_population_indices] / (3 * (disk_bh_pro_masses[ecc_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=ecc_prograde_population_indices.size)
 
     # T_orb = pi (R/r_g)^1.5 (GM_smbh/c^2) = pi (R/r_g)^1.5 (GM_smbh*2e30/c^2)
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
-    orbital_timescales_circ_pops = scipy.constants.pi*((disk_bh_pro_orbs_a[circ_bh_indices])**(1.5))*(2.e30*smbh_mass*scipy.constants.G)/(scipy.constants.c**(3.0)*3.15e7)
+    orbital_timescales_circ_pops = scipy.constants.pi*((disk_star_pro_orbs_a[circ_prograde_population_indices])**(1.5))*(2.e30*smbh_mass*scipy.constants.G)/(scipy.constants.c**(3.0)*3.15e7) 
     N_circ_orbs_per_timestep = timestep_duration_yr/orbital_timescales_circ_pops
-    ecc_orb_min = disk_star_pro_orbs_a[circ_star_indices]*(1.0-disk_star_pro_orbs_ecc[circ_star_indices])
-    ecc_orb_max = disk_star_pro_orbs_a[circ_star_indices]*(1.0+disk_star_pro_orbs_ecc[circ_star_indices])
+    ecc_orb_min = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0-disk_bh_pro_orbs_a[ecc_prograde_population_indices])
+    ecc_orb_max = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_bh_pro_orbs_a[ecc_prograde_population_indices])
     num_poss_ints = 0
     num_encounters = 0
     id_nums_touch = []
-    if len(circ_bh_indices) > 0:
-        for i, bh_idx in enumerate(circ_bh_indices):
-            for j, star_idx in enumerate(circ_star_indices):
-                if (circ_bh_locations[i] < ecc_orb_max[j] and circ_bh_locations[i] > ecc_orb_min[j]):
+    if len(circ_prograde_population_indices) > 0:
+        for i, circ_idx in enumerate(circ_prograde_population_indices):
+            for j, ecc_idx in enumerate(ecc_prograde_population_indices):
+                if (circ_prograde_population_locations[i] < ecc_orb_max[j] and circ_prograde_population_locations[i] > ecc_orb_min[j]):
                     # prob_encounter/orbit =hill sphere size/circumference of circ orbit =2RH/2pi a_circ1
                     # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
-                    temp_bin_mass = disk_bh_pro_masses[bh_idx] + disk_star_pro_masses[star_idx]
-                    obj_smbh_mass_ratio = temp_bin_mass/(3.0*smbh_mass)
-                    mass_ratio_factor = (obj_smbh_mass_ratio)**(1./3.)
+                    temp_bin_mass = disk_star_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]
+                    star_smbh_mass_ratio = temp_bin_mass/(3.0*smbh_mass)
+                    mass_ratio_factor = (star_smbh_mass_ratio)**(1./3.)
                     prob_orbit_overlap = (1./scipy.constants.pi)*mass_ratio_factor
                     prob_enc_per_timestep = prob_orbit_overlap * N_circ_orbs_per_timestep[i]
                     if prob_enc_per_timestep > 1:
                         prob_enc_per_timestep = 1
                     random_uniform_number = rng.uniform(size=1)
                     if random_uniform_number < prob_enc_per_timestep:
-                        # See if stars touch
-                        rhill_star = circ_star_locations[j] * np.sqrt(disk_star_pro_masses[star_idx] / (3 * smbh_mass))
-                        rstar_rhill_star = disk_star_pro_radius_rg[star_idx] / rhill_star
-                        rstar_rhill = rstar_rhill_star ** rstar_rhill_exponent
-                        chance_of_touch = rng.uniform(size=1)
-                        # If they do touch then record the ID numbers and move onto the next pair
-                        if (chance_of_touch < rstar_rhill):
-                            id_nums_touch.append(np.array([disk_star_pro_id_nums[star_idx], disk_bh_pro_id_nums[bh_idx]]))
-                        # If they don't touch proceed as normal
-                        else:
-                            num_encounters = num_encounters + 1
-                            # if close encounter, pump ecc of circ orbiter to e=0.1 from near circular, and incr a_circ1 by 10%
-                            # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
-                            # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
-                            # Both are circular so both get pumped?
-                            if disk_bh_pro_orbs_ecc[bh_idx] <= disk_bh_pro_orb_ecc_crit:
-                                disk_bh_pro_orbs_ecc[bh_idx] = delta_energy_strong
-                                disk_bh_pro_orbs_a[bh_idx] = disk_bh_pro_orbs_a[bh_idx]*(1.0 + delta_energy_strong)
-                                # Catch for if orb_a > disk_radius_outer
-                                if (disk_bh_pro_orbs_a[bh_idx] > disk_radius_outer):
-                                    disk_bh_pro_orbs_a[bh_idx] = disk_radius_outer - epsilon_bh[i]
-                                disk_star_pro_orbs_ecc[star_idx] = delta_energy_strong
-                                disk_star_pro_orbs_a[star_idx] = disk_star_pro_orbs_a[star_idx]*(1 + delta_energy_strong)
-                                if (disk_star_pro_orbs_a[star_idx] > disk_radius_outer):
-                                    disk_star_pro_orbs_a[star_idx] = disk_radius_outer - epsilon_star[j]
-
+                        num_encounters = num_encounters + 1
+                        # if close encounter, pump ecc of circ orbiter to e=0.1 from near circular, and incr a_circ1 by 10%
+                        # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
+                        # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
+                        if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
+                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong
+                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
+                            # Catch for if orb_a > disk_radius_outer
+                            if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
+                                disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon_star[i]
+                            disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
+                            disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                            # Look for stars that are inside each other's Hill spheres and if so return them as mergers
+                            separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_bh_pro_orbs_a[ecc_idx])
+                            center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_bh_pro_orbs_a[ecc_idx]],
+                                                        weights=[disk_star_pro_masses[circ_idx], disk_bh_pro_masses[ecc_idx]])
+                            rhill_poss_encounter = center_of_mass * ((disk_star_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]) / (3. * smbh_mass)) ** (1./3.)
+                            if (separation - rhill_poss_encounter < 0):
+                                id_nums_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_bh_pro_id_nums[ecc_idx]]))
                     num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
