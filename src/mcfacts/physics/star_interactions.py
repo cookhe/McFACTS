@@ -19,7 +19,7 @@ def add_merged_stars(id_nums_mergers, stars, id_start_val, disk_bh_pro_orb_ecc_c
     # After doing the weighted average for orb_a we then cut off stars with mass > disk_star_initial_mass_cutoff
     masses[masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
     # New gen is the maximum between the pair's gen
-    gens = np.maximum(stars.at_id_num(id_nums_mergers[0], "gen"), stars.at_id_num(id_nums_mergers[1], "gen"))
+    gens = np.maximum(stars.at_id_num(id_nums_mergers[0], "gen"), stars.at_id_num(id_nums_mergers[1], "gen")) + 1.0
     # Radius, luminosity, Teff are all interpolated based on the new mass
     logR, logL, logTeff = stellar_interpolation.interp_star_params(masses)
     # No metallicity evolution
