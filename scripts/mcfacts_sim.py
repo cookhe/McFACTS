@@ -620,7 +620,7 @@ def main():
             )
 
             disk_star_luminosity_factor = 4.  # Hardcoded from Cantiello+2021 and Fabj+2024
-            stars_pro.mass = accretion.change_star_mass(
+            stars_pro.mass = accretion.accrete_star_mass(
                 stars_pro.mass,
                 stars_pro.orb_a,
                 stars_pro.orb_ecc,
