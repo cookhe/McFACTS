@@ -8,15 +8,44 @@ import astropy.units as astropy_units
 from mcfacts.physics.point_masses import si_from_r_g
 
 
-def change_star_mass(disk_star_pro_masses,
-                     disk_star_pro_orbs_a,
-                     disk_star_pro_eccs,
-                     disk_star_luminosity_factor,
-                     disk_star_initial_mass_cutoff,
-                     smbh_mass,
-                     disk_sound_speed,
-                     disk_density,
-                     timestep_duration_yr):
+def star_wind_mass_loss(disk_star_pro_masses,
+                        disk_star_pro_log_radius,
+                        disk_star_pro_log_lum,
+                        disk_star_pro_orbs_a,
+                        disk_opacity_func,
+                        timestep_duration_yr):
+
+    # NOTE: need to add units, check units for opacity
+    disk_opacity = disk_opacity_func(disk_star_pro_orbs_a) * (astropy_units.meter ** 2) / astropy_units.kg
+
+    # First convert quantities to SI units
+    star_radius = (10 ** disk_star_pro_log_radius) * astropy_units.Rsun
+    star_lum = (10 ** disk_star_pro_log_lum) * astropy_units.Lsun
+    star_mass = disk_star_pro_masses * astropy_units.Msun
+    timestep_duration_yr_si = timestep_duration_yr * astropy_units.year
+
+    # Calculate Eddington luminosity
+    L_Edd = 4. * np.pi * astropy_const.G * astropy_const.c * star_mass / disk_opacity
+
+    # Calculate escape speed
+    v_esc = (2. * astropy_const.G * star_mass / star_radius) ** 0.5
+
+    mdot_Edd = - (star_lum / (v_esc ** 2)) * (1 + np.tanh((star_lum - L_Edd) / (0.1 * L_Edd)))
+
+    star_new_masses = ((star_mass + (mdot_Edd * timestep_duration_yr_si)).to("Msun")).value
+
+    return (star_new_masses)
+
+
+def accrete_star_mass(disk_star_pro_masses,
+                      disk_star_pro_orbs_a,
+                      disk_star_pro_eccs,
+                      disk_star_luminosity_factor,
+                      disk_star_initial_mass_cutoff,
+                      smbh_mass,
+                      disk_sound_speed,
+                      disk_density,
+                      timestep_duration_yr):
     """Adds mass according to Fabj+2024 accretion rate
 
     Takes initial star masses at start of timestep and adds mass according to Fabj+2024.
