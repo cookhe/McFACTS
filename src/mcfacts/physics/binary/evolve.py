@@ -1,9 +1,11 @@
 """
 Module for evolving the state of a binary.
 """
+from mcfacts.physics import point_masses
 import numpy as np
 import scipy
-from mcfacts.objects.agnobject import obj_to_binary_bh_array
+
+from astropy import units as astropy_units
 
 
 def change_bin_mass(blackholes_binary, disk_bh_eddington_ratio,
@@ -100,8 +102,8 @@ def change_bin_spin_magnitudes(blackholes_binary, disk_bh_eddington_ratio,
     spin_1_after = spin_1_before + spin_change_factor
     spin_2_after = spin_2_before + spin_change_factor
 
-    spin_1_after[spin_1_after > max_allowed_spin] = np.full(np.sum(spin_1_after > max_allowed_spin), max_allowed_spin)
-    spin_2_after[spin_2_after > max_allowed_spin] = np.full(np.sum(spin_2_after > max_allowed_spin), max_allowed_spin)
+    spin_1_after[spin_1_after > max_allowed_spin] = max_allowed_spin
+    spin_2_after[spin_2_after > max_allowed_spin] = max_allowed_spin
 
     blackholes_binary.spin_1[idx_non_mergers] = spin_1_after
     blackholes_binary.spin_2[idx_non_mergers] = spin_2_after
@@ -159,8 +161,8 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     spin_angle_1_after = spin_angle_1_before - spin_angle_change_factor
     spin_angle_2_after = spin_angle_2_before - spin_angle_change_factor
 
-    spin_angle_1_after[spin_angle_1_after < spin_minimum_resolution] = np.zeros(np.sum(spin_angle_1_after < spin_minimum_resolution))
-    spin_angle_2_after[spin_angle_2_after < spin_minimum_resolution] = np.zeros(np.sum(spin_angle_2_after < spin_minimum_resolution))
+    spin_angle_1_after[spin_angle_1_after < spin_minimum_resolution] = 0.0
+    spin_angle_2_after[spin_angle_2_after < spin_minimum_resolution] = 0.0
 
     blackholes_binary.spin_angle_1[idx_non_mergers] = spin_angle_1_after
     blackholes_binary.spin_angle_2[idx_non_mergers] = spin_angle_2_after
@@ -227,12 +229,12 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
     else:
         raise AttributeError("disk_surface_density is a float")
 
-    # Define kappa (or set up a function to call). 
+    # Define kappa (or set up a function to call).
     disk_opacity = disk_opacity_func(blackholes_binary.bin_orb_a)
 
     ratio_heat_mig_torques_bin_com = 0.07 * (1 / disk_opacity) * np.power(disk_alpha_viscosity, -1.5) * disk_bh_eddington_ratio * np.sqrt(blackholes_binary.bin_orb_a) / disk_surface_density_at_location
 
-    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = np.ones(np.sum(blackholes_binary.bin_orb_a > disk_radius_outer))
+    ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = 1.0
 
     return (ratio_heat_mig_torques_bin_com)
 
@@ -507,15 +509,15 @@ def bin_contact_check(blackholes_binary, smbh_mass):
         binary_separation <= 2M_bin/M_smbh
     """
 
-    mass_binary = blackholes_binary.mass_1 + blackholes_binary.mass_2
-
     # We assume bh are not spinning when in contact. TODO: Consider spin in future.
-    contact_condition = 2 * (mass_binary / smbh_mass)
+    contact_condition = (point_masses.r_schwarzschild_of_m(blackholes_binary.mass_1) +
+                         point_masses.r_schwarzschild_of_m(blackholes_binary.mass_2))
+    contact_condition = point_masses.r_g_from_units(smbh_mass, contact_condition)
     mask_condition = (blackholes_binary.bin_sep <= contact_condition)
 
     # If binary separation <= contact condition, set binary separation to contact condition
     blackholes_binary.bin_sep[mask_condition] = contact_condition[mask_condition]
-    blackholes_binary.flag_merging[mask_condition] = np.full(np.sum(mask_condition), -2)
+    blackholes_binary.flag_merging[mask_condition] = -2
 
     return (blackholes_binary)
 
@@ -542,9 +544,10 @@ def bin_reality_check(blackholes_binary):
     mass_2_id_num = blackholes_binary.id_num[blackholes_binary.mass_2 == 0]
     orb_a_1_id_num = blackholes_binary.id_num[blackholes_binary.orb_a_1 == 0]
     orb_a_2_id_num = blackholes_binary.id_num[blackholes_binary.orb_a_2 == 0]
+    bin_ecc_id_num = blackholes_binary.id_num[blackholes_binary.bin_ecc >= 1]
 
     id_nums = np.concatenate([mass_1_id_num, mass_2_id_num,
-                             orb_a_1_id_num, orb_a_2_id_num])
+                             orb_a_1_id_num, orb_a_2_id_num, bin_ecc_id_num])
 
     if id_nums.size > 0:
         return (id_nums)
@@ -569,7 +572,7 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
     timestep_duration_yr : float
         Length of timestep [yr]
     time_gw_normalization : float
-        A normalization for GW decay timescale, set by `smbh_mass` & normalized for
+        A normalization for GW decay timescale [s], set by `smbh_mass` & normalized for
         a binary total mass of 10 solar masses.
     bin_index : int
         Count of number of binaries
@@ -586,7 +589,6 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
     # 2. Find number of binary orbits around its center of mass within the timestep
     # 3. For every 10^3 orbits, halve the binary separation.
 
-
     # Only interested in BH that have not merged
     idx_non_mergers = np.where(blackholes_binary.flag_merging >= 0)[0]
 
@@ -596,7 +598,6 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
 
     # Set up variables
     mass_binary = blackholes_binary.mass_1[idx_non_mergers] + blackholes_binary.mass_2[idx_non_mergers]
-    mass_reduced = (blackholes_binary.mass_1[idx_non_mergers] * blackholes_binary.mass_2[idx_non_mergers]) / mass_binary
     bin_sep = blackholes_binary.bin_sep[idx_non_mergers]
     bin_orb_ecc = blackholes_binary.bin_ecc[idx_non_mergers]
 
@@ -616,25 +617,38 @@ def bin_harden_baruteau(blackholes_binary, smbh_mass, timestep_duration_yr,
     num_orbits_in_timestep[bin_period > 0] = timestep_duration_yr / bin_period[bin_period > 0]
     scaled_num_orbits = num_orbits_in_timestep / 1000.0
 
-    # Timescale for binary merger via GW emission alone, scaled to bin parameters
-    time_to_merger_gw = time_gw_normalization*((bin_sep)**(4.0))*((mass_binary/10.0)**(-2))*((mass_reduced/2.5)**(-1.0))*ecc_factor
+    # Timescale for binary merger via GW emission alone in seconds, scaled to bin parameters
+    sep_crit = (point_masses.r_schwarzschild_of_m(blackholes_binary.mass_1[idx_non_mergers]) +
+                point_masses.r_schwarzschild_of_m(blackholes_binary.mass_2[idx_non_mergers]))
+    time_to_merger_gw = (point_masses.time_of_orbital_shrinkage(
+        blackholes_binary.mass_1[idx_non_mergers] * astropy_units.Msun,
+        blackholes_binary.mass_2[idx_non_mergers] * astropy_units.Msun,
+        point_masses.si_from_r_g(smbh_mass, bin_sep),
+        sep_final=sep_crit
+    ) * ecc_factor).value
+
     # Finite check
     assert np.isfinite(time_to_merger_gw).all(),\
         "Finite check failure: time_to_merger_gw"
     blackholes_binary.time_to_merger_gw[idx_non_mergers] = time_to_merger_gw
 
+    # Create mask for things that WILL merge in this timestep
+    # need timestep_duration_yr in seconds
+    timestep_duration_sec = (timestep_duration_yr * astropy_units.year).to("second").value
+    merge_mask = time_to_merger_gw <= timestep_duration_sec
+
     # Binary will not merge in this timestep
-    # new bin_sep according to Baruteu+11 prescription
-    bin_sep[time_to_merger_gw > timestep_duration_yr] = bin_sep[time_to_merger_gw > timestep_duration_yr] * np.power(0.5, scaled_num_orbits[time_to_merger_gw > timestep_duration_yr])
-    blackholes_binary.bin_sep[idx_non_mergers[time_to_merger_gw > timestep_duration_yr]] = bin_sep[time_to_merger_gw > timestep_duration_yr]
+    # new bin_sep according to Baruteau+11 prescription
+    bin_sep[~merge_mask] = bin_sep[~merge_mask] * (0.5 ** scaled_num_orbits[~merge_mask])
+    blackholes_binary.bin_sep[idx_non_mergers[~merge_mask]] = bin_sep[~merge_mask]
     # Finite check
     assert np.isfinite(blackholes_binary.bin_sep).all(),\
         "Finite check failure: blackholes_binary.bin_sep"
 
     # Otherwise binary will merge in this timestep
     # Update flag_merging to -2 and time_merged to current time
-    blackholes_binary.flag_merging[idx_non_mergers[time_to_merger_gw <= timestep_duration_yr]] = np.full(np.sum(time_to_merger_gw <= timestep_duration_yr), -2)
-    blackholes_binary.time_merged[idx_non_mergers[time_to_merger_gw <= timestep_duration_yr]] = np.full(np.sum(time_to_merger_gw <= timestep_duration_yr), time_passed)
+    blackholes_binary.flag_merging[idx_non_mergers[merge_mask]] = -2
+    blackholes_binary.time_merged[idx_non_mergers[merge_mask]] = time_passed
     # Finite check
     assert np.isfinite(blackholes_binary.flag_merging).all(),\
         "Finite check failure: blackholes_binary.flag_merging"
