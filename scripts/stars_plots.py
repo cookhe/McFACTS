@@ -20,7 +20,7 @@ from mcfacts.vis import styles
 plt.style.use("mcfacts.vis.mcfacts_figures")
 
 #apj_col or apj_page
-figsize = "apj_page"
+figsize = "apj_col"
 
 ######## Arg ########
 def arg():
