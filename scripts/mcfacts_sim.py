@@ -23,13 +23,13 @@ from mcfacts.physics import feedback
 from mcfacts.physics import gw
 from mcfacts.physics import migration
 from mcfacts.physics import stellar_interpolation
-from mcfacts.physics import star_interactions
+#from mcfacts.physics import star_interactions
 from mcfacts.physics import point_masses
 
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
 from mcfacts.mcfacts_random_state import reset_random
-from mcfacts.objects.agnobject import AGNBlackHole, AGNBinaryBlackHole, AGNMergedBlackHole, AGNStar, AGNMergedStar, AGNFilingCabinet
+from mcfacts.objects.agnobject import AGNBlackHole, AGNBinaryBlackHole, AGNMergedBlackHole, AGNStar, AGNMergedStar, AGNExplodedStar, AGNFilingCabinet
 from mcfacts.setup import setupdiskblackholes, setupdiskstars, initializediskstars
 
 binary_field_names = "bin_orb_a1 bin_orb_a2 mass1 mass2 spin1 spin2 theta1 theta2 sep bin_com time_gw merger_flag time_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
@@ -204,7 +204,7 @@ def main():
     blackholes_binary_gw_pop = AGNBinaryBlackHole()
     stars_pop = AGNStar()
     tdes_pop = AGNStar()
-    stars_explode_pop = AGNStar()
+    stars_explode_pop = AGNExplodedStar()
     stars_merge_pop = AGNMergedStar()
 
     # tdes_pop = AGNStar()
@@ -394,7 +394,7 @@ def main():
         stars_tdes = AGNStar()
 
         # Create empty exploded stars object
-        stars_explode = AGNStar()
+        stars_explode = AGNExplodedStar()
 
         # Create empty merged stars object
         stars_merge = AGNMergedStar()
@@ -895,22 +895,21 @@ def main():
                     bh_star_touch_id_nums = bh_star_touch_id_nums.flatten()
                     star_id_nums = bh_star_touch_id_nums[np.nonzero(filing_cabinet.at_id_num(bh_star_touch_id_nums, "category") == 1)]
                     bh_id_nums = bh_star_touch_id_nums[np.nonzero(filing_cabinet.at_id_num(bh_star_touch_id_nums, "category") == 0)]
-                    stars_explode.add_stars(new_id_num=star_id_nums,
-                                            new_mass=stars_pro.at_id_num(star_id_nums, "mass"),
-                                            new_orb_a=stars_pro.at_id_num(star_id_nums, "orb_a"),
-                                            new_log_radius=stars_pro.at_id_num(star_id_nums, "log_radius"),
-                                            new_log_luminosity=stars_pro.at_id_num(star_id_nums, "log_luminosity"),
-                                            new_log_teff=stars_pro.at_id_num(star_id_nums, "log_teff"),
-                                            new_X=stars_pro.at_id_num(star_id_nums, "star_X"),
-                                            new_Y=stars_pro.at_id_num(star_id_nums, "star_Y"),
-                                            new_Z=stars_pro.at_id_num(star_id_nums, "star_Z"),
-                                            new_orb_inc=stars_pro.at_id_num(star_id_nums, "orb_inc"),
-                                            new_orb_ang_mom=stars_pro.at_id_num(star_id_nums, "orb_ang_mom"),
-                                            new_orb_ecc=stars_pro.at_id_num(star_id_nums, "orb_ecc"),
-                                            new_orb_arg_periapse=stars_pro.at_id_num(star_id_nums, "orb_arg_periapse"),
-                                            new_gen=stars_pro.at_id_num(star_id_nums, "gen"),
+                    stars_explode.add_stars(new_id_num_star=star_id_nums,
+                                            new_id_num_bh=bh_id_nums,
+                                            new_mass_star=stars_pro.at_id_num(star_id_nums, "mass"),
+                                            new_mass_bh=blackholes_pro.at_id_num(bh_id_nums, "mass"),
+                                            new_orb_a_star=stars_pro.at_id_num(star_id_nums, "orb_a"),
+                                            new_orb_a_bh=blackholes_pro.at_id_num(bh_id_nums, "orb_a"),
+                                            new_star_log_radius=stars_pro.at_id_num(star_id_nums, "log_radius"),
+                                            new_orb_inc_star=stars_pro.at_id_num(star_id_nums, "orb_inc"),
+                                            new_orb_inc_bh=blackholes_pro.at_id_num(bh_id_nums, "orb_inc"),
+                                            new_orb_ecc_star=stars_pro.at_id_num(star_id_nums, "orb_ecc"),
+                                            new_orb_ecc_bh=blackholes_pro.at_id_num(bh_id_nums, "orb_ecc"),
+                                            new_gen_star=stars_pro.at_id_num(star_id_nums, "gen"),
+                                            new_gen_bh=blackholes_pro.at_id_num(bh_id_nums, "gen"),
                                             new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
-                                            new_time_passed=stars_pro.at_id_num(star_id_nums, "time_passed"),
+                                            new_time_sn=np.full(star_id_nums.size, time_passed),
                                             )
                     # Delete exploded stars from regular array and filing cabinet
                     stars_pro.remove_id_num(star_id_nums)
@@ -1465,22 +1464,21 @@ def main():
                     bhstar_id_nums = bhstar_id_nums.flatten()
                     star_id_nums = bhstar_id_nums[np.nonzero(filing_cabinet.at_id_num(bhstar_id_nums, "category") == 1)]
                     bh_id_nums = bhstar_id_nums[np.nonzero(filing_cabinet.at_id_num(bhstar_id_nums, "category") == 0)]
-                    stars_explode.add_stars(new_id_num=star_id_nums,
-                                            new_mass=stars_pro.at_id_num(star_id_nums, "mass"),
-                                            new_orb_a=stars_pro.at_id_num(star_id_nums, "orb_a"),
-                                            new_log_radius=stars_pro.at_id_num(star_id_nums, "log_radius"),
-                                            new_log_luminosity=stars_pro.at_id_num(star_id_nums, "log_luminosity"),
-                                            new_log_teff=stars_pro.at_id_num(star_id_nums, "log_teff"),
-                                            new_X=stars_pro.at_id_num(star_id_nums, "star_X"),
-                                            new_Y=stars_pro.at_id_num(star_id_nums, "star_Y"),
-                                            new_Z=stars_pro.at_id_num(star_id_nums, "star_Z"),
-                                            new_orb_inc=stars_pro.at_id_num(star_id_nums, "orb_inc"),
-                                            new_orb_ang_mom=stars_pro.at_id_num(star_id_nums, "orb_ang_mom"),
-                                            new_orb_ecc=stars_pro.at_id_num(star_id_nums, "orb_ecc"),
-                                            new_orb_arg_periapse=stars_pro.at_id_num(star_id_nums, "orb_arg_periapse"),
-                                            new_gen=stars_pro.at_id_num(star_id_nums, "gen"),
+                    stars_explode.add_stars(new_id_num_star=star_id_nums,
+                                            new_id_num_bh=bh_id_nums,
+                                            new_mass_star=stars_pro.at_id_num(star_id_nums, "mass"),
+                                            new_mass_bh=blackholes_pro.at_id_num(bh_id_nums, "mass"),
+                                            new_orb_a_star=stars_pro.at_id_num(star_id_nums, "orb_a"),
+                                            new_orb_a_bh=blackholes_pro.at_id_num(bh_id_nums, "orb_a"),
+                                            new_star_log_radius=stars_pro.at_id_num(star_id_nums, "log_radius"),
+                                            new_orb_inc_star=stars_pro.at_id_num(star_id_nums, "orb_inc"),
+                                            new_orb_inc_bh=blackholes_pro.at_id_num(bh_id_nums, "orb_inc"),
+                                            new_orb_ecc_star=stars_pro.at_id_num(star_id_nums, "orb_ecc"),
+                                            new_orb_ecc_bh=blackholes_pro.at_id_num(bh_id_nums, "orb_ecc"),
+                                            new_gen_star=stars_pro.at_id_num(star_id_nums, "gen"),
+                                            new_gen_bh=blackholes_pro.at_id_num(bh_id_nums, "gen"),
                                             new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
-                                            new_time_passed=stars_pro.at_id_num(star_id_nums, "time_passed"),
+                                            new_time_sn=np.full(star_id_nums.size, time_passed),
                                             )
                     # Delete exploded stars from regular array and filing cabinet
                     stars_pro.remove_id_num(star_id_nums)
@@ -2109,22 +2107,21 @@ def main():
                             new_gen=stars_pro.gen,
                             new_time_passed=stars_pro.time_passed)
         
-        stars_explode_pop.add_stars(new_id_num=stars_explode.id_num,
-                                    new_mass=stars_explode.mass,
-                                    new_orb_a=stars_explode.orb_a,
-                                    new_log_radius=stars_explode.log_radius,
-                                    new_log_luminosity=stars_explode.log_luminosity,
-                                    new_log_teff=stars_explode.log_teff,
-                                    new_X=stars_explode.star_X,
-                                    new_Y=stars_explode.star_Y,
-                                    new_Z=stars_explode.star_Z,
-                                    new_orb_inc=stars_explode.orb_inc,
-                                    new_orb_ang_mom=stars_explode.orb_ang_mom,
-                                    new_orb_ecc=stars_explode.orb_ecc,
-                                    new_orb_arg_periapse=stars_explode.orb_arg_periapse,
-                                    new_gen=stars_explode.gen,
+        stars_explode_pop.add_stars(new_id_num_star=stars_explode.id_num_star,
+                                    new_id_num_bh=stars_explode.id_num_bh,
+                                    new_mass_star=stars_explode.mass_star,
+                                    new_mass_bh=stars_explode.mass_bh,
+                                    new_orb_a_star=stars_explode.orb_a_star,
+                                    new_orb_a_bh=stars_explode.orb_a_bh,
+                                    new_star_log_radius=stars_explode.star_log_radius,
+                                    new_orb_inc_star=stars_explode.orb_inc_star,
+                                    new_orb_inc_bh=stars_explode.orb_inc_bh,
+                                    new_orb_ecc_star=stars_explode.orb_ecc_star,
+                                    new_orb_ecc_bh=stars_explode.orb_ecc_bh,
+                                    new_gen_star=stars_explode.gen_star,
+                                    new_gen_bh=stars_explode.gen_bh,
                                     new_galaxy=stars_explode.galaxy,
-                                    new_time_passed=stars_explode.time_passed,
+                                    new_time_sn=stars_explode.time_sn
                                     )
         
         stars_merge_pop.add_stars(new_id_num=stars_merge.id_num,
@@ -2157,7 +2154,7 @@ def main():
                        "gen_1", "gen_2", "time_merged", "chi_p"]
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
-    stars_explode_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
+    stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "orb_a_bh", "mass_star", "mass_bh", "star_log_radius", "orb_ecc_star", "orb_ecc_bh", "orb_inc_star", "orb_inc_bh", "gen_star", "gen_bh", "id_num_star", "id_num_bh"]
     tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
     stars_merge_cols = ["galaxy", "time_merged", "gen_final", "mass_final", "mass_1", "mass_2", "gen_1", "gen_2", "id_num"]
 
