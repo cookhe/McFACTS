@@ -18,6 +18,11 @@ attr_star = ["id_num", "orb_a", "mass",
              "gen", "galaxy", "time_passed",
              "star_X", "star_Y", "star_Z", "log_radius", "log_teff", "log_luminosity"]
 
+attr_merged_star = ["id_num", "galaxy", "orb_a_final", "mass_final", "gen_final",
+                    "mass_1", "mass_2",
+                    "gen_1", "gen_2",
+                    "time_merged"]
+
 attr_binary_bh = ["id_num", "orb_a_1", "orb_a_2", "mass_1", "mass_2", #"mass_total",
                   "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
                   "bin_sep", "bin_orb_a", "time_to_merger_gw", "flag_merging",
@@ -60,6 +65,8 @@ def get_attr_list(obj):
         return (attr_merged_bh)
     elif isinstance(obj, AGNBinaryBlackHole):
         return (attr_binary_bh)
+    elif isinstance(obj, AGNMergedStar):
+        return (attr_merged_star)
     else:
         raise TypeError("obj is not an AGNObject subclass")
 
@@ -1434,6 +1441,117 @@ class AGNMergedBlackHole(AGNObject):
         self.gen_2 = np.concatenate([self.gen_2, new_gen_2])
         self.chi_eff = np.concatenate([self.chi_eff, new_chi_eff])
         self.chi_p = np.concatenate([self.chi_p, new_chi_p])
+        self.time_merged = np.concatenate([self.time_merged, new_time_merged])
+
+        if (num_obj_merge == 0):
+            num_obj_merge = new_mass_final.shape[0]
+
+        self.num += num_obj_merge
+
+        self.check_consistency()
+
+
+class AGNMergedStar(AGNObject):
+    """
+    Array of merged stars.
+    """
+    def __init__(self,
+                 id_num=empty_arr,
+                 galaxy=empty_arr,
+                 orb_a_final=empty_arr,
+                 mass_final=empty_arr,
+                 gen_final=empty_arr,
+                 mass_1=empty_arr,
+                 mass_2=empty_arr,
+                 gen_1=empty_arr,
+                 gen_2=empty_arr,
+                 time_merged=empty_arr,
+                 num_obj_merge=0):
+        """Creates an instance of AGNMergedBlackHole.
+
+        Parameters
+        ----------
+        galaxy : numpy array
+            galaxy (iteration)
+        orb_a_final : numpy array
+            orbital semi-major axis of merged star post-merger wrt SMBH in R_g
+        mass_final : numpy array
+            mass post-merger in Msun
+        gen_final : numpy array
+            final generation of merged star
+        mass_1 : numpy array
+            mass of the first component prior to merger in Msun
+        mass_2 : numpy array
+            mass of the second component prior to merger in Msun
+        gen_1 : numpy array
+            merger generation of the first component
+        gen_2 : numpy array
+            merger generation of the second component
+        time_merged : numpy array
+            the timestep of merger
+        num_obj_merge : int
+            number of objects
+        """
+
+        if (num_obj_merge == 0):
+            num_obj_merge = mass_final.shape[0]
+
+        self.id_num = id_num
+        self.galaxy = galaxy
+        self.orb_a_final = orb_a_final
+        self.mass_final = mass_final
+        self.gen_final = gen_final
+        self.mass_1 = mass_1
+        self.mass_2 = mass_2
+        self.gen_1 = gen_1
+        self.gen_2 = gen_2
+        self.time_merged = time_merged
+
+        self.num = num_obj_merge
+
+        self.check_consistency()
+
+    def add_stars(self, new_id_num=empty_arr, new_galaxy=empty_arr, new_orb_a_final=empty_arr, new_gen_final=empty_arr,
+                  new_mass_final=empty_arr,
+                  new_mass_1=empty_arr, new_mass_2=empty_arr,
+                  new_gen_1=empty_arr, new_gen_2=empty_arr,
+                  new_time_merged=empty_arr, num_obj_merge=0):
+        """
+        Add stars to the AGNMergedStar object
+
+        Parameters
+        ----------
+        new_galaxy : numpy array
+            galaxy (iteration)
+        new_orb_a_final : numpy array
+            orbital semi-major axis of merged star wrt SMBH post-merger in R_g
+        new_mass_final : numpy array
+            mass post-merger in Msun
+        new_gen_final : numpy array
+            final generation of merged star
+        new_mass_1 : numpy array
+            mass of the first component prior to merger in Msun
+        new_mass_2 : numpy array
+            mass of the second component prior to merger in Msun
+        new_gen_1 : numpy array
+            merger generation of the first component
+        new_gen_2 : numpy array
+            merger generation of the second component
+        new_time_merged : numpy array
+            the timestep of merger
+        num_obj_merge : int
+            number of objects to be added
+        """
+
+        self.id_num = np.concatenate([self.id_num, new_id_num])
+        self.galaxy = np.concatenate([self.galaxy, new_galaxy])
+        self.orb_a_final = np.concatenate([self.orb_a_final, new_orb_a_final])
+        self.mass_final = np.concatenate([self.mass_final, new_mass_final])
+        self.gen_final = np.concatenate([self.gen_final, new_gen_final])
+        self.mass_1 = np.concatenate([self.mass_1, new_mass_1])
+        self.mass_2 = np.concatenate([self.mass_2, new_mass_2])
+        self.gen_1 = np.concatenate([self.gen_1, new_gen_1])
+        self.gen_2 = np.concatenate([self.gen_2, new_gen_2])
         self.time_merged = np.concatenate([self.time_merged, new_time_merged])
 
         if (num_obj_merge == 0):
