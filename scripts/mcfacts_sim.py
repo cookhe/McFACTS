@@ -29,7 +29,7 @@ from mcfacts.physics import point_masses
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
 from mcfacts.mcfacts_random_state import reset_random
-from mcfacts.objects.agnobject import AGNBlackHole, AGNBinaryBlackHole, AGNMergedBlackHole, AGNStar, AGNFilingCabinet
+from mcfacts.objects.agnobject import AGNBlackHole, AGNBinaryBlackHole, AGNMergedBlackHole, AGNStar, AGNMergedStar, AGNFilingCabinet
 from mcfacts.setup import setupdiskblackholes, setupdiskstars, initializediskstars
 
 binary_field_names = "bin_orb_a1 bin_orb_a2 mass1 mass2 spin1 spin2 theta1 theta2 sep bin_com time_gw merger_flag time_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
@@ -205,6 +205,7 @@ def main():
     stars_pop = AGNStar()
     tdes_pop = AGNStar()
     stars_explode_pop = AGNStar()
+    stars_merge_pop = AGNMergedStar()
 
     # tdes_pop = AGNStar()
 
@@ -394,6 +395,9 @@ def main():
 
         # Create empty exploded stars object
         stars_explode = AGNStar()
+
+        # Create empty merged stars object
+        stars_merge = AGNMergedStar()
 
         # Find inner disk BH (potential EMRI)
         bh_id_num_inner_disk = blackholes.id_num[blackholes.orb_a < opts.inner_disk_outer_radius]
@@ -611,6 +615,19 @@ def main():
                 stars_pro.remove_id_num(star_pro_id_num_unphysical)
                 filing_cabinet.remove_id_num(star_pro_id_num_unphysical)
 
+            # Get ID numbers if immortal stars to make sure stars don't yo-yo
+            id_nums_immortal_before = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
+
+            # Stars lose mass via stellar winds
+            stars_pro.mass = accretion.star_wind_mass_loss(
+                stars_pro.mass,
+                stars_pro.log_radius,
+                stars_pro.log_luminosity,
+                stars_pro.orb_a,
+                disk_opacity,
+                opts.timestep_duration_yr
+            )
+
             # Accrete
             blackholes_pro.mass = accretion.change_bh_mass(
                 blackholes_pro.mass,
@@ -631,6 +648,15 @@ def main():
                 disk_density,
                 opts.timestep_duration_yr
             )
+
+            # Get ID numbers of immortal stars after
+            id_nums_immortal_after = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
+
+            if (len((~np.isin(id_nums_immortal_before, id_nums_immortal_after)).nonzero()[0])) > 0:
+                print("id_nums_immortal_before", id_nums_immortal_before)
+                print("id_nums_immortal_after", id_nums_immortal_after)
+                print(ff)
+
 
             # Change stars' radii, luminosity, and temp
             stars_pro.log_radius, stars_pro.log_luminosity, stars_pro.log_teff = stellar_interpolation.interp_star_params(stars_pro.mass)
@@ -788,11 +814,50 @@ def main():
 
                 if (star_touch_id_nums.size > 0):
                     # Star and star touch each other: stellar merger
-                    stars_pro, star_merged_id_num_new = star_interactions.add_merged_stars(star_touch_id_nums,
-                                                                                           stars_pro,
-                                                                                           filing_cabinet.id_max,
-                                                                                           opts.disk_bh_pro_orb_ecc_crit,
-                                                                                           opts.disk_star_initial_mass_cutoff)
+                    # Generate new ID numbers
+                    star_merged_id_num_new = np.arange(filing_cabinet.id_max + 1, filing_cabinet.id_max + 1 + star_touch_id_nums.shape[1], 1)
+                    # Merged mass is just masses added together. Any over disk_star_initial_mass_cutoff get set to disk_star_initial_mass_cutoff
+                    star_merged_mass = stars_pro.at_id_num(star_touch_id_nums[0], "mass") + stars_pro.at_id_num(star_touch_id_nums[1], "mass")
+                    # New orb_a is the center of mass of the two stars
+                    star_merged_orbs_a = ((stars_pro.at_id_num(star_touch_id_nums[0], "mass") * stars_pro.at_id_num(star_touch_id_nums[0], "orb_a")) +
+                                          (stars_pro.at_id_num(star_touch_id_nums[1], "mass") * stars_pro.at_id_num(star_touch_id_nums[1], "orb_a"))) / star_merged_mass
+                    # After doing the weighted average for orb_a we then cut off stars with mass > disk_star_initial_mass_cutoff
+                    star_merged_mass[star_merged_mass > opts.disk_star_initial_mass_cutoff] = opts.disk_star_initial_mass_cutoff
+                    # Radius, luminosity, Teff are all interpolated based on the new mass
+                    star_merged_logR, star_merged_logL, star_merged_logTeff = stellar_interpolation.interp_star_params(star_merged_mass)
+                    # New gen is the maximum between the pair's gen plus one
+                    star_merged_gen = np.maximum(stars_pro.at_id_num(star_touch_id_nums[0], "gen"), stars_pro.at_id_num(star_touch_id_nums[1], "gen")) + 1.0
+
+                    # Add to stars object
+                    stars_pro.add_stars(new_id_num=star_merged_id_num_new,
+                                        new_mass=star_merged_mass,
+                                        new_orb_a=star_merged_orbs_a,
+                                        new_log_radius=star_merged_logR,
+                                        new_log_teff=star_merged_logTeff,
+                                        new_log_luminosity=star_merged_logL,
+                                        new_X=stars_pro.at_id_num(star_touch_id_nums[0], "star_X"),  # no metallicity evolution
+                                        new_Y=stars_pro.at_id_num(star_touch_id_nums[0], "star_Y"),
+                                        new_Z=stars_pro.at_id_num(star_touch_id_nums[0], "star_Z"),
+                                        new_orb_ang_mom=np.ones(star_touch_id_nums.shape[1]),  # orb_ang_mom is +1 because two prograde stars merge
+                                        new_orb_ecc=np.full(star_touch_id_nums.shape[1], opts.disk_bh_pro_orb_ecc_crit),  # orb_ecc is initially very small
+                                        new_orb_inc=np.zeros(star_touch_id_nums.shape[1]),  # orb_inc is zero
+                                        new_orb_arg_periapse=stars_pro.at_id_num(star_touch_id_nums[0], "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
+                                        new_gen=star_merged_gen,
+                                        new_galaxy=stars_pro.at_id_num(star_touch_id_nums[0], "galaxy"),
+                                        new_time_passed=stars_pro.at_id_num(star_touch_id_nums[0], "time_passed"))
+
+                    # Add new merged stars to merged stars object
+                    stars_merge.add_stars(new_id_num=star_merged_id_num_new,
+                                          new_galaxy=stars_pro.at_id_num(star_touch_id_nums[0], "galaxy"),
+                                          new_orb_a_final=star_merged_orbs_a,
+                                          new_gen_final=star_merged_gen,
+                                          new_mass_final=star_merged_mass,
+                                          new_mass_1=stars_pro.at_id_num(star_touch_id_nums[0], "mass"),
+                                          new_mass_2=stars_pro.at_id_num(star_touch_id_nums[1], "mass"),
+                                          new_gen_1=stars_pro.at_id_num(star_touch_id_nums[0], "gen"),
+                                          new_gen_2=stars_pro.at_id_num(star_touch_id_nums[1], "gen"),
+                                          new_time_merged=np.full(star_touch_id_nums.shape[1], time_passed))
+
                     # Add new merged stars to filing cabinet and delete previous stars
                     filing_cabinet.add_objects(new_id_num=star_merged_id_num_new,
                                                new_category=np.ones(star_merged_id_num_new.size),
@@ -803,6 +868,7 @@ def main():
                                                new_direction=np.ones(star_merged_id_num_new.size),
                                                new_disk_inner_outer=np.ones(star_merged_id_num_new.size))
                     filing_cabinet.remove_id_num(star_touch_id_nums.flatten())
+                    stars_pro.remove_id_num(star_touch_id_nums.flatten())
 
                 # Star-BH encounters (circular stars and eccentric BH)
                 stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums = dynamics.circular_singles_encounters_prograde_star_bh(
@@ -1455,11 +1521,50 @@ def main():
 
                 if (starstar_id_nums.size > 0):
                     # Star and star encounter each other: stellar merger
-                    stars_pro, star_merged_id_num_new = star_interactions.add_merged_stars(starstar_id_nums,
-                                                                                           stars_pro,
-                                                                                           filing_cabinet.id_max,
-                                                                                           opts.disk_bh_pro_orb_ecc_crit,
-                                                                                           opts.disk_star_initial_mass_cutoff)
+                    # Generate new ID numbers
+                    star_merged_id_num_new = np.arange(filing_cabinet.id_max + 1, filing_cabinet.id_max + 1 + starstar_id_nums.shape[1], 1)
+                    # Merged mass is just masses added together. Any over disk_star_initial_mass_cutoff get set to disk_star_initial_mass_cutoff
+                    star_merged_mass = stars_pro.at_id_num(starstar_id_nums[0], "mass") + stars_pro.at_id_num(starstar_id_nums[1], "mass")
+                    # New orb_a is the center of mass of the two stars
+                    star_merged_orbs_a = ((stars_pro.at_id_num(starstar_id_nums[0], "mass") * stars_pro.at_id_num(starstar_id_nums[0], "orb_a")) +
+                                          (stars_pro.at_id_num(starstar_id_nums[1], "mass") * stars_pro.at_id_num(starstar_id_nums[1], "orb_a"))) / star_merged_mass
+                    # After doing the weighted average for orb_a we then cut off stars with mass > disk_star_initial_mass_cutoff
+                    star_merged_mass[star_merged_mass > opts.disk_star_initial_mass_cutoff] = opts.disk_star_initial_mass_cutoff
+                    # Radius, luminosity, Teff are all interpolated based on the new mass
+                    star_merged_logR, star_merged_logL, star_merged_logTeff = stellar_interpolation.interp_star_params(star_merged_mass)
+                    # New gen is the maximum between the pair's gen plus one
+                    star_merged_gen = np.maximum(stars_pro.at_id_num(starstar_id_nums[0], "gen"), stars_pro.at_id_num(starstar_id_nums[1], "gen")) + 1.0
+
+                    # Add to stars object
+                    stars_pro.add_stars(new_id_num=star_merged_id_num_new,
+                                        new_mass=star_merged_mass,
+                                        new_orb_a=star_merged_orbs_a,
+                                        new_log_radius=star_merged_logR,
+                                        new_log_teff=star_merged_logTeff,
+                                        new_log_luminosity=star_merged_logL,
+                                        new_X=stars_pro.at_id_num(starstar_id_nums[0], "star_X"),  # no metallicity evolution
+                                        new_Y=stars_pro.at_id_num(starstar_id_nums[0], "star_Y"),
+                                        new_Z=stars_pro.at_id_num(starstar_id_nums[0], "star_Z"),
+                                        new_orb_ang_mom=np.ones(starstar_id_nums.shape[1]),  # orb_ang_mom is +1 because two prograde stars merge
+                                        new_orb_ecc=np.full(starstar_id_nums.shape[1], opts.disk_bh_pro_orb_ecc_crit),  # orb_ecc is initially very small
+                                        new_orb_inc=np.zeros(starstar_id_nums.shape[1]),  # orb_inc is zero
+                                        new_orb_arg_periapse=stars_pro.at_id_num(starstar_id_nums[0], "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
+                                        new_gen=star_merged_gen,
+                                        new_galaxy=stars_pro.at_id_num(starstar_id_nums[0], "galaxy"),
+                                        new_time_passed=stars_pro.at_id_num(starstar_id_nums[0], "time_passed"))
+
+                    # Add new merged stars to merged stars object
+                    stars_merge.add_stars(new_id_num=star_merged_id_num_new,
+                                          new_galaxy=stars_pro.at_id_num(starstar_id_nums[0], "galaxy"),
+                                          new_orb_a_final=star_merged_orbs_a,
+                                          new_gen_final=star_merged_gen,
+                                          new_mass_final=star_merged_mass,
+                                          new_mass_1=stars_pro.at_id_num(starstar_id_nums[0], "mass"),
+                                          new_mass_2=stars_pro.at_id_num(starstar_id_nums[1], "mass"),
+                                          new_gen_1=stars_pro.at_id_num(starstar_id_nums[0], "gen"),
+                                          new_gen_2=stars_pro.at_id_num(starstar_id_nums[1], "gen"),
+                                          new_time_merged=np.full(starstar_id_nums.shape[1], time_passed))
+
                     # Add new merged stars to filing cabinet and delete previous stars
                     filing_cabinet.add_objects(new_id_num=star_merged_id_num_new,
                                                new_category=np.ones(star_merged_id_num_new.size),
@@ -1470,6 +1575,7 @@ def main():
                                                new_direction=np.ones(star_merged_id_num_new.size),
                                                new_disk_inner_outer=np.ones(star_merged_id_num_new.size))
                     filing_cabinet.remove_id_num(starstar_id_nums.flatten())
+                    stars_pro.remove_id_nums(starstar_id_nums.flatten())
 
             # After this time period, was there a disk capture via orbital grind-down?
             # To do: What eccentricity do we want the captured BH to have? Right now ecc=0.0? Should it be ecc<h at a?             
@@ -2021,6 +2127,17 @@ def main():
                                     new_time_passed=stars_explode.time_passed,
                                     )
         
+        stars_merge_pop.add_stars(new_id_num=stars_merge.id_num,
+                                  new_galaxy=stars_merge.galaxy,
+                                  new_orb_a_final=stars_merge.orb_a_final,
+                                  new_gen_final=stars_merge.gen_final,
+                                  new_mass_final=stars_merge.mass_final,
+                                  new_mass_1=stars_merge.mass_1,
+                                  new_mass_2=stars_merge.mass_2,
+                                  new_gen_1=stars_merge.gen_1,
+                                  new_gen_2=stars_merge.gen_2,
+                                  new_time_merged=stars_merge.time_merged)
+        
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
     population_save_name = f"{basename}_population{extension}"
@@ -2030,6 +2147,7 @@ def main():
     gws_save_name = f"{basename}_lvk{extension}"
     stars_save_name = f"{basename}_stars{extension}"
     stars_explode_save_name = f"{basename}_starsexplode{extension}"
+    stars_merge_save_name = f"{basename}_starsmerged{extension}"
 
     # Define columns to write
     emri_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "gw_strain", "gw_freq", "id_num"]
@@ -2041,6 +2159,7 @@ def main():
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
     stars_explode_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
     tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
+    stars_merge_cols = ["galaxy", "time_merged", "gen_final", "mass_final", "mass_1", "mass_2", "gen_1", "gen_2", "id_num"]
 
     # Save things
     emris_pop.to_txt(os.path.join(opts.work_directory, emris_save_name),
@@ -2063,6 +2182,8 @@ def main():
                      cols=tde_cols)
         stars_explode_pop.to_txt(os.path.join(opts.work_directory, stars_explode_save_name),
                      cols=stars_explode_cols)
+        stars_merge_pop.to_txt(os.path.join(opts.work_directory, stars_merge_save_name),
+                               cols=stars_merge_cols)
 
     toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
