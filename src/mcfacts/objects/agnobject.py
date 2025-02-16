@@ -23,6 +23,10 @@ attr_merged_star = ["id_num", "galaxy", "orb_a_final", "mass_final", "gen_final"
                     "gen_1", "gen_2",
                     "time_merged"]
 
+attr_exploded_star = ["galaxy", "id_num_star", "id_num_bh", "orb_a_star", "orb_a_bh",
+                      "mass_star", "mass_bh", "gen_star", "gen_bh", "orb_inc_star", "orb_inc_bh",
+                      "orb_ecc_star", "orb_ecc_bh", "star_log_radius", "time_sn"]
+
 attr_binary_bh = ["id_num", "orb_a_1", "orb_a_2", "mass_1", "mass_2", #"mass_total",
                   "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
                   "bin_sep", "bin_orb_a", "time_to_merger_gw", "flag_merging",
@@ -67,6 +71,8 @@ def get_attr_list(obj):
         return (attr_binary_bh)
     elif isinstance(obj, AGNMergedStar):
         return (attr_merged_star)
+    elif isinstance(obj, AGNExplodedStar):
+        return (attr_exploded_star)
     else:
         raise TypeError("obj is not an AGNObject subclass")
 
@@ -1558,6 +1564,156 @@ class AGNMergedStar(AGNObject):
             num_obj_merge = new_mass_final.shape[0]
 
         self.num += num_obj_merge
+
+        self.check_consistency()
+
+
+class AGNExplodedStar(AGNObject):
+    """
+    Array of exploded stars with BH parameters.
+    """
+    def __init__(self,
+                 id_num_star=empty_arr,
+                 id_num_bh=empty_arr,
+                 galaxy=empty_arr,
+                 orb_a_star=empty_arr,
+                 orb_a_bh=empty_arr,
+                 mass_star=empty_arr,
+                 mass_bh=empty_arr,
+                 gen_star=empty_arr,
+                 gen_bh=empty_arr,
+                 orb_inc_star=empty_arr,
+                 orb_inc_bh=empty_arr,
+                 orb_ecc_star=empty_arr,
+                 orb_ecc_bh=empty_arr,
+                 star_log_radius=empty_arr,
+                 time_sn=empty_arr,
+                 num_obj_explode=0):
+        """Creates an instance of AGNExplodedStar.
+
+        Parameters
+        ----------
+        id_num_star : numpy array
+            ID number of exploded star
+        id_num_bh : numpy array
+            ID number of BH that interacted with star
+        galaxy : numpy array
+            galaxy (iteration)
+        orb_a_star : numpy array
+            orbital semi-major axis of star wrt SMBH in R_g
+        orb_a_bh : numpy array
+            orbital semi-major axis of BH wrt SMBH in R_g
+        mass_star : numpy array
+            mass of star in Msun
+        mass_bh : numpy array
+            mass of BH in Msun
+        gen_star : numpy array
+            generation of star
+        gen_bh : numpy array
+            generation of BH
+        orb_inc_star : numpy array
+            orbital inclination of star
+        orb_inc_bh : numpy array
+            orbital inclination of BH
+        orb_ecc_star : numpy array
+            orbital eccentricity of star wrt SMBH
+        orb_ecc_bh : numpy array
+            orbital eccentricity of BH wrt SMBH
+        star_log_radius : numpy array
+            Log radius of star in Rsun
+        time_sn : numpy array
+            the timestep of explosion
+        num_obj_explode : int
+            number of objects
+        """
+
+        if (num_obj_explode == 0):
+            num_obj_explode = id_num_star.shape[0]
+
+        self.id_num_star = id_num_star
+        self.id_num_bh = id_num_bh
+        self.galaxy = galaxy
+        self.orb_a_star = orb_a_star
+        self.orb_a_bh = orb_a_bh
+        self.mass_star = mass_star
+        self.mass_bh = mass_bh
+        self.gen_star = gen_star
+        self.gen_bh = gen_bh
+        self.orb_inc_star = orb_inc_star
+        self.orb_inc_bh = orb_inc_bh
+        self.orb_ecc_star = orb_ecc_star
+        self.orb_ecc_bh = orb_ecc_bh
+        self.star_log_radius = star_log_radius
+        self.time_sn = time_sn
+
+        self.num = num_obj_explode
+
+        self.check_consistency()
+
+    def add_stars(self, new_id_num_star=empty_arr, new_id_num_bh=empty_arr, new_galaxy=empty_arr,
+                  new_orb_a_star=empty_arr, new_orb_a_bh=empty_arr, new_mass_star=empty_arr, new_mass_bh=empty_arr,
+                  new_gen_star=empty_arr, new_gen_bh=empty_arr, new_orb_inc_star=empty_arr, new_orb_inc_bh=empty_arr,
+                  new_orb_ecc_star=empty_arr, new_orb_ecc_bh=empty_arr, new_star_log_radius=empty_arr, new_time_sn=empty_arr,
+                  num_obj_explode=0):
+        """
+        Add stars to the AGNMergedStar object
+
+        Parameters
+        ----------
+        new_galaxy : numpy array
+            galaxy (iteration)
+        new_id_num_star : numpy array
+            ID number of exploded star
+        new_id_num_bh : numpy array
+            ID number of BH that interacted with star
+        new_orb_a_star : numpy array
+            Semi-major axis of exploded star wrt SMBH in R_g
+        new_orb_a_bh : numpy array
+            Semi-major axis of BH wrt SMBH in R_g
+        new_mass_star : numpy array
+            Mass [M_sun] of exploded star
+        new_mass_bh : numpy array
+            Mass [M_sun] of BH
+        new_gen_star : numpy array
+            Generation of exploded star
+        new_gen_bh : numpy array
+            Generation of BH
+        new_orb_inc_star : numpy array
+            Orbital inclination of star wrt SMBH
+        new_orb_inc_bh : numpy array
+            Orbital inclination of BH wrt SMBH
+        new_orb_ecc_star : numpy array
+            Orbital eccentricity of star wrt SMBH
+        new_orb_ecc_bh : numpy array
+            Orbital eccentricity of BH wrt SMBH
+        new_star_log_radius : numpy array
+            Log radius [R_sun] of star
+        new_time_sn : numpy array
+            Time of explosion
+        num_obj_explode : int
+            Number of objects
+        """
+
+        self.galaxy = np.concatenate([self.galaxy, new_galaxy])
+        self.id_num_star = np.concatenate([self.id_num_star, new_id_num_star])
+        self.id_num_bh = np.concatenate([self.id_num_bh, new_id_num_bh])
+        self.orb_a_star = np.concatenate([self.orb_a_star, new_orb_a_star])
+        self.orb_a_bh = np.concatenate([self.orb_a_bh, new_orb_a_bh])
+        self.mass_star = np.concatenate([self.mass_star, new_mass_star])
+        self.mass_bh = np.concatenate([self.mass_bh, new_mass_bh])
+        self.gen_star = np.concatenate([self.gen_star, new_gen_star])
+        self.gen_bh = np.concatenate([self.gen_bh, new_gen_bh])
+        self.orb_inc_star = np.concatenate([self.orb_inc_star, new_orb_inc_star])
+        self.orb_inc_bh = np.concatenate([self.orb_inc_bh, new_orb_inc_bh])
+        self.orb_ecc_star = np.concatenate([self.orb_ecc_star, new_orb_ecc_star])
+        self.orb_ecc_bh = np.concatenate([self.orb_ecc_bh, new_orb_ecc_bh])
+        self.star_log_radius = np.concatenate([self.star_log_radius, new_star_log_radius])
+        self.time_sn = np.concatenate([self.time_sn, new_time_sn])
+
+        if (num_obj_explode == 0):
+            num_obj_explode = new_mass_star.shape[0]
+
+        self.num += num_obj_explode
 
         self.check_consistency()
 
