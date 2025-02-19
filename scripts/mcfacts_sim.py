@@ -64,6 +64,8 @@ def arg():
                         default=DEFAULT_INI, type=str)
     parser.add_argument("--fname-output-mergers", default="output_mergers.dat",
                         help="output merger file (if any)", type=str)
+    parser.add_argument("--fname-output", default="output.dat",
+                        help="output file (if any)", type=str)
     parser.add_argument("--fname-snapshots-bh",
                         default="output_bh_[single|binary]_$(index).dat",
                         help="output of BH index file ")
@@ -106,6 +108,7 @@ def arg():
     assert opts.fname_ini.is_file()
     opts.fname_snapshots_bh = Path(opts.fname_snapshots_bh)
     opts.fname_output_mergers = Path(opts.fname_output_mergers)
+    opts.fname_output = Path(opts.fname_output)
 
     # Parse inifile
     print("opts.fname_ini", opts.fname_ini)
@@ -206,6 +209,11 @@ def main():
     tdes_pop = AGNStar()
     stars_explode_pop = AGNExplodedStar()
     stars_merge_pop = AGNMergedStar()
+
+    # Setting up arrays to keep track of how much mass is cycled through stars
+    disk_arr_galaxy = []
+    disk_arr_timestep_pop = np.array([])
+    disk_arr_mass_cycled_pop = np.array([])
 
     # tdes_pop = AGNStar()
 
@@ -515,6 +523,11 @@ def main():
             print("prior ecc", blackholes_pro.orb_ecc)
         '''
 
+        # Set up arrays to keep track of mass cycled through disk
+        disk_arr_timestep = []
+        disk_arr_mass_cycled = []
+
+
         # Start Loop of Timesteps
         print("Start Loop!")
         time_passed = time_init
@@ -534,6 +547,9 @@ def main():
                 blackholes_binary.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_binary_{timestep_current_num}.dat"),
                                          cols=binary_cols)
                 timestep_current_num += 1
+
+            # Set up array to keep track of mass cycled in this timestep
+            mass_cycled = []
 
             # Order of operations:
             # No migration until orbital eccentricity damped to e_crit
@@ -619,7 +635,7 @@ def main():
             id_nums_immortal_before = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
 
             # Stars lose mass via stellar winds
-            stars_pro.mass = accretion.star_wind_mass_loss(
+            stars_pro.mass, star_mass_lost = accretion.star_wind_mass_loss(
                 stars_pro.mass,
                 stars_pro.log_radius,
                 stars_pro.log_luminosity,
@@ -637,7 +653,7 @@ def main():
             )
 
             disk_star_luminosity_factor = 4.  # Hardcoded from Cantiello+2021 and Fabj+2024
-            stars_pro.mass = accretion.accrete_star_mass(
+            stars_pro.mass, star_mass_gained = accretion.accrete_star_mass(
                 stars_pro.mass,
                 stars_pro.orb_a,
                 stars_pro.orb_ecc,
@@ -648,6 +664,9 @@ def main():
                 disk_density,
                 opts.timestep_duration_yr
             )
+
+            # Calculate total mass cycled through the disk
+            mass_cycled.append(np.abs(star_mass_lost) + np.abs(star_mass_gained))
 
             # Get ID numbers of immortal stars after
             id_nums_immortal_after = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
@@ -856,6 +875,8 @@ def main():
                                           new_mass_2=stars_pro.at_id_num(star_touch_id_nums[1], "mass"),
                                           new_gen_1=stars_pro.at_id_num(star_touch_id_nums[0], "gen"),
                                           new_gen_2=stars_pro.at_id_num(star_touch_id_nums[1], "gen"),
+                                          new_log_radius_final=star_merged_logR,
+                                          new_orb_ecc=np.full(star_touch_id_nums.shape[1], opts.disk_bh_pro_orb_ecc_crit),
                                           new_time_merged=np.full(star_touch_id_nums.shape[1], time_passed))
 
                     # Add new merged stars to filing cabinet and delete previous stars
@@ -911,6 +932,8 @@ def main():
                                             new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
                                             new_time_sn=np.full(star_id_nums.size, time_passed),
                                             )
+                    # Add exploded star mass to mass cycled through disk
+                    mass_cycled.append(stars_pro.at_id_num(star_id_nums, "mass").sum())
                     # Delete exploded stars from regular array and filing cabinet
                     stars_pro.remove_id_num(star_id_nums)
                     filing_cabinet.remove_id_num(star_id_nums)
@@ -1480,6 +1503,7 @@ def main():
                                             new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
                                             new_time_sn=np.full(star_id_nums.size, time_passed),
                                             )
+                    mass_cycled.append(stars_pro.at_id_num(star_id_nums, "mass").sum())
                     # Delete exploded stars from regular array and filing cabinet
                     stars_pro.remove_id_num(star_id_nums)
                     filing_cabinet.remove_id_num(star_id_nums)
@@ -1561,6 +1585,8 @@ def main():
                                           new_mass_2=stars_pro.at_id_num(starstar_id_nums[1], "mass"),
                                           new_gen_1=stars_pro.at_id_num(starstar_id_nums[0], "gen"),
                                           new_gen_2=stars_pro.at_id_num(starstar_id_nums[1], "gen"),
+                                          new_log_radius_final=star_merged_logR,
+                                          new_orb_ecc=np.full(starstar_id_nums.shape[1], opts.disk_bh_pro_orb_ecc_crit),
                                           new_time_merged=np.full(starstar_id_nums.shape[1], time_passed))
 
                     # Add new merged stars to filing cabinet and delete previous stars
@@ -1955,6 +1981,11 @@ def main():
                 # delete from retro arrays
                 stars_retro.remove_id_num(id_num_remove=star_id_num_tde)
 
+            # Record mass cycled parameters
+            disk_arr_timestep.append(time_passed)
+            disk_arr_galaxy.append(galaxy)
+            disk_arr_mass_cycled.append(sum(mass_cycled))
+
             # Iterate the time step
             time_passed = time_passed + opts.timestep_duration_yr
             # Print time passed every 10 timesteps for now
@@ -2133,7 +2164,13 @@ def main():
                                   new_mass_2=stars_merge.mass_2,
                                   new_gen_1=stars_merge.gen_1,
                                   new_gen_2=stars_merge.gen_2,
+                                  new_log_radius_final=stars_merge.log_radius_final,
+                                  new_orb_ecc=stars_merge.orb_ecc,
                                   new_time_merged=stars_merge.time_merged)
+        
+        # Add mass cycled info to population arrays
+        disk_arr_timestep_pop = np.concatenate([disk_arr_timestep_pop, disk_arr_timestep])
+        disk_arr_mass_cycled_pop = np.concatenate([disk_arr_mass_cycled_pop, disk_arr_mass_cycled])
         
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
@@ -2142,9 +2179,12 @@ def main():
     emris_save_name = f"{basename}_emris{extension}"
     tdes_save_name = f"{basename}_tdes{extension}"
     gws_save_name = f"{basename}_lvk{extension}"
-    stars_save_name = f"{basename}_stars{extension}"
-    stars_explode_save_name = f"{basename}_starsexplode{extension}"
-    stars_merge_save_name = f"{basename}_starsmerged{extension}"
+    stars_save_name = f"{basename}_stars_population{extension}"
+    stars_explode_save_name = f"{basename}_stars_exploded{extension}"
+    stars_merge_save_name = f"{basename}_stars_merged{extension}"
+    basename_disk, extension_disk = os.path.splitext(opts.fname_output)
+    disk_mass_cycled_save_name = f"{basename_disk}_diskmasscycled{extension_disk}"
+
 
     # Define columns to write
     emri_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "gw_strain", "gw_freq", "id_num"]
@@ -2153,10 +2193,12 @@ def main():
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
                        "gen_1", "gen_2", "time_merged", "chi_p"]
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
-    stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
-    stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "orb_a_bh", "mass_star", "mass_bh", "star_log_radius", "orb_ecc_star", "orb_ecc_bh", "orb_inc_star", "orb_inc_bh", "gen_star", "gen_bh", "id_num_star", "id_num_bh"]
-    tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
-    stars_merge_cols = ["galaxy", "time_merged", "gen_final", "mass_final", "mass_1", "mass_2", "gen_1", "gen_2", "id_num"]
+    stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
+    stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
+                                               "orb_a_bh",   "mass_bh",   "orb_ecc_bh",   "gen_bh", "id_num_bh", "orb_inc_bh"]
+    tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
+    stars_merge_cols = ["galaxy", "time_merged","orb_a_final", "mass_final", "orb_ecc", "log_radius_final", "gen_final", "id_num", "mass_1", "mass_2", "gen_1", "gen_2"]
+
 
     # Save things
     emris_pop.to_txt(os.path.join(opts.work_directory, emris_save_name),
@@ -2181,6 +2223,8 @@ def main():
                      cols=stars_explode_cols)
         stars_merge_pop.to_txt(os.path.join(opts.work_directory, stars_merge_save_name),
                                cols=stars_merge_cols)
+        temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep_pop, disk_arr_mass_cycled_pop))
+        np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_cycled")
 
     toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
