@@ -60,9 +60,12 @@ def star_wind_mass_loss(disk_star_pro_masses,
 
     mdot_Edd = (- (star_lum / (v_esc ** 2)) * (1 + np.tanh(tanh_argument.value))).to("Msun/yr")
 
+    # This is already a negative number
+    mass_lost = (mdot_Edd * timestep_duration_yr_si).to("Msun").value
+
     star_new_masses = ((star_mass + (mdot_Edd * timestep_duration_yr_si)).to("Msun")).value
 
-    return (star_new_masses)
+    return (star_new_masses, mass_lost.sum())
 
 
 def accrete_star_mass(disk_star_pro_masses,
@@ -128,7 +131,9 @@ def accrete_star_mass(disk_star_pro_masses,
     # Stars can't accrete over disk_star_initial_mass_cutoff
     disk_star_pro_new_masses[disk_star_pro_new_masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
 
-    return disk_star_pro_new_masses
+    mass_gained = disk_star_pro_new_masses - disk_star_pro_masses
+
+    return disk_star_pro_new_masses, mass_gained.sum()
 
 
 def change_bh_mass(disk_bh_pro_masses, disk_bh_eddington_ratio, disk_bh_eddington_mass_growth_rate, timestep_duration_yr):
