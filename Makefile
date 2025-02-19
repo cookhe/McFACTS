@@ -130,7 +130,14 @@ kaila_stars: plots
 	cd runs; \
 	python ../${STARS_PLOTS} \
 	--runs-directory ${wd} \
-	--fname-stars ${wd}/output_mergers_stars.dat \
+	--fname-stars ${wd}/output_mergers_stars_population.dat \
+	--plots-directory ${wd}
+
+kaila_stars_plots: just_plots
+	cd runs; \
+	python ../${STARS_PLOTS} \
+	--runs-directory ${wd} \
+	--fname-stars ${wd}/output_mergers_stars_population.dat \
 	--plots-directory ${wd}
 		
 
