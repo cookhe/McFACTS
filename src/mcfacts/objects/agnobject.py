@@ -21,6 +21,7 @@ attr_star = ["id_num", "orb_a", "mass",
 attr_merged_star = ["id_num", "galaxy", "orb_a_final", "mass_final", "gen_final",
                     "mass_1", "mass_2",
                     "gen_1", "gen_2",
+                    "log_radius_final", "orb_ecc",
                     "time_merged"]
 
 attr_exploded_star = ["galaxy", "id_num_star", "id_num_bh", "orb_a_star", "orb_a_bh",
@@ -1471,6 +1472,8 @@ class AGNMergedStar(AGNObject):
                  mass_2=empty_arr,
                  gen_1=empty_arr,
                  gen_2=empty_arr,
+                 log_radius_final=empty_arr,
+                 orb_ecc=empty_arr,
                  time_merged=empty_arr,
                  num_obj_merge=0):
         """Creates an instance of AGNMergedBlackHole.
@@ -1493,6 +1496,10 @@ class AGNMergedStar(AGNObject):
             merger generation of the first component
         gen_2 : numpy array
             merger generation of the second component
+        log_radius_final : numpy array
+            log radius [Rsun] of the star post-merger
+        orb_ecc : numpy array
+            orbital eccentricity of the star post-merger wrt SMBH
         time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1511,6 +1518,8 @@ class AGNMergedStar(AGNObject):
         self.mass_2 = mass_2
         self.gen_1 = gen_1
         self.gen_2 = gen_2
+        self.log_radius_final = log_radius_final
+        self.orb_ecc = orb_ecc
         self.time_merged = time_merged
 
         self.num = num_obj_merge
@@ -1521,6 +1530,7 @@ class AGNMergedStar(AGNObject):
                   new_mass_final=empty_arr,
                   new_mass_1=empty_arr, new_mass_2=empty_arr,
                   new_gen_1=empty_arr, new_gen_2=empty_arr,
+                  new_log_radius_final=empty_arr, new_orb_ecc=empty_arr,
                   new_time_merged=empty_arr, num_obj_merge=0):
         """
         Add stars to the AGNMergedStar object
@@ -1543,6 +1553,10 @@ class AGNMergedStar(AGNObject):
             merger generation of the first component
         new_gen_2 : numpy array
             merger generation of the second component
+        new_log_radius_final : numpy array
+            log radius [Rsun] of the star post-merger
+        new_orb_ecc : numpy array
+            orbital eccentricity of the star post-merger wrt SMBH
         new_time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1558,6 +1572,8 @@ class AGNMergedStar(AGNObject):
         self.mass_2 = np.concatenate([self.mass_2, new_mass_2])
         self.gen_1 = np.concatenate([self.gen_1, new_gen_1])
         self.gen_2 = np.concatenate([self.gen_2, new_gen_2])
+        self.log_radius_final = np.concatenate([self.log_radius_final, new_log_radius_final])
+        self.orb_ecc = np.concatenate([self.orb_ecc, new_orb_ecc])
         self.time_merged = np.concatenate([self.time_merged, new_time_merged])
 
         if (num_obj_merge == 0):
