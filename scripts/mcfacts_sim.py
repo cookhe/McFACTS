@@ -614,21 +614,6 @@ def main():
                 opts.disk_bh_pro_orb_ecc_crit,
                 paardekooper_torque)
 
-
-            # then migrate with Grishin et al. 2024 torques
-            #blackholes_pro.orb_a = migration.type1_migration_grishin(
-            #    opts.smbh_mass,
-            #    blackholes_pro.orb_a,
-            #    blackholes_pro.mass,
-            #    blackholes_pro.orb_ecc,
-            #    opts.disk_bh_pro_orb_ecc_crit,
-            #    disk_surface_density,
-            #    disk_aspect_ratio,
-            #    ratio_heat_mig_torques,
-            #    opts.disk_radius_trap,
-            #    opts.disk_radius_outer,
-            #    opts.timestep_duration_yr
-            #)
             # Check for orb_a unphysical
             bh_pro_id_num_unphysical = blackholes_pro.id_num[blackholes_pro.orb_a == 0.]
             if bh_pro_id_num_unphysical.size > 0:

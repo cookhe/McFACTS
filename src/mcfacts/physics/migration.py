@@ -148,8 +148,8 @@ def torque_mig_timescale(smbh_mass,orbs_a,masses, orbs_ecc, orb_ecc_crit,migrati
         Critical value of orbital eccentricity [unitless] below which we assume Type 1 migration must occur. Do not damp orb ecc below this (e_crit=0.01 is default)
     disk_surf_density_func : numpy.ndarray
         Migration torque array. E.g. calculated from torque_paardekooper (units = Nm=J)
-    
-        
+
+
     """
     #M_sun =2.e30kg
     m_sun = 2.0*10**(30)
@@ -190,7 +190,7 @@ def torque_mig_timescale(smbh_mass,orbs_a,masses, orbs_ecc, orb_ecc_crit,migrati
     print("torque_mig_timescale",torque_mig_timescale)
     return torque_mig_timescale
 
-def jiminezmasset17_torque(smbh_mass, disk_surf_density_func_log, disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit):
+def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit):
     """Return the Jiminez & Masset (2017) torque coefficient for Type 1 migration
     """
     #Sort the radii of BH and get their log (radii)
@@ -243,9 +243,9 @@ def jiminezmasset17_torque(smbh_mass, disk_surf_density_func_log, disc_surf_dens
     #print("log_new_orbs_a",log_new_orbs_a)
     #print("sorted_log_new_orbs_a",sort_log_orbs_a)
     
-    Torque_paardekooper_coeff = -0.85 + dSigmadR +0.9*dTempdR
+    Torque_jiminezmasset_coeff = -0.85 + dSigmadR +0.9*dTempdR
 
-    return Torque_paardekooper_coeff
+    return Torque_jiminezmasset_coeff
 
 
 def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
