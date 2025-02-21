@@ -27,6 +27,7 @@ class AGNGasDiskModel(object):
         Python object representing a solved AGN disk either from the Sirko & Goodman model
         or from the Thompson model
 
+
         """
         #pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
         #prad = 4 * ct.sigmaSB * (self.disk_model.T ** 4) / (3 * ct.c)

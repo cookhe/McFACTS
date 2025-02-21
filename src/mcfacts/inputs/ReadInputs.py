@@ -561,6 +561,7 @@ def construct_disk_pAGN(
     return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_surf_dens_func_log, temp_func, disk_model_properties, bonus_structures
 
 
+
 def construct_disk_interp(
     smbh_mass,
     disk_radius_outer,

@@ -148,6 +148,7 @@ def torque_mig_timescale(smbh_mass,orbs_a,masses, orbs_ecc, orb_ecc_crit,migrati
         Critical value of orbital eccentricity [unitless] below which we assume Type 1 migration must occur. Do not damp orb ecc below this (e_crit=0.01 is default)
     disk_surf_density_func : numpy.ndarray
         Migration torque array. E.g. calculated from torque_paardekooper (units = Nm=J)
+    
         
     """
     #M_sun =2.e30kg
