@@ -187,7 +187,7 @@ def torque_mig_timescale(smbh_mass,orbs_a,masses, orbs_ecc, orb_ecc_crit,migrati
     bh_masses = m_sun*masses[migration_indices]
     #Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2
     torque_mig_timescale = bh_masses*Omega_bh*((orb_a_in_meters)**(2.0))/(2.0*migration_torque)
-    print("torque_mig_timescale",torque_mig_timescale)
+    #print("torque_mig_timescale",torque_mig_timescale)
     return torque_mig_timescale
 
 def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit):
@@ -325,7 +325,7 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     # Here smbh_mass/disk_bh_mass_pro are both in M_sun, so units cancel
     # c, G and disk_surface_density in SI units
     tau = ((disk_aspect_ratio ** 2.0) * scipy.constants.c / (3.0 * scipy.constants.G) * (smbh_mass/masses[migration_indices]) / disk_surface_density) / np.sqrt(new_orbs_a)
-    print("tau",tau)
+    #print("tau",tau)
     # ratio of timestep to tau_mig (timestep in years so convert)
     dt = timestep_duration_yr * scipy.constants.year / tau
     # migration distance is original locations times fraction of tau_mig elapsed
