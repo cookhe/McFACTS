@@ -27,10 +27,12 @@ class AGNGasDiskModel(object):
         Python object representing a solved AGN disk either from the Sirko & Goodman model
         or from the Thompson model
 
+
         """
-        pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
-        prad = 4 * ct.sigmaSB * (self.disk_model.T ** 4) / (3 * ct.c)
-        cs = np.sqrt((pgas + prad) / (self.disk_model.rho))
+        #pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
+        #prad = 4 * ct.sigmaSB * (self.disk_model.T ** 4) / (3 * ct.c)
+        #cs = np.sqrt((pgas + prad) / (self.disk_model.rho))
+        cs = self.disk_model.h * self.disk_model.Omega
         omega = self.disk_model.Omega
         rho = self.disk_model.rho
         h = self.disk.model.h
@@ -78,11 +80,23 @@ class AGNGasDiskModel(object):
         R_agn = self.disk_model.R_AGN / (self.disk_model.Rs / 2)
         Sigma = 2 * self.disk_model.h * self.disk_model.rho  # SI density
         kappa = 2 * self.disk_model.tauV / Sigma  # Opacity = 2*tau/Sigma
+        cs = self.disk_model.h * self.disk_model.Omega
+        temp_midplane = self.disk_model.T # Disk midplane temp (K)
+        
 
         if flag_truncate_disk: # truncate to gas part of disk (no SFR)
             R = R[:self.disk_model.isf]
             Sigma = Sigma[:self.disk_model.isf]
             kappa = kappa[:self.disk_model.isf]
+            cs = cs[:self.disk_model.isf]
+        #Temp interpolator function
+        ln_temp_midplane = np.log(temp_midplane) # ln midplane temp.
+        temp_func_log = scipy.interpolate.CubicSpline(
+                                                            np.log(R),
+                                                            ln_temp_midplane,
+                                                            extrapolate=False
+                                                            )
+        temp_func = lambda x, f=temp_func_log: np.exp(f(np.log(x)))
 
         # Generate surface density (Sigma) interpolator function
         ln_Sigma = np.log(Sigma)  # log of SI density
@@ -91,6 +105,7 @@ class AGNGasDiskModel(object):
                                                            ln_Sigma,
                                                            extrapolate=False
                                                            )
+        
         surf_dens_func = lambda x, f=surf_dens_func_log: np.exp(f(np.log(x)))
 
         # Generate aspect ratio (h/r) interpolator function
@@ -113,6 +128,24 @@ class AGNGasDiskModel(object):
                                                          )
         opacity_func = lambda x, f=opacity_func_log: np.exp(f(np.log(x)))
 
+        # Generate sound speed (cs) interpolator function
+        ln_cs = np.log(cs)
+        sound_speed_func_log = scipy.interpolate.CubicSpline(
+                                                           np.log(R),
+                                                           ln_cs,
+                                                           extrapolate=False
+                                                           )
+        sound_speed_func = lambda x, f=sound_speed_func_log: np.exp(f(np.log(x)))
+
+        # Generate disk density (rho) interpolator function
+        ln_rho = np.log(self.disk_model.rho)
+        disk_density_func_log = scipy.interpolate.CubicSpline(
+                                                    np.log(R),
+                                                    ln_rho,
+                                                    extrapolate=False
+                                                    )
+        disk_density_func = lambda x, f=disk_density_func_log: np.exp(f(np.log(x)))
+
         bonus_structures = {}
         bonus_structures['R_agn'] = R_agn
         bonus_structures['R'] = R
@@ -123,7 +156,7 @@ class AGNGasDiskModel(object):
         bonus_structures["T"] = self.disk_model.T
         bonus_structures["tauV"] = self.disk_model.tauV
 
-        return surf_dens_func, aspect_func, opacity_func, bonus_structures
+        return surf_dens_func, aspect_func, opacity_func, sound_speed_func, disk_density_func, surf_dens_func_log, temp_func, bonus_structures
 
 
 
