@@ -24,6 +24,8 @@ from mcfacts.physics import gw
 from mcfacts.physics import migration
 from mcfacts.physics import stellar_interpolation
 from mcfacts.physics import point_masses
+from mcfacts.physics import lum
+from mcfacts.physics import analytical_velo
 
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
@@ -1075,11 +1077,27 @@ def main():
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_inc")
                                 )
-
                         # TODO: calculate v_kick and resulting perturbation to orb ecc. For now set v_kick to 200 km/s
-                        v_kick = 200.
+                        #bh_v_kick = analytical_velo.analytical_kick_velocity(
+                         #       len(bh_binary_id_num_merger))
+                        v_kick = 200.                        
+                        bh_lum_shock = lum.shock_luminosity( 
+                                opts.smbh_mass,
+                                bh_mass_merged,
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
+                                disk_aspect_ratio,
+                                disk_density,
+                                v_kick) # add bh_v_kick to incorp
+                                
+                        bh_lum_jet = lum.jet_luminosity(
+                                bh_mass_merged,
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
+                                disk_density,
+                                v_kick) # add bh_v_kick to incorp
+                                
+
                         bh_orb_ecc_merged = merge.merged_orb_ecc(blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                                                 np.full(bh_binary_id_num_merger.size, v_kick),
+                                                                 np.full(bh_binary_id_num_merger.size, v_kick), # add bh_v_kick to incorp
                                                                  opts.smbh_mass)
 
                         # Append new merged BH to arrays of single BH locations, masses, spins, spin angles & gens
@@ -1099,6 +1117,9 @@ def main():
                                                          new_gen_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "gen_2"),
                                                          new_chi_eff=bh_chi_eff_merged,
                                                          new_chi_p=bh_chi_p_merged,
+                                                         #new_v_kick=bh_v_kick,
+                                                         new_lum_shock=bh_lum_shock,
+                                                         new_lum_jet=bh_lum_jet,
                                                          new_time_merged=np.full(bh_binary_id_num_merger.size, time_passed))
 
                         # # New bh generation is max of generations involved in merger plus 1
@@ -1611,6 +1632,9 @@ def main():
                                              new_gen_2=blackholes_merged.gen_2,
                                              new_chi_eff=blackholes_merged.chi_eff,
                                              new_chi_p=blackholes_merged.chi_p,
+                                             #new_v_kick=blackholes_merged.v_kick,
+                                             new_lum_shock=blackholes_merged.lum_shock,
+                                             new_lum_jet=blackholes_merged.lum_jet,
                                              new_time_merged=blackholes_merged.time_merged)
 
         # Add list of all binaries formed to the population level object
@@ -1707,7 +1731,7 @@ def main():
     bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
     population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p"]
+                       "gen_1", "gen_2", "time_merged", "chi_p", "lum_shock", "lum_jet"] # add "v_kick", to incorp
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
     tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "log_radius", "log_teff", "log_luminosity", "orb_ecc", "star_X", "star_Y", "star_Z", "gen", "id_num"]
