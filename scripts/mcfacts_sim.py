@@ -541,8 +541,6 @@ def main():
                     opts.disk_alpha_viscosity,
                     opts.disk_radius_outer,
                     opts.thermal_feedback_ratio_max)
-            else:
-                ratio_heat_mig_torques = np.zeros(len(blackholes_pro.orb_a))
 
                 ratio_heat_mig_stars_torques = feedback.feedback_stars_hankla(
                     stars_pro.orb_a,
@@ -756,7 +754,6 @@ def main():
                     blackholes_pro.orb_ecc,
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    opts.disk_radius_outer,
                     opts.delta_energy_strong,
                     opts.disk_radius_outer
                 )
@@ -768,7 +765,6 @@ def main():
                     stars_pro.orb_ecc,
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    opts.disk_radius_outer,
                     opts.delta_energy_strong,
                     opts.disk_radius_outer
                 )
