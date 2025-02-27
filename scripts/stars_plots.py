@@ -73,7 +73,7 @@ def main():
 
     stars = np.loadtxt(opts.fname_stars, skiprows=2)
 
-    merger_g1_mask, merger_g2_mask, merger_gX_mask = make_gen_masks(stars, 11)
+    merger_g1_mask, merger_g2_mask, merger_gX_mask = make_gen_masks(stars, 6)
 
     # Ensure no union between sets
     assert all(merger_g1_mask & merger_g2_mask) == 0
