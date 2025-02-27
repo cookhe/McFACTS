@@ -539,8 +539,7 @@ def main():
                     disk_opacity,
                     opts.disk_bh_eddington_ratio,
                     opts.disk_alpha_viscosity,
-                    opts.disk_radius_outer,
-                    opts.thermal_feedback_ratio_max)
+                    opts.disk_radius_outer)
 
                 ratio_heat_mig_stars_torques = feedback.feedback_stars_hankla(
                     stars_pro.orb_a,
@@ -611,7 +610,7 @@ def main():
                 opts.smbh_mass,
                 blackholes_pro.orb_a,
                 blackholes_pro.mass,
-                blackholes_pro.orb_ecc, 
+                blackholes_pro.orb_ecc,
                 opts.disk_bh_pro_orb_ecc_crit,
                 paardekooper_torque)
 
@@ -932,11 +931,10 @@ def main():
                         disk_opacity,
                         opts.disk_bh_eddington_ratio,
                         opts.disk_alpha_viscosity,
-                        opts.disk_radius_outer,
-                        opts.thermal_feedback_ratio_max
+                        opts.disk_radius_outer
                     )
                 else:
-                    ratio_heat_mig_torques_bin_com = np.zeros(blackholes_binary.num)
+                    ratio_heat_mig_torques_bin_com = np.ones(blackholes_binary.num)
 
                 # Migrate binaries center of mass
                 blackholes_binary = migration.type1_migration_binary(
