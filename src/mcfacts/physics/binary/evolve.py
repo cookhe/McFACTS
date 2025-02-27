@@ -170,10 +170,7 @@ def change_bin_spin_angles(blackholes_binary, disk_bh_eddington_ratio,
     return (blackholes_binary)
 
 
-def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
-                            disk_opacity_func, disk_bh_eddington_ratio,
-                            disk_alpha_viscosity, disk_radius_outer,
-                            thermal_feedback_max):
+def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacity_func, disk_bh_eddington_ratio, disk_alpha_viscosity, disk_radius_outer):
     """Calculates ratio of heating torque to migration torque using Eqn. 28 in Hankla, Jiang & Armitage (2020)
 
     Parameters
@@ -194,9 +191,6 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
         Disk gas viscocity [units??] alpha parameter
     disk_radius_outer : float
             Outer radius [r_{g,SMBH}] of the disk
-    thermal_feedback_max : float
-        Maximum allowed value for the ratio of radiative feedback torque
-        to Type 1 migration torque.
 
     Returns
     -------
@@ -242,9 +236,6 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density,
 
     # set ratio = 1 (no migration) for binaries at or beyond the disk outer radius
     ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = 1.0
-
-    # apply the cap to the feedback ratio
-    ratio_heat_mig_torques_bin_com[np.where(ratio_heat_mig_torques_bin_com > thermal_feedback_max)] = thermal_feedback_max
 
     return (ratio_heat_mig_torques_bin_com)
 

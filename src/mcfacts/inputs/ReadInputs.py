@@ -102,9 +102,6 @@ Inifile
         Fraction of BBH that form retrograde to test (q,X_eff) relation. Default retro=0.1
     "flag_thermal_feedback"         : int
         Switch (1) turns feedback from embedded BH on.
-    "thermal_feedback_ratio_max"    : float
-        Impose this limit on the ratio of feedback to migration torques to prevent runaway
-        outward migration in low opacity disks
     "flag_orb_ecc_damping"          : int
         Switch (1) turns orb. ecc damping on.
         If switch = 0, assumes all bh are circularized (at e=e_crit)
@@ -186,7 +183,6 @@ INPUT_TYPES = {
     "galaxy_num"                    : int,
     "fraction_bin_retro"            : float,
     "flag_thermal_feedback"         : int,
-    "thermal_feedback_ratio_max"    : float,
     "flag_orb_ecc_damping"          : int,
     "capture_time_yr"               : float,
     "disk_radius_capture_outer"     : float,

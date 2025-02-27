@@ -4,7 +4,7 @@ Module for calculating corrections to migration due to feedback models.
 import numpy as np
 
 
-def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_func, disk_bh_eddington_ratio, disk_alpha_viscosity, disk_radius_outer, thermal_feedback_max):
+def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_func, disk_bh_eddington_ratio, disk_alpha_viscosity, disk_radius_outer):
     """Calculate the ratio of radiative feedback torque to migration torque.
 
     This feedback model uses Eqn. 28 in Hankla, Jiang & Armitage (2020)
@@ -31,9 +31,6 @@ def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_
         Disk gas viscocity [units??] alpha parameter
     disk_radius_outer : float
             Outer radius [r_{g,SMBH}] of the disk
-    thermal_feedback_max : float
-        Maximum allowed value for the ratio of radiative feedback torque
-        to Type 1 migration torque.
 
     Returns
     -------
@@ -71,9 +68,6 @@ def feedback_bh_hankla(disk_bh_pro_orbs_a, disk_surf_density_func, disk_opacity_
 
     # set ratio = 1 (no migration) for black holes at or beyond the disk outer radius
     ratio_feedback_migration_torque[np.where(disk_bh_pro_orbs_a >= disk_radius_outer)] = 1.
-
-    # apply the cap to the feedback ratio
-    ratio_feedback_migration_torque[np.where(ratio_feedback_migration_torque > thermal_feedback_max)] = thermal_feedback_max
 
     return ratio_feedback_migration_torque
 
