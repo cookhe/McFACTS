@@ -376,8 +376,8 @@ def main():
     # ========================================
     fig = plt.figure(figsize=plotting.set_size(figsize))
 
-    plt.scatter(stars_merge[:, 1]/1e6, stars_merge[:, 3], s=styles.markersize_gen1, marker="o", edgecolor=styles.color_gen1, facecolor="None", label="Merged star")
-    plt.scatter(stars_explode[:, 1]/1e6, stars_explode[:, 3], s=styles.markersize_gen1, marker="o", edgecolor=styles.color_gen2, facecolor="None", label="Exploded star")
+    plt.scatter(stars_merge[:, 1]/1e6, stars_merge[:, 3], s=styles.markersize_gen1, marker="o", edgecolor=styles.color_gen1, facecolor="None", alpha=styles.markeralpha_gen1, label="Merged star")
+    plt.scatter(stars_explode[:, 1]/1e6, stars_explode[:, 3], s=styles.markersize_gen1, marker="o", edgecolor=styles.color_gen2, facecolor="None", alpha=styles.markeralpha_gen1, label="Exploded star")
 
     plt.xlabel(r"Time [Myr]")
     plt.ylabel(r"Mass [$M_\odot$]")
