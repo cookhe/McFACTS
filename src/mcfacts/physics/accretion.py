@@ -131,7 +131,8 @@ def accrete_star_mass(disk_star_pro_masses,
     # Stars can't accrete over disk_star_initial_mass_cutoff
     disk_star_pro_new_masses[disk_star_pro_new_masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
 
-    mass_gained = disk_star_pro_new_masses - disk_star_pro_masses
+    # Mass gained does not include the cutoff
+    mass_gained = ((mdot * timestep_duration_yr_si).to("Msun")).value
 
     return disk_star_pro_new_masses, mass_gained.sum()
 
