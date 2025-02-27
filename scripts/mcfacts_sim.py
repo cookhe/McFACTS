@@ -213,7 +213,8 @@ def main():
     # Setting up arrays to keep track of how much mass is cycled through stars
     disk_arr_galaxy = []
     disk_arr_timestep_pop = np.array([])
-    disk_arr_mass_cycled_pop = np.array([])
+    disk_arr_mass_lost_pop = np.array([])
+    disk_arr_mass_gained_pop = np.array([])
 
     # tdes_pop = AGNStar()
 
@@ -525,7 +526,8 @@ def main():
 
         # Set up arrays to keep track of mass cycled through disk
         disk_arr_timestep = []
-        disk_arr_mass_cycled = []
+        disk_arr_mass_lost = []
+        disk_arr_mass_gained = []
 
 
         # Start Loop of Timesteps
@@ -549,7 +551,8 @@ def main():
                 timestep_current_num += 1
 
             # Set up array to keep track of mass cycled in this timestep
-            mass_cycled = []
+            disk_mass_gained = []
+            disk_mass_lost = []
 
             # Order of operations:
             # No migration until orbital eccentricity damped to e_crit
@@ -631,9 +634,6 @@ def main():
                 stars_pro.remove_id_num(star_pro_id_num_unphysical)
                 filing_cabinet.remove_id_num(star_pro_id_num_unphysical)
 
-            # Get ID numbers if immortal stars to make sure stars don't yo-yo
-            id_nums_immortal_before = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
-
             # Stars lose mass via stellar winds
             stars_pro.mass, star_mass_lost = accretion.star_wind_mass_loss(
                 stars_pro.mass,
@@ -643,6 +643,9 @@ def main():
                 disk_opacity,
                 opts.timestep_duration_yr
             )
+
+            # Mass lost from stars is gained by the disk
+            disk_mass_gained.append(np.abs(star_mass_lost))
 
             # Accrete
             blackholes_pro.mass = accretion.change_bh_mass(
@@ -665,17 +668,8 @@ def main():
                 opts.timestep_duration_yr
             )
 
-            # Calculate total mass cycled through the disk
-            mass_cycled.append(np.abs(star_mass_lost) + np.abs(star_mass_gained))
-
-            # Get ID numbers of immortal stars after
-            id_nums_immortal_after = stars_pro.id_num[stars_pro.mass == opts.disk_star_initial_mass_cutoff]
-
-            if (len((~np.isin(id_nums_immortal_before, id_nums_immortal_after)).nonzero()[0])) > 0:
-                print("id_nums_immortal_before", id_nums_immortal_before)
-                print("id_nums_immortal_after", id_nums_immortal_after)
-                print(ff)
-
+            # Mass gained by stars is lost from disk
+            disk_mass_lost.append(star_mass_gained)
 
             # Change stars' radii, luminosity, and temp
             stars_pro.log_radius, stars_pro.log_luminosity, stars_pro.log_teff = stellar_interpolation.interp_star_params(stars_pro.mass)
@@ -932,8 +926,8 @@ def main():
                                             new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
                                             new_time_sn=np.full(star_id_nums.size, time_passed),
                                             )
-                    # Add exploded star mass to mass cycled through disk
-                    mass_cycled.append(stars_pro.at_id_num(star_id_nums, "mass").sum())
+                    # Add exploded star mass to mass gained by disk
+                    disk_mass_gained.append(stars_pro.at_id_num(star_id_nums, "mass").sum())
                     # Delete exploded stars from regular array and filing cabinet
                     stars_pro.remove_id_num(star_id_nums)
                     filing_cabinet.remove_id_num(star_id_nums)
@@ -1503,7 +1497,7 @@ def main():
                                             new_galaxy=stars_pro.at_id_num(star_id_nums, "galaxy"),
                                             new_time_sn=np.full(star_id_nums.size, time_passed),
                                             )
-                    mass_cycled.append(stars_pro.at_id_num(star_id_nums, "mass").sum())
+                    disk_mass_gained.append(stars_pro.at_id_num(star_id_nums, "mass").sum())
                     # Delete exploded stars from regular array and filing cabinet
                     stars_pro.remove_id_num(star_id_nums)
                     filing_cabinet.remove_id_num(star_id_nums)
@@ -1984,7 +1978,8 @@ def main():
             # Record mass cycled parameters
             disk_arr_timestep.append(time_passed)
             disk_arr_galaxy.append(galaxy)
-            disk_arr_mass_cycled.append(sum(mass_cycled))
+            disk_arr_mass_gained.append(sum(disk_mass_gained))
+            disk_arr_mass_lost.append(sum(disk_mass_lost))
 
             # Iterate the time step
             time_passed = time_passed + opts.timestep_duration_yr
@@ -2170,7 +2165,8 @@ def main():
         
         # Add mass cycled info to population arrays
         disk_arr_timestep_pop = np.concatenate([disk_arr_timestep_pop, disk_arr_timestep])
-        disk_arr_mass_cycled_pop = np.concatenate([disk_arr_mass_cycled_pop, disk_arr_mass_cycled])
+        disk_arr_mass_gained_pop = np.concatenate([disk_arr_mass_gained_pop, disk_arr_mass_gained])
+        disk_arr_mass_lost_pop = np.concatenate([disk_arr_mass_lost_pop, disk_arr_mass_lost])
         
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
@@ -2223,8 +2219,8 @@ def main():
                      cols=stars_explode_cols)
         stars_merge_pop.to_txt(os.path.join(opts.work_directory, stars_merge_save_name),
                                cols=stars_merge_cols)
-        temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep_pop, disk_arr_mass_cycled_pop))
-        np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_cycled")
+        temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep_pop, disk_arr_mass_gained_pop, disk_arr_mass_lost_pop))
+        np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_gained mass_lost")
 
     toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
