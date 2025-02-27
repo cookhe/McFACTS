@@ -25,6 +25,7 @@ VERA_PLOTS_EXE = ${HERE}/scripts/vera_plots.py
 MSTAR_RUNS_EXE = ${HERE}/scripts/vera_mstar_bins.py
 MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 STARS_PLOTS = ${HERE}/scripts/stars_plots.py
+DISK_MASS_PLOTS = ${HERE}/scripts/disk_mass_plots.py
 
 #### Setup ####
 SEED=3456789108
@@ -132,6 +133,10 @@ kaila_stars: plots
 	--runs-directory ${wd} \
 	--fname-stars ${wd}/output_mergers_stars_population.dat \
 	--plots-directory ${wd}
+	python ../${DISK_MASS_PLOTS} \
+	--runs-directory ${wd} \
+	--fname-disk ${wd}/output_diskmasscycled.dat \
+	--plots-directory ${wd}
 
 kaila_stars_plots: just_plots
 	cd runs; \
@@ -139,7 +144,13 @@ kaila_stars_plots: just_plots
 	--runs-directory ${wd} \
 	--fname-stars ${wd}/output_mergers_stars_population.dat \
 	--plots-directory ${wd}
-		
+
+disk_mass_plots: just_plots
+	cd runs; \
+	python ../${DISK_MASS_PLOTS} \
+	--runs-directory ${wd} \
+	--fname-disk ${wd}/output_diskmasscycled.dat \
+	--plots-directory ${wd}		
 
 mstar_runs_fixed:
 	python ${MSTAR_RUNS_EXE} \
