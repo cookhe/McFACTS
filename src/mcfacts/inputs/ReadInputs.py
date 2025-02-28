@@ -193,6 +193,7 @@ INPUT_TYPES = {
     "disk_inner_stable_circ_orb"    : float,
     "mass_pile_up"                  : float,
     "save_snapshots"                : bool,
+    "torque_prescription"           : str,
 }
 
 
