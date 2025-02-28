@@ -27,6 +27,7 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 STARS_PLOTS = ${HERE}/scripts/stars_plots.py
 DISK_MASS_PLOTS = ${HERE}/scripts/disk_mass_plots.py
 ORBA_MASS_FRAMES = ${HERE}/scripts/star_bh_movie_frames.py
+EMILY_PLOTS = ${HERE}/scripts/emily_plots.py
 
 #### Setup ####
 SEED=3456789108
@@ -117,7 +118,7 @@ mstar_runs_pagn:
 		--timestep_num 1000 \
 		--bin_num_max 10000 \
 		--nbins 33 \
-		--galaxy_num 100 \
+		--galaxy_num 5 \
 		--mstar-min 1e9 \
 		--mstar-max 1e13 \
 		--scrub \
@@ -171,6 +172,13 @@ disk_mass_plots:
 	--runs-directory ${wd} \
 	--fname-disk ${wd}/output_diskmasscycled.dat \
 	--plots-directory ${wd}		
+		
+emily_plots: plots
+	cd runs; \
+	python ../${EMILY_PLOTS} \
+	--runs-directory ${wd} \
+	--fname-mergers ${wd}/output_mergers_population.dat \
+	--plots-directory ${wd}
 
 mstar_runs_fixed:
 	python ${MSTAR_RUNS_EXE} \
@@ -178,7 +186,7 @@ mstar_runs_fixed:
 		--timestep_num 1000 \
 		--bin_num_max 10000 \
 		--nbins 33 \
-		--galaxy_num 100 \
+		--galaxy_num 5 \
 		--mstar-min 1e9 \
 		--mstar-max 1e13 \
 		--scrub \

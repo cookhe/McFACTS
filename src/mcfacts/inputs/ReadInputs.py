@@ -193,6 +193,8 @@ INPUT_TYPES = {
     "disk_inner_stable_circ_orb"    : float,
     "mass_pile_up"                  : float,
     "save_snapshots"                : bool,
+    "mean_harden_energy_delta"      : float,
+    "var_harden_energy_delta"       : float
 }
 
 
@@ -548,7 +550,7 @@ def construct_disk_pAGN(
 
     # Run pAGN
     pagn_model = dm_pagn.AGNGasDiskModel(disk_type=pagn_name, **base_args)
-    disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, bonus_structures = \
+    disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, bonus_structures = \
         pagn_model.return_disk_surf_model()
 
     # Define properties we want to return
@@ -556,8 +558,9 @@ def construct_disk_pAGN(
     disk_model_properties['Sigma'] = disk_surf_dens_func
     disk_model_properties['h_over_r'] = disk_aspect_ratio_func
     disk_model_properties['kappa'] = disk_opacity_func
-
-    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_model_properties, bonus_structures
+    disk_model_properties['dSigmadR'] = disk_surf_dens_func_log
+    disk_model_properties['T'] = temp_func
+    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, disk_model_properties, bonus_structures
 
 
 def construct_disk_interp(
@@ -607,7 +610,7 @@ def construct_disk_interp(
     #   infile = model_surface_density.txt, where model is user choice
     if not(flag_use_pagn):
         # Load interpolators
-        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_model_properties = \
+        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, temp_func, disk_model_properties = \
             construct_disk_direct(
                 disk_model_name,
                 disk_radius_outer,
@@ -616,7 +619,7 @@ def construct_disk_interp(
 
     else:
         # instead, populate with pagn
-        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_model_properties, bonus_structures = \
+        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, disk_model_properties, bonus_structures = \
             construct_disk_pAGN(
                 disk_model_name,
                 smbh_mass,
@@ -630,8 +633,7 @@ def construct_disk_interp(
         print("I read and digested your disk model")
         print("Sending variables back")
 
-    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func
-
+    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func
 
 def ReadInputs_prior_mergers(fname='recipes/sg1Myrx2_survivors.dat', verbose=False):
     """This function reads your prior mergers from a file user specifies or
