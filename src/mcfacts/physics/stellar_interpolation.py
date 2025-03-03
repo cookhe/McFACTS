@@ -136,10 +136,10 @@ def ratio_star_torques(disk_density_func, disk_pressure_grad_func, disk_aspect_r
 
     disk_radius_si = point_masses.si_from_r_g(smbh_mass, disk_radius)
 
-    v_phi = (disk_radius_si * ((1./disk_density) * disk_pressure_grad + ((astropy_const.G * smbh_mass_si) / (disk_radius_si ** 2)))) ** 0.5
+    v_phi = (disk_radius_si * ((1./disk_density) * disk_pressure_grad + ((const.G * smbh_mass_si) / (disk_radius_si ** 2)))) ** 0.5
     v_phi = v_phi.to("m/s")
 
-    v_kep = (astropy_const.G * smbh_mass_si / disk_radius_si) ** 0.5
+    v_kep = (const.G * smbh_mass_si / disk_radius_si) ** 0.5
     v_kep = v_kep.to("m/s")
 
     v_rel = np.abs(v_phi - v_kep)

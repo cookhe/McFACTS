@@ -41,22 +41,22 @@ def star_wind_mass_loss(disk_star_pro_masses,
     """
 
     # Get opacity for orb_a values and add SI units
-    disk_opacity = disk_opacity_func(disk_star_pro_orbs_a) * (astropy_units.meter ** 2) / astropy_units.kg
+    disk_opacity = disk_opacity_func(disk_star_pro_orbs_a) * (u.meter ** 2) / u.kg
 
     # First convert quantities to SI units
-    star_radius = (10 ** disk_star_pro_log_radius) * astropy_units.Rsun
-    star_lum = (10 ** disk_star_pro_log_lum) * astropy_units.Lsun
-    star_mass = disk_star_pro_masses * astropy_units.Msun
-    timestep_duration_yr_si = timestep_duration_yr * astropy_units.year
+    star_radius = (10 ** disk_star_pro_log_radius) * u.Rsun
+    star_lum = (10 ** disk_star_pro_log_lum) * u.Lsun
+    star_mass = disk_star_pro_masses * u.Msun
+    timestep_duration_yr_si = timestep_duration_yr * u.year
 
     # Calculate Eddington luminosity
-    L_Edd = (4. * np.pi * astropy_const.G * astropy_const.c * star_mass / disk_opacity).to("Lsun")
+    L_Edd = (4. * np.pi * const.G * const.c * star_mass / disk_opacity).to("Lsun")
 
     # Calculate escape speed
-    v_esc = ((2. * astropy_const.G * star_mass / star_radius) ** 0.5).to("km/s")
+    v_esc = ((2. * const.G * star_mass / star_radius) ** 0.5).to("km/s")
 
     tanh_argument = (star_lum - L_Edd) / (0.1 * L_Edd)
-    assert astropy_units.dimensionless_unscaled == tanh_argument.unit, "Units do not cancel out, error in luminosity calculations"
+    assert u.dimensionless_unscaled == tanh_argument.unit, "Units do not cancel out, error in luminosity calculations"
 
     mdot_Edd = (- (star_lum / (v_esc ** 2)) * (1 + np.tanh(tanh_argument.value))).to("Msun/yr")
 
