@@ -3,20 +3,80 @@ Module for calculating change of mass, spin magnitude, and spin angle due to acc
 """
 
 import numpy as np
-import astropy.constants as astropy_const
-import astropy.units as astropy_units
+import astropy.constants as const
+import astropy.units as u
 from mcfacts.physics.point_masses import si_from_r_g
 
 
-def change_star_mass(disk_star_pro_masses,
-                     disk_star_pro_orbs_a,
-                     disk_star_pro_eccs,
-                     disk_star_luminosity_factor,
-                     disk_star_initial_mass_cutoff,
-                     smbh_mass,
-                     disk_sound_speed,
-                     disk_density,
-                     timestep_duration_yr):
+def star_wind_mass_loss(disk_star_pro_masses,
+                        disk_star_pro_log_radius,
+                        disk_star_pro_log_lum,
+                        disk_star_pro_orbs_a,
+                        disk_opacity_func,
+                        timestep_duration_yr):
+    """Removes mass according to the Cantiello+ 2021 prescription
+
+    Takes initial star masses at the start of the timestep and removes mass according
+    to Eqn. 16 in Cantiello+ 2021
+
+    Parameters
+    ----------
+    disk_star_pro_masses : numpy.ndarray
+        Initial masses [M_sun] of stars in prograde orbits around the SMBH with :obj:`float` type.
+    disk_star_pro_log_radius : numpy.ndarray
+        Radius (log R/R_sun) of stars in prograde orbits around the SMBH with :obj:`float` type.
+    disk_star_pro_log_lum : numpy.ndarray
+        Luminosity (log L/L_sun) of stars in prograde orbits around the SMBH with :obj:`float` type.
+    disk_star_pro_orbs_a : numpy.narray
+        Semi-major axes [R_{g,SMBH}] of stars in prograde orbits around the SMBH with :obj:`float` type.
+    disk_opacity_func : function
+        Disk opacity function
+    timestep_duration_yr : float
+        Length of timestep [yr]
+
+    Returns
+    -------
+    star_new_masses : numpy.ndarray
+        New masses [M_sun] after removing mass for one timestep at specified mass loss rate with :obj:`float` type.
+    """
+
+    # Get opacity for orb_a values and add SI units
+    disk_opacity = disk_opacity_func(disk_star_pro_orbs_a) * (u.meter ** 2) / u.kg
+
+    # First convert quantities to SI units
+    star_radius = (10 ** disk_star_pro_log_radius) * u.Rsun
+    star_lum = (10 ** disk_star_pro_log_lum) * u.Lsun
+    star_mass = disk_star_pro_masses * u.Msun
+    timestep_duration_yr_si = timestep_duration_yr * u.year
+
+    # Calculate Eddington luminosity
+    L_Edd = (4. * np.pi * const.G * const.c * star_mass / disk_opacity).to("Lsun")
+
+    # Calculate escape speed
+    v_esc = ((2. * const.G * star_mass / star_radius) ** 0.5).to("km/s")
+
+    tanh_argument = (star_lum - L_Edd) / (0.1 * L_Edd)
+    assert u.dimensionless_unscaled == tanh_argument.unit, "Units do not cancel out, error in luminosity calculations"
+
+    mdot_Edd = (- (star_lum / (v_esc ** 2)) * (1 + np.tanh(tanh_argument.value))).to("Msun/yr")
+
+    # This is already a negative number
+    mass_lost = (mdot_Edd * timestep_duration_yr_si).to("Msun").value
+
+    star_new_masses = ((star_mass + (mdot_Edd * timestep_duration_yr_si)).to("Msun")).value
+
+    return (star_new_masses, mass_lost.sum())
+
+
+def accrete_star_mass(disk_star_pro_masses,
+                      disk_star_pro_orbs_a,
+                      disk_star_pro_eccs,
+                      disk_star_luminosity_factor,
+                      disk_star_initial_mass_cutoff,
+                      smbh_mass,
+                      disk_sound_speed,
+                      disk_density,
+                      timestep_duration_yr):
     """Adds mass according to Fabj+2024 accretion rate
 
     Takes initial star masses at start of timestep and adds mass according to Fabj+2024.
@@ -49,13 +109,13 @@ def change_star_mass(disk_star_pro_masses,
     """
 
     # Put things in SI units
-    star_masses_si = disk_star_pro_masses * astropy_units.solMass
-    disk_sound_speed_si = disk_sound_speed(disk_star_pro_orbs_a) * astropy_units.meter/astropy_units.second
-    disk_density_si = disk_density(disk_star_pro_orbs_a) * (astropy_units.kg / (astropy_units.m ** 3))
-    timestep_duration_yr_si = timestep_duration_yr * astropy_units.year
+    star_masses_si = disk_star_pro_masses * u.solMass
+    disk_sound_speed_si = disk_sound_speed(disk_star_pro_orbs_a) * u.meter/u.second
+    disk_density_si = disk_density(disk_star_pro_orbs_a) * (u.kg / (u.m ** 3))
+    timestep_duration_yr_si = timestep_duration_yr * u.year
 
     # Calculate Bondi and Hill radii
-    r_bondi = (2 * astropy_const.G.to("m^3 / kg s^2") * star_masses_si / (disk_sound_speed_si ** 2)).to("meter")
+    r_bondi = (2 * const.G.to("m^3 / kg s^2") * star_masses_si / (disk_sound_speed_si ** 2)).to("meter")
     r_hill_rg = (disk_star_pro_orbs_a * (1 - disk_star_pro_eccs) * ((disk_star_pro_masses / (3 * (disk_star_pro_masses + smbh_mass))) ** (1./3.)))
     r_hill_m = si_from_r_g(smbh_mass, r_hill_rg)
 
@@ -71,7 +131,10 @@ def change_star_mass(disk_star_pro_masses,
     # Stars can't accrete over disk_star_initial_mass_cutoff
     disk_star_pro_new_masses[disk_star_pro_new_masses > disk_star_initial_mass_cutoff] = disk_star_initial_mass_cutoff
 
-    return disk_star_pro_new_masses
+    # Mass gained does not include the cutoff
+    mass_gained = ((mdot * timestep_duration_yr_si).to("Msun")).value
+
+    return disk_star_pro_new_masses, mass_gained.sum()
 
 
 def change_bh_mass(disk_bh_pro_masses, disk_bh_eddington_ratio, disk_bh_eddington_mass_growth_rate, timestep_duration_yr):
