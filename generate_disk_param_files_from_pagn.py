@@ -103,10 +103,10 @@ sk_data_omega = func_to_vstack(sk_disk_omega_func, sk_aspect['radius'].values)
 
 # Save to file
 np.savetxt("src/mcfacts/inputs/data/sirko_goodman_sound_speed.txt", sk_data_cs, header="Sound speed [m/s] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/sirko_goodman_disk_density.txt", sk_data_rho, header="Disk density [kg/m^3] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/sirko_goodman_disk_pressure_gradient.txt", sk_data_dpdr, header="Disk pressure gradient [kg/m s^2 m] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/sirko_goodman_disk_temperature.txt", sk_data_temp, header="Disk temperature [K] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/sirko_goodman_disk_omega.txt", sk_data_omega, header="Disk omega [rad/s] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/sirko_goodman_density.txt", sk_data_rho, header="Disk density [kg/m^3] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/sirko_goodman_pressure_gradient.txt", sk_data_dpdr, header="Disk pressure gradient [kg/m s^2 m] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/sirko_goodman_temperature.txt", sk_data_temp, header="Disk temperature [K] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/sirko_goodman_omega.txt", sk_data_omega, header="Disk omega [rad/s] radius [R_g=GM_SMBH/c^2]")
 
 
 #### -------------------- TQM DISK --------------------
@@ -179,7 +179,7 @@ tqm_data_omega = func_to_vstack(tqm_disk_omega_func, tqm_aspect['radius'])
 
 # Save to file
 np.savetxt("src/mcfacts/inputs/data/thompson_etal_sound_speed.txt", tqm_data_cs, header="Sound speed [m/s] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/thompson_etal_disk_density.txt", tqm_data_rho, header="Disk density [kg/m^3] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/thompson_etal_disk_pressure_gradient.txt", tqm_data_dpdr, header="Disk pressure gradient [kg/m s^2 m] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/thompson_etal_disk_temperature.txt", tqm_data_temp, header="Disk temperature [K] radius [R_g=GM_SMBH/c^2]")
-np.savetxt("src/mcfacts/inputs/data/thompson_etal_disk_omega.txt", tqm_data_omega, header="Disk omega [rad/s] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/thompson_etal_density.txt", tqm_data_rho, header="Disk density [kg/m^3] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/thompson_etal_pressure_gradient.txt", tqm_data_dpdr, header="Disk pressure gradient [kg/m s^2 m] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/thompson_etal_temperature.txt", tqm_data_temp, header="Disk temperature [K] radius [R_g=GM_SMBH/c^2]")
+np.savetxt("src/mcfacts/inputs/data/thompson_etal_omega.txt", tqm_data_omega, header="Disk omega [rad/s] radius [R_g=GM_SMBH/c^2]")
