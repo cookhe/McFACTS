@@ -502,9 +502,11 @@ def construct_disk_direct(
     disk_omega_func = lambda x, f=disk_omegas_func_log: np.exp(f(np.log(x)))
 
     # Create pressure gradients function from input arrays
-    disk_pressure_gradients_func_log = scipy.interpolate.CubicSpline(
-        np.log(disk_model_radii), np.log(pressure_gradients))
-    disk_pressure_gradient_func = lambda x, f=disk_pressure_gradients_func_log: np.exp(f(np.log(x)))
+    # Need to preserve signs, since log only takes positive values
+    # Multiply final value by the correct sign
+    disk_pressure_gradient_func = scipy.interpolate.CubicSpline(
+        disk_model_radii, pressure_gradients)
+    #disk_pressure_gradient_func = lambda x, f=disk_pressure_gradients_func_raw: np.exp(f(np.log(x)))
 
     # Create temperatures function from input arrays
     disk_temperatures_func_log = scipy.interpolate.CubicSpline(
