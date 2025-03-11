@@ -71,7 +71,7 @@ sk_prad = sk.tauV * pagn_ct.sigmaSB * sk.Teff4 / (2 * pagn_ct.c)
 sk_ptot = sk_pgas + sk_prad
 sk_disk_pressure_grad_func_interp = scipy.interpolate.CubicSpline(
                                                         sk.R,
-                                                        np.gradient(sk_ptot/sk.R),
+                                                        np.gradient(sk_ptot)/np.gradient(sk.R),
                                                         extrapolate=False)
 sk_disk_pressure_grad_func = lambda x, f=sk_disk_pressure_grad_func_interp: f(point_masses.si_from_r_g(sk.Mbh * u.kg, x).value)
 # Apply to radius and put in vstack form
@@ -147,7 +147,7 @@ tqm_prad = tqm.tauV * pagn_ct.sigmaSB * tqm.Teff4 / (2 * pagn_ct.c)
 tqm_ptot = tqm_pgas + tqm_prad
 tqm_disk_pressure_grad_func_interp = scipy.interpolate.CubicSpline(
                                                         tqm.R,
-                                                        np.gradient(tqm_ptot/tqm.R),
+                                                        np.gradient(tqm_ptot)/np.gradient(tqm.R),
                                                         extrapolate=False)
 tqm_disk_pressure_grad_func = lambda x, f=tqm_disk_pressure_grad_func_interp: f(point_masses.si_from_r_g(tqm.Mbh * u.kg, x).value)
 # Apply to radius and put in vstack form
