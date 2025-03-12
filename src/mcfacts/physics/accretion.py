@@ -134,7 +134,13 @@ def accrete_star_mass(disk_star_pro_masses,
     # Mass gained does not include the cutoff
     mass_gained = ((mdot * timestep_duration_yr_si).to("Msun")).value
 
-    return disk_star_pro_new_masses, mass_gained.sum()
+    # Immortal stars don't enter this function as immortal because they lose a small amt of mass in star_wind_mass_loss
+    # Get how much mass is req to make them immortal again
+    immortal_mass_diff = disk_star_pro_new_masses[disk_star_pro_new_masses == disk_star_initial_mass_cutoff] - disk_star_pro_masses[disk_star_pro_new_masses == disk_star_initial_mass_cutoff]
+    # Any extra mass over the immortal cutoff is blown off the star and back into the disk
+    immortal_mass_lost = mass_gained[disk_star_pro_new_masses == disk_star_initial_mass_cutoff] - immortal_mass_diff
+
+    return disk_star_pro_new_masses, mass_gained.sum(), immortal_mass_lost.sum()
 
 
 def change_bh_mass(disk_bh_pro_masses, disk_bh_eddington_ratio, disk_bh_eddington_mass_growth_rate, timestep_duration_yr):
