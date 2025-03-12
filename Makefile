@@ -135,7 +135,7 @@ kaila_stars: plots
 	--runs-directory ${wd} \
 	--fname-stars ${wd}/output_mergers_stars_population.dat \
 	--fname-stars-merge ${wd}/output_mergers_stars_merged.dat \
-	--fname-stars_explode ${wd}/output_mergers_stars_exploded.dat \
+	--fname-stars-explode ${wd}/output_mergers_stars_exploded.dat \
 	--plots-directory ${wd}
 
 kaila_stars_movie: clean
