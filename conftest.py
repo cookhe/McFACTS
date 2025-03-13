@@ -30,13 +30,25 @@ INPUT_PARAMETERS = {
         InputParameterSet.DYNAMICS: []
     },
     "disk_radius_outer": {
-        InputParameterSet.BASE: [25000, 50000, 1E5],
+        InputParameterSet.BASE: [50000],
         InputParameterSet.SINGLETON: [],
         InputParameterSet.BINARY: [],
         InputParameterSet.DYNAMICS: []
     },
     "nsc_radius_crit": {
-        InputParameterSet.BASE: [0.20, 0.25, 0.30],
+        InputParameterSet.BASE: [0.25],
+        InputParameterSet.SINGLETON: [],
+        InputParameterSet.BINARY: [],
+        InputParameterSet.DYNAMICS: []
+    },
+    "nsc_density_index_inner": {
+        InputParameterSet.BASE: [1.75],
+        InputParameterSet.SINGLETON: [],
+        InputParameterSet.BINARY: [],
+        InputParameterSet.DYNAMICS: []
+    },
+    "nsc_density_index_outer": {
+        InputParameterSet.BASE: [2.5],
         InputParameterSet.SINGLETON: [],
         InputParameterSet.BINARY: [],
         InputParameterSet.DYNAMICS: []
