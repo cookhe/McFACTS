@@ -566,7 +566,7 @@ def main():
                     opts.disk_radius_outer,
                     opts.timestep_duration_yr
                 )
-
+                
             #Alternatively, calculate actual torques from disk profiles.
             #Paardekooper torque coeff (default)
             if opts.torque_prescription == 'paardekooper':
@@ -579,6 +579,7 @@ def main():
                     blackholes_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit
                 )
+                
             #Jiminez-Masset torque coeff (from Grishin+24)
             if opts.torque_prescription == 'jiminez_masset':
                 jiminez_masset_torque_coeff = migration.jiminezmasset17_torque(
@@ -591,6 +592,25 @@ def main():
                     blackholes_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit
                 )
+                jiminez_masset_thermal_torque_coeff = migration.jiminezmasset17_thermal_torque_coeff(
+                    opts.smbh_mass, 
+                    disk_surface_density,
+                    disk_opacity,
+                    disk_aspect_ratio,
+                    temp_func,
+                    disk_sound_speed,
+                    disk_density, 
+                    opts.disk_bh_eddington_ratio,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.orb_ecc,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    blackholes_pro.mass,
+                    opts.flag_thermal_feedback
+                )
+                if opts.flag_thermal_feedback > 0:
+                    total_jiminez_masset_torque = jiminez_masset_torque_coeff + jiminez_masset_thermal_torque_coeff
+                else:
+                    total_jiminze_masset_torque = jiminez_masset_torque_coeff
             #Normalized torque (multiplies torque coeff)
             if opts.torque_prescription == 'paardekooper' or opts.torque_prescription == 'jiminez_masset':
                 normalized_torque = migration.normalized_torque(
@@ -607,8 +627,7 @@ def main():
                     if opts.torque_prescription == 'paardekooper':
                         torque =  paardekooper_torque_coeff*normalized_torque
                     if opts.torque_prescription == 'jiminez_masset':
-                        torque = jiminez_masset_torque_coeff*normalized_torque
-    
+                        torque = total_jiminez_masset_torque*normalized_torque
                 else: 
                     print()
             
@@ -631,11 +650,17 @@ def main():
                     ratio_heat_mig_torques,
                     opts.disk_radius_trap,
                     opts.disk_radius_outer,
-                    opts.timestep_duration_yr
+                    opts.timestep_duration_yr,
+                    opts.flag_phenom_turb,
+                    opts.phenom_turb_centroid,
+                    opts.phenom_turb_std_dev,
+                    opts.nsc_imf_bh_mode
                 )
             
             #print("new_bh_orbs_default",new_orbs_default)
             blackholes_pro.orb_a = new_orbs
+            #if time_passed == 0 or time_passed==1.e5:
+            #    print("black holes pro orb_a=",blackholes_pro.orb_a)
             stars_pro.orb_a = migration.type1_migration_single(
                 opts.smbh_mass,
                 stars_pro.orb_a,

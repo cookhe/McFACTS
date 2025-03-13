@@ -194,6 +194,9 @@ INPUT_TYPES = {
     "mass_pile_up"                  : float,
     "save_snapshots"                : bool,
     "torque_prescription"           : str,
+    "flag_phenom_turb"              : int,
+    "phenom_turb_centroid"          : float,
+    "phenom_turb_std_dev"          : float,
 }
 
 
