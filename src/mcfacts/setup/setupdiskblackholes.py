@@ -1,3 +1,5 @@
+"""Defines functions to set up initial conditions for black holes in the AGN disk."""
+
 import numpy as np
 from mcfacts.mcfacts_random_state import rng
 
