@@ -391,6 +391,26 @@ def main():
     plt.close()
 
 
+    # ========================================
+    # Merged and exploded stars vs time histogram
+    # ========================================
+    fig = plt.figure(figsize=plotting.set_size(figsize))
+
+    bins = np.linspace(0, stars_merge[:, 1].max()/1e6, int(np.sqrt(len(stars_merge[:, 1]))))
+
+    plt.hist([stars_merge[:, 1]/1e6, stars_explode[:, 1]/1e6], color=[styles.color_gen1, styles.color_gen2], label=["Merged star", "Exploded star"], stacked=True)
+
+    plt.xlabel(r"Time [Myr]")
+    plt.ylabel(r"Number")
+
+    if figsize == 'apj_col':
+        plt.legend(fontsize=6)
+    elif figsize == 'apj_page':
+        plt.legend()
+
+    plt.savefig(opts.plots_directory + "/stars_merge_explode_hist.png", format="png")
+    plt.close()
+
 
 
 ######## Execution ########
