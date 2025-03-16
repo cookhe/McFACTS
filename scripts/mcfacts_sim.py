@@ -546,12 +546,15 @@ def main():
         while time_passed < time_final:
             # Record snapshots if user wishes
             if opts.save_snapshots == 1:
+                print("stars_inner_disk.orb_a at write",stars_inner_disk.orb_a)
 
                 blackholes_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_pro_{timestep_current_num}.dat"))
                 blackholes_retro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_retro_{timestep_current_num}.dat"))
+                blackholes_inner_disk.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_inner_disk_{timestep_current_num}.dat"))
                 if opts.flag_add_stars:
                     stars_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_stars_single_pro_{timestep_current_num}.dat"))
                     stars_retro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_stars_single_retro_{timestep_current_num}.dat"))
+                    stars_inner_disk.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_stars_single_inner_disk_{timestep_current_num}.dat"))
                 blackholes_binary.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_binary_{timestep_current_num}.dat"),
                                          cols=binary_cols)
                 timestep_current_num += 1
@@ -696,7 +699,6 @@ def main():
             stars_pro.mass, star_mass_gained, star_immortal_mass_lost = accretion.accrete_star_mass(
                 stars_pro.mass,
                 stars_pro.orb_a,
-                stars_pro.orb_ecc,
                 disk_star_luminosity_factor,
                 opts.disk_star_initial_mass_cutoff,
                 opts.smbh_mass,
@@ -1951,6 +1953,12 @@ def main():
                 blackholes_inner_disk.remove_id_num(emri_merger_id_num)
                 # Remove merged EMRIs from filing_cabinet
                 filing_cabinet.remove_id_num(emri_merger_id_num)
+
+            if np.size(star_rlof_smbh_id_num) > 0:
+                # Remove merged TDEs from filing cabinet
+                # Eventually need to treat with Metzger+ 2022 (2022ApJ...926..101M)
+                stars_inner_disk.remove_id_num(star_rlof_smbh_id_num)
+                filing_cabinet.remove_id_num(star_rlof_smbh_id_num)
 
             # Here is where we need to move retro to prograde if they've flipped in this timestep
             # If they're IN the disk prograde, OR if they've circularized:
