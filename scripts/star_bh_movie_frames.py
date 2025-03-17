@@ -35,10 +35,10 @@ def plotting(stars_orba, stars_mass, mask_immortal, starsin_orba, starsin_mass, 
     plt.scatter(stars_orba[mask_immortal], stars_mass[mask_immortal], marker="o", edgecolor='#450920', facecolor='None', zorder=10)
     plt.scatter(starsin_orba, starsin_mass, marker="o", edgecolor='#DA627D', facecolor='None', zorder=10)
     plt.scatter(starsretro_orba, starsretro_mass, marker="o", edgecolor='#DA627D', facecolor='None', zorder=10)
-    plt.scatter(bh_orba, bh_mass, marker="o", edgecolor="darkgoldenrod", facecolor="None", zorder=10)
-    plt.scatter(bhin_orba, bhin_mass, marker="o", edgecolor="darkgoldenrod", facecolor="None", zorder=10)
-    plt.scatter(bhretro_orba, bhretro_mass, marker="o", edgecolor="darkgoldenrod", facecolor="None", zorder=10)
-    plt.scatter(bbh_orba, bbh_mass, marker="o", edgecolors="#005f73", facecolor="None", zorder=10)
+    plt.scatter(bh_orba, bh_mass, marker="o", edgecolor="darkgoldenrod", facecolor="None", zorder=5)
+    plt.scatter(bhin_orba, bhin_mass, marker="o", edgecolor="darkgoldenrod", facecolor="None", zorder=5)
+    plt.scatter(bhretro_orba, bhretro_mass, marker="o", edgecolor="darkgoldenrod", facecolor="None", zorder=5)
+    plt.scatter(bbh_orba, bbh_mass, marker="o", edgecolors="#005f73", facecolor="None", zorder=15)
     plt.scatter(0, -10, label=nomask_label, color="#DA627D")
     plt.scatter(0, -10, label=mask_label, color="#450920")
     plt.scatter(0, -10, label=bh_label, color="darkgoldenrod")
@@ -46,10 +46,10 @@ def plotting(stars_orba, stars_mass, mask_immortal, starsin_orba, starsin_mass, 
 
     plt.vlines(700, -5, 500, colors='dimgrey', label="Trap radius", zorder=0)
 
-    plt.legend(title=rf"{(int(timestep) + 1)/1e2} Myr", loc="upper right", frameon=False)
+    plt.legend(title=rf"{(int(timestep) + 1)/1e2} Myr", loc="upper left", frameon=False)
     plt.ylabel(r"Mass [$M_\odot$]")
     plt.xlabel(r"Semi-major axis [R$_{\mathrm {g, SMBH}}$]")
-    plt.ylim(-5, 500)
+    plt.ylim(-5, 310)
     plt.xlim(20, 55000)
 
     plt.xscale("log")
@@ -123,7 +123,7 @@ def generate_plots(fpath, num_timesteps):
             bh_in_mass = bh_in[:, 2]
         plotting(star[:, 1], star[:, 2], mask_immortal, star_in_orba, star_in_mass, star_retro[:, 1], star_retro[:, 2],
                  bh[:, 1], bh[:, 2], bh_in_orba, bh_in_mass, bh_retro[:, 1], bh_retro[:, 2], bbh_orba, bbh_mass, t_star,
-                 r"Immortal star ($298$ $M_\odot$)", "Single prograde star", "Single prograde BH", "BBH",
+                 r"Immortal star ($298$ $M_\odot$)", "Single star", "Single BH", "BBH",
                  fpath + f"/orba_mass_movie_timestep_{t_star}")
 
 
