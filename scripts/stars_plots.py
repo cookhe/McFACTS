@@ -123,7 +123,7 @@ def main():
     fig = plt.figure(figsize=plotting.set_size(figsize))
     counts, bins = np.histogram(stars[:, 3])
     # plt.hist(bins[:-1], bins, weights=counts)
-    bins = np.arange(int(stars[:, 3].min()), int(stars[:, 3].max()) + 2, 1)
+    bins = np.linspace(int(stars[:, 3].min()), int(stars[:, 3].max()) + 2, int(np.sqrt(len(stars[:,3]))))
 
     hist_data = [stars[:, 3][merger_g1_mask], stars[:, 3][merger_g2_mask], stars[:, 3][merger_gX_mask]]
     hist_label = ['1g', '2g', r'$\geq$3g']
@@ -151,7 +151,7 @@ def main():
     elif figsize == 'apj_page':
         plt.legend()
 
-    plt.savefig(opts.plots_directory + r"/star_merger_mass.png", format='png')
+    plt.savefig(opts.plots_directory + r"/star_pop_mass.png", format='png')
 
     plt.close()
 
@@ -396,9 +396,10 @@ def main():
     # ========================================
     fig = plt.figure(figsize=plotting.set_size(figsize))
 
-    bins = np.linspace(0, stars_merge[:, 1].max()/1e6, int(np.sqrt(len(stars_merge[:, 1]))))
+    bins = np.linspace(0, stars_merge[:, 1].max()/1e6, int(np.sqrt(min(len(stars_merge[:, 1]), len(stars_explode[:, 1])))))
+    bins = np.linspace(0, stars_merge[:, 1].max()/1e6, 20)
 
-    plt.hist([stars_merge[:, 1]/1e6, stars_explode[:, 1]/1e6], color=[styles.color_gen1, styles.color_gen2], label=["Merged star", "Exploded star"], stacked=True)
+    plt.hist([stars_merge[:, 1]/1e6, stars_explode[:, 1]/1e6], bins=bins, color=["#D47B7C", styles.color_gen2], label=["Merged star", "Exploded star"], stacked=True)
 
     plt.xlabel(r"Time [Myr]")
     plt.ylabel(r"Number")
