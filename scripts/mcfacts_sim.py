@@ -319,7 +319,7 @@ def main():
                                   orb_ecc=bh_orb_ecc_initial,
                                   orb_arg_periapse=bh_orb_arg_periapse_initial,
                                   bh_num=disk_bh_num,
-                                  galaxy=np.zeros(disk_bh_num),
+                                  galaxy=np.full(disk_bh_num, galaxy),
                                   time_passed=np.zeros(disk_bh_num))
 
         # Initialize filing_cabinet
@@ -333,7 +333,7 @@ def main():
 
         # Initialize stars
         if opts.flag_add_stars:
-            stars, disk_star_num = initializediskstars.init_single_stars(opts, disk_aspect_ratio, id_start_val=filing_cabinet.id_max+1)
+            stars, disk_star_num = initializediskstars.init_single_stars(opts, disk_aspect_ratio, galaxy, id_start_val=filing_cabinet.id_max+1)
         else:
             stars, disk_star_num = AGNStar(), 0
 

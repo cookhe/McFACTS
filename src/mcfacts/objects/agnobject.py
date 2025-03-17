@@ -121,14 +121,13 @@ def obj_to_binary_bh_array(obj):
 class AGNObject(object):
     """
     A superclass that holds parameters that apply to all objects in McFacts.
-    It is formatted as an object full of arrays.
+    It is formatted as an object full of arrays. Dimensions of arrays must
+    match the number of objects in the class.
     No instances of the AGNObject class should be created, it is a superclass
     to the AGNStar, AGNBlackHole, etc. classes.
     All orbital attributes to this class are with respect to the central SMBH.
     if the subclass is a Binary object, then attributes are for the total
     quantities (total mass, etc.), not the binary components.
-    No instances of the AGNObject class should be created, it is a superclass
-    to the AGNStar, AGNBlackHole, etc. classes.
     """
 
     def __init__(self,
