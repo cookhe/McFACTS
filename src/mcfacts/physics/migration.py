@@ -7,15 +7,24 @@ import scipy
 from mcfacts.mcfacts_random_state import rng
 
 
-def paardekooper10_torque(smbh_mass, disk_surf_density_func_log, disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit):
+def paardekooper10_torque(smbh_mass, disk_surf_density_func_log, disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
     """Return the Paardekooper (2010) torque coefficient for Type 1 migration
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
+    
+    #Need to have at least 2 elements in sorted_log_orbs_a below. 
+    # If insufficient elements, generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
+    if np.size(orbs_a) < 100:
+        orbs_a = np.linspace(10*disk_inner_stable_circ_orb,disk_radius_outer,num=100)
+        #sorted_log_orbs_a = np.log10(sorted_orbs_a)
     #Sort the radii of BH and get their log (radii)
     sorted_orbs_a = np.sort(orbs_a)
+    #Prevent accidental zeros or Nans!
     log_orbs_a = np.log10(orbs_a)
     sorted_log_orbs_a = np.sort(log_orbs_a)
     
+    
+    #sorted_log_orbs_a = np.nan_to_num(sorted_log_orbs_a)
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
     # Get indices of objects with orb_ecc <= ecc_crit so we can only update orb_a for those.
@@ -33,6 +42,76 @@ def paardekooper10_torque(smbh_mass, disk_surf_density_func_log, disc_surf_densi
     #Evaluate disc surf density at locations of all BH
     #disc_surf_d = disc_surf_density(orbs_a)
     disc_surf_d = disc_surf_density(sorted_orbs_a)
+    disc_temp=np.nan_to_num(temp_func(sorted_orbs_a))
+    disc_temp=np.abs(disc_temp)
+    #Evaluate disc surf density at only migrating BH
+    disc_surf_d_mig = disc_surf_density(new_orbs_a)
+    #Get log of disc surf density
+    log_disc_surf_d = np.log10(disc_surf_d)
+    log_disc_surf_d = np.nan_to_num(log_disc_surf_d)
+    #Get log of disc midplane temperature
+    #print("disc_temp",disc_temp)
+    log_disc_temp = np.log10(disc_temp)
+
+    log_disc_surf_d_mig = np.log10(disc_surf_d_mig)
+    sort_log_orbs_a =np.sort(log_new_orbs_a)
+    
+    
+    Sigmalog_spline = scipy.interpolate.CubicSpline(sorted_log_orbs_a, log_disc_surf_d, extrapolate=False)
+    Templog_spline = scipy.interpolate.CubicSpline(sorted_log_orbs_a, log_disc_temp, extrapolate=False)
+    #Find derivates of Sigmalog_spline
+    dSigmadR_spline = Sigmalog_spline.derivative()
+    dTempdR_spline = Templog_spline.derivative()
+    #Evaluate dSigmadR_spline at the migrating orb_a values   
+    dSigmadR = dSigmadR_spline(log_new_orbs_a)
+    dTempdR = dTempdR_spline(log_new_orbs_a)
+    #sortdSigmadR = dSigmadR_spline(sort_log_orbs_a)
+
+    #print("dSigmadR", dSigmadR)
+    #print("dTempdR", dTempdR)
+    #print("sortdSigmadR",sortdSigmadR)
+    #print("log_new_orbs_a",log_new_orbs_a)
+    #print("sorted_log_new_orbs_a",sort_log_orbs_a)
+    
+    Torque_paardekooper_coeff = -0.85 + dSigmadR +0.9*dTempdR
+
+    return Torque_paardekooper_coeff
+
+def paardekooper10_torque_binary(smbh_mass, disk_surf_density_func_log, disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, blackholes_binary,disk_radius_outer,disk_inner_stable_circ_orb):
+    """Return the Paardekooper (2010) torque coefficient for Type 1 migration for binaries
+        Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
+    """
+    #Find the semi-major axis locations of the binaries
+    bin_orb_a = blackholes_binary.bin_orb_a
+    #Find the eccentricities of the binaries
+    bin_orb_ecc = blackholes_binary.bin_orb_ecc
+    
+    #Need to have at least 2 elements in sorted_log_orbs_a below. 
+    # If insufficient elements, generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
+    if np.size(orbs_a) < 100:
+        orbs_a = np.linspace(10*disk_inner_stable_circ_orb,disk_radius_outer,num=100)
+    #Sort the radii of BH and get their log (radii)
+    sorted_orbs_a = np.sort(orbs_a)
+    log_orbs_a = np.log10(orbs_a)
+    sorted_log_orbs_a = np.sort(log_orbs_a)
+    
+    # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
+    # Otherwise no change in semi-major axis (orb_a).
+    # Get indices of objects with orb_ecc <= ecc_crit so we can only update orb_a for those.
+    migration_indices = np.asarray(bin_orb_ecc <= orb_ecc_crit).nonzero()[0]
+
+    
+    # If nothing will migrate then end the function
+    if migration_indices.shape == (0,):
+    #    return (orbs_a)
+        return ()
+    # If things will migrate then copy over the orb_a of objects that will migrate
+    new_orbs_a = bin_orb_a[migration_indices].copy()
+    
+    log_new_orbs_a = np.log10(new_orbs_a)
+    #Evaluate disc surf density at locations of all BH
+    #disc_surf_d = disc_surf_density(orbs_a)
+    disc_surf_d = disc_surf_density(sorted_orbs_a)
     disc_temp=temp_func(sorted_orbs_a)
     #Evaluate disc surf density at only migrating BH
     disc_surf_d_mig = disc_surf_density(new_orbs_a)
@@ -44,7 +123,7 @@ def paardekooper10_torque(smbh_mass, disk_surf_density_func_log, disc_surf_densi
     log_disc_surf_d_mig = np.log10(disc_surf_d_mig)
     sort_log_orbs_a =np.sort(log_new_orbs_a)
     
-    
+     
     Sigmalog_spline = scipy.interpolate.CubicSpline(sorted_log_orbs_a, log_disc_surf_d, extrapolate=False)
     Templog_spline = scipy.interpolate.CubicSpline(sorted_log_orbs_a, log_disc_temp, extrapolate=False)
     #Find derivates of Sigmalog_spline
@@ -147,7 +226,7 @@ def torque_mig_timescale(smbh_mass,orbs_a,masses, orbs_ecc, orb_ecc_crit,migrati
         Orbital ecc [unitless] wrt to SMBH of objects at start of timestep :math:`\\mathtt{disk_radius_trap}. Floor in orbital ecc given by e_crit.
     orb_ecc_crit : float
         Critical value of orbital eccentricity [unitless] below which we assume Type 1 migration must occur. Do not damp orb ecc below this (e_crit=0.01 is default)
-    disk_surf_density_func : numpy.ndarray
+    migration_torque : numpy.ndarray
         Migration torque array. E.g. calculated from torque_paardekooper (units = Nm=J)
 
 
@@ -179,7 +258,7 @@ def torque_mig_timescale(smbh_mass,orbs_a,masses, orbs_ecc, orb_ecc_crit,migrati
     #print("torque_mig_timescale",torque_mig_timescale)
     return torque_mig_timescale
 
-def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit):
+def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
     """Return the Jiminez & Masset (2017) torque coefficient for Type 1 migration
         Jiminez-Masset_torque = [0.46 + 0.96dSigmadR -1/8dTdR]/gamma
                                 +[-2.34 -0.1dSigmadR +1.5dTdR]*factor
@@ -204,6 +283,10 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
     m_sun = 2.0*10**(30)
     smbh_mass_in_kg = smbh_mass * m_sun
 
+    #Need to have at least 2 elements in sorted_log_orbs_a below. 
+    # If insufficient elements, generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
+    if np.size(orbs_a) < 100:
+        orbs_a = np.linspace(10*disk_inner_stable_circ_orb,disk_radius_outer,num=100)
     #Sort the radii of BH and get their log (radii)
     sorted_orbs_a = np.sort(orbs_a)
     log_orbs_a = np.log10(orbs_a)
@@ -291,7 +374,7 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
 
     return Torque_jiminezmasset_coeff
 
-def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, sound_speed_func, density_func, disk_bh_eddington_ratio, orbs_a, orbs_ecc, orb_ecc_crit, bh_masses, flag_thermal_feedback):
+def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, sound_speed_func, density_func, disk_bh_eddington_ratio, orbs_a, orbs_ecc, orb_ecc_crit, bh_masses, flag_thermal_feedback, disk_radius_outer, disk_inner_stable_circ_orb):
     """Return the Jiminez & Masset (2017) thermal torque coefficient for Type 1 migration
         Jiminez-Masset_thermal_torque_coeff = Torque_hot*(4mu_thermal/(1+4.*mu_thermal))+ Torque_cold*(2mu_thermal/(1+2.*mu_thermal))
             Given   Torque_hot=thermal_factor*(L/L_c)
@@ -332,6 +415,11 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
     m_sun = 2.0*10**(30)
     smbh_mass_in_kg = smbh_mass * m_sun
 
+    #Need to have at least 2 elements in sorted_log_orbs_a below. 
+    # If insufficient elements, generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
+    if np.size(orbs_a) < 100:
+        orbs_a = np.linspace(10*disk_inner_stable_circ_orb,disk_radius_outer,num=100)
+        
     #Sort the radii of BH and get their log (radii)
     sorted_orbs_a = np.sort(orbs_a)
     log_orbs_a = np.log10(orbs_a)
@@ -460,7 +548,7 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
 
 
 def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, torque_mig_timescale, disk_feedback_ratio_func,
-                    disk_radius_trap, disk_radius_outer, timestep_duration_yr, flag_phenom_turb, phenom_turb_centroid, phenom_turb_std_dev, bh_min_mass):
+                    disk_radius_trap, disk_radius_anti_trap, disk_radius_outer, timestep_duration_yr, flag_phenom_turb, phenom_turb_centroid, phenom_turb_std_dev, bh_min_mass, torque_prescription):
     """Calculates how far an object migrates in an AGN gas disk in a single timestep given a torque migration timescale
     calculated elsewhere (e.g. torque_migration_timescale)
     Returns their new locations after migration over one timestep.
@@ -484,6 +572,8 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         if ratio >1, migration outwards on timescale tau_mig/(R-1)
     disk_radius_trap : float
         Radius [r_{g,SMBH}] of disk migration trap
+    disk_radius_antitrap : float
+        Radius [r_{g,SMBH}] of disk anti-trap (divergent trap)    
     disk_radius_outer : float
         Radius [r_{g,SMBH}] of outer edge of disk
     timestep_duration_yr : float
@@ -496,6 +586,8 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         Standard deviation of Gaussian draw of turbulent perturbation (default is 0.1)
     bh_min_mass : float
         Minimum mass of BH IMF. Phenom. turbulence is largest for this value. Decreases with bh_mass^2 since normalized torque propto m_bh^2. 
+    torque_prescription : str
+        Torque prescription 'paardekooper' or 'jiminez_masset' ('old' is deprecated)
     Returns
     -------
     orbs_a : float array
@@ -513,8 +605,6 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
 
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
-    # Disk feedback ratio
-    disk_feedback_ratio = disk_feedback_ratio_func[migration_indices]
 
     # Array of migration timescales for each orbiter in seconds as calculated from torques elsewhere
     tau = torque_mig_timescale
@@ -528,61 +618,161 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     # migration distance is original locations times fraction of tau_mig elapsed
     migration_distance = new_orbs_a.copy() * dt
     #print("torque_mig_distance",migration_distance)
-    #Take absolute value of migration distance --assume migration is always inwards
-    migration_distance = np.abs(migration_distance)
-    #print("abs_mig_distance",migration_distance)
+    
 
     if flag_phenom_turb == 1:
         #Only need to perturb migrators for now
         #size_of_turbulent_array = np.size(migration_indices)
+        # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
+        migration_distance = np.abs(migration_distance)
         #Calc migration distance as modified by turbulence.
         migration_distance = migration_distance*(1.0 + rng.normal(phenom_turb_centroid,phenom_turb_std_dev,size=migration_indices.size))/normalized_mig_masses_sq
     
-    # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
-    epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
 
-    # Get masks for if objects are inside or outside the trap radius
-    mask_out_trap = new_orbs_a > disk_radius_trap
-    mask_in_trap = new_orbs_a < disk_radius_trap
+    if torque_prescription == 'old' or torque_prescription == 'paardekooper':
+        # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
+        migration_distance = np.abs(migration_distance)
+        # Disk feedback ratio
+        disk_feedback_ratio = disk_feedback_ratio_func[migration_indices]
+        # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
+        epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
 
-    # Get mask for objects where feedback_ratio <1; these still migrate inwards, but more slowly
-    mask_mig_in = disk_feedback_ratio < 1
-    if (np.sum(mask_mig_in) > 0):
-        # If outside trap migrate inwards
-        temp_orbs_a = new_orbs_a[mask_mig_in & mask_out_trap] - migration_distance[mask_mig_in & mask_out_trap] * (1 - disk_feedback_ratio[mask_mig_in & mask_out_trap])
-        # If migration takes object inside trap, fix at trap
-        temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_mig_in & mask_out_trap][temp_orbs_a <= disk_radius_trap]
-        new_orbs_a[mask_mig_in & mask_out_trap] = temp_orbs_a
+        # Get masks for if objects are inside or outside the trap radius
+        mask_out_trap = new_orbs_a > disk_radius_trap
+        mask_in_trap = new_orbs_a < disk_radius_trap
 
-        # If inside trap, migrate outwards
-        temp_orbs_a = new_orbs_a[mask_mig_in & mask_in_trap] + migration_distance[mask_mig_in & mask_in_trap] * (1 - disk_feedback_ratio[mask_mig_in & mask_in_trap])
-        # If migration takes object outside trap, fix at trap
-        temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_mig_in & mask_in_trap][temp_orbs_a >= disk_radius_trap]
-        new_orbs_a[mask_mig_in & mask_in_trap] = temp_orbs_a
+        # Get mask for objects where feedback_ratio <1; these still migrate inwards, but more slowly
+        mask_mig_in = disk_feedback_ratio < 1
+        if (np.sum(mask_mig_in) > 0):
+            # If outside trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_mig_in & mask_out_trap] - migration_distance[mask_mig_in & mask_out_trap] * (1 - disk_feedback_ratio[mask_mig_in & mask_out_trap])
+            # If migration takes object inside trap, fix at trap
+            temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_mig_in & mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            new_orbs_a[mask_mig_in & mask_out_trap] = temp_orbs_a
 
-    # Get mask for objects where feedback_ratio > 1: these migrate outwards
-    mask_mig_out = disk_feedback_ratio > 1
-    if (np.sum(mask_mig_out) > 0):
-        new_orbs_a[mask_mig_out] = new_orbs_a[mask_mig_out] + migration_distance[mask_mig_out] * (disk_feedback_ratio[mask_mig_out] - 1)
+            # If inside trap, migrate outwards
+            temp_orbs_a = new_orbs_a[mask_mig_in & mask_in_trap] + migration_distance[mask_mig_in & mask_in_trap] * (1 - disk_feedback_ratio[mask_mig_in & mask_in_trap])
+            # If migration takes object outside trap, fix at trap
+            temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_mig_in & mask_in_trap][temp_orbs_a >= disk_radius_trap]
+            new_orbs_a[mask_mig_in & mask_in_trap] = temp_orbs_a
 
-    # Get mask for objects where feedback_ratio == 1. Shouldn't happen if feedback = 1 (on), but will happen if feedback = 0 (off)
-    mask_mig_stay = disk_feedback_ratio == 1
-    if (np.sum(mask_mig_stay) > 0):
-        # If outside trap migrate inwards
-        temp_orbs_a = new_orbs_a[mask_mig_stay & mask_out_trap] - migration_distance[mask_mig_stay & mask_out_trap]
-        # If migration takes object inside trap, fix at trap
-        temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_mig_stay & mask_out_trap][temp_orbs_a <= disk_radius_trap]
-        new_orbs_a[mask_mig_stay & mask_out_trap] = temp_orbs_a
+        # Get mask for objects where feedback_ratio > 1: these migrate outwards
+        mask_mig_out = disk_feedback_ratio > 1
+        if (np.sum(mask_mig_out) > 0):
+            new_orbs_a[mask_mig_out] = new_orbs_a[mask_mig_out] + migration_distance[mask_mig_out] * (disk_feedback_ratio[mask_mig_out] - 1)
 
-        # If inside trap migrate outwards
-        temp_orbs_a = new_orbs_a[mask_mig_stay & mask_in_trap] + migration_distance[mask_mig_stay & mask_in_trap]
-        # If migration takes object outside trap, fix at trap
-        temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_mig_stay & mask_in_trap][temp_orbs_a >= disk_radius_trap]
-        new_orbs_a[mask_mig_stay & mask_in_trap] = temp_orbs_a
+        # Get mask for objects where feedback_ratio == 1. Shouldn't happen if feedback = 1 (on), but will happen if feedback = 0 (off)
+        mask_mig_stay = disk_feedback_ratio == 1
+        if (np.sum(mask_mig_stay) > 0):
+            # If outside trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_mig_stay & mask_out_trap] - migration_distance[mask_mig_stay & mask_out_trap]
+            # If migration takes object inside trap, fix at trap
+            temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_mig_stay & mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            new_orbs_a[mask_mig_stay & mask_out_trap] = temp_orbs_a
 
-    # Assert that things cannot migrate out of the disk
-    epsilon = disk_radius_outer * ((masses[migration_indices][new_orbs_a > disk_radius_outer] / (3 * (masses[migration_indices][new_orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(new_orbs_a > disk_radius_outer))
-    new_orbs_a[new_orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
+            # If inside trap migrate outwards
+            temp_orbs_a = new_orbs_a[mask_mig_stay & mask_in_trap] + migration_distance[mask_mig_stay & mask_in_trap]
+            # If migration takes object outside trap, fix at trap
+            temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_mig_stay & mask_in_trap][temp_orbs_a >= disk_radius_trap]
+            new_orbs_a[mask_mig_stay & mask_in_trap] = temp_orbs_a
+
+        # Assert that things cannot migrate out of the disk
+        epsilon = disk_radius_outer * ((masses[migration_indices][new_orbs_a > disk_radius_outer] / (3 * (masses[migration_indices][new_orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(new_orbs_a > disk_radius_outer))
+        new_orbs_a[new_orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
+    
+    if torque_prescription == 'jiminez_masset':
+        #If smbh_mass >10^8Msun --assume migration is always inwards
+        if smbh_mass > 1.e8:
+            migration_distance = np.abs(migration_distance)
+            new_orbs_a = new_orbs_a - migration_distance
+        #If smbh_mass = 1.e8, assume trap at disk_radius_trap, but Type 1 migration inward everywhere. 
+        # ie. migrators interior & exterior to trap migrate inwards, but exteriors at trap stay there.
+        if smbh_mass == 1.e8:
+            #migration_distance =np.abs(migration_distance)
+            # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
+            epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
+            # Get masks for if objects are inside or outside the trap radius (fixed to disk_radius_trap)
+            mask_out_trap = new_orbs_a > disk_radius_trap
+            mask_in_trap = new_orbs_a < (disk_radius_trap - epsilon_trap_radius)
+            
+            # If outside trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_out_trap] - migration_distance[mask_out_trap]
+            # If migration takes object inside trap, fix at trap
+            temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            new_orbs_a[mask_out_trap] = temp_orbs_a
+            #If inside trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_in_trap] - migration_distance[mask_in_trap]
+            new_orbs_a[mask_in_trap] = temp_orbs_a
+
+        if smbh_mass <1.e8 and smbh_mass > 1.e6:
+            # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
+            epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
+            # Trap radius changes as a function of mass. 
+            # Also new(!) anti-trap radius. Region between trap and anti-trap migrates out, all others migrate inwards
+            # Calc new trap radius from Grishin+24
+            #temp_disk_radius_trap = disk_radius_trap*((smbh_mass/1.e8)**(-1.225))
+            #temp_disk_radius_anti_trap = disk_radius_trap*((smbh_mass/1.e8)**(0.1))
+            #print("trap,anti-trap", temp_disk_radius_trap,temp_disk_radius_anti_trap)
+            # Get masks for objects outside trap, inside trap and inside anti-trap
+            mask_out_trap = new_orbs_a > disk_radius_trap
+            mask_in_anti_trap = new_orbs_a < disk_radius_anti_trap
+            #mask_in_trap = new_orbs_a > disk_radius_anti_trap and new_orbs_a < disk_radius_trap
+            mask_in_trap = (new_orbs_a > disk_radius_anti_trap) & (new_orbs_a < disk_radius_trap)
+            # If outside trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_out_trap] + migration_distance[mask_out_trap]
+            # If migration takes object inside trap, fix at trap
+            temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            new_orbs_a[mask_out_trap] = temp_orbs_a
+
+            #If inside trap, but outside anti_trap, migrate outwards
+            #Commented out this out-migration line
+            #temp_orbs_a = new_orbs_a[mask_in_trap] + migration_distance[mask_in_trap]
+            #Anything in out-migrating region ends up on trap in <0.01Myr (ie 1 timestep)
+            
+            # If migration takes object outside trap, fix at trap. No use, outside trap to keep at trap.
+            #temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            #new_orbs_a[mask_in_trap] = temp_orbs_a
+            #if np.size(new_orbs_a[mask_in_trap])>0:
+            #    print("in trap",new_orbs_a[mask_in_trap])
+            
+            new_orbs_a[mask_in_trap] = disk_radius_trap + epsilon_trap_radius[mask_in_trap]
+            
+            #if np.size(new_orbs_a[mask_in_trap])> 0:
+            #    print("new_orbs_a_outmig",new_orbs_a[mask_in_trap])
+            
+            #If inside anti_trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_in_anti_trap] + migration_distance[mask_in_anti_trap]
+            new_orbs_a[mask_in_anti_trap] = temp_orbs_a
+        if smbh_mass < 1.e6:
+            # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
+            epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
+            # Trap radius changes as a function of mass. 
+            # Also new(!) anti-trap radius. Region between trap and anti-trap migrates out, all others migrate inwards
+            # Calc new trap radius from Grishin+24
+            disk_radius_trap = disk_radius_trap *(smbh_mass/1.e8)**(-0.97)
+            disk_radius_anti_trap = disk_radius_trap *(smbh_mass/1.e8)**(0.099)
+            # Get masks for objects outside trap, inside trap and inside anti-trap
+            mask_out_trap = new_orbs_a > disk_radius_trap
+            mask_in_anti_trap = new_orbs_a < disk_radius_anti_trap
+            mask_in_trap = new_orbs_a > disk_radius_anti_trap and new_orbs_a < disk_radius_trap
+            
+            # If outside trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_out_trap] - migration_distance[mask_out_trap]
+            # If migration takes object inside trap, fix at trap
+            temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            new_orbs_a[mask_out_trap] = temp_orbs_a
+
+            #If inside trap, but outside anti_trap, migrate outwards
+            temp_orbs_a = new_orbs_a[mask_in_trap] + migration_distance[mask_in_trap]
+            # If migration takes object outside trap, fix at trap
+            temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
+            new_orbs_a[mask_in_trap] = temp_orbs_a
+
+            #If inside anti_trap migrate inwards
+            temp_orbs_a = new_orbs_a[mask_in_anti_trap] - migration_distance[mask_in_anti_trap]
+            new_orbs_a[mask_in_anti_trap] = temp_orbs_a
+
+
 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
