@@ -330,7 +330,7 @@ def main():
         ax2.legend(loc='lower left')
 
     ax2.grid('on', color='gray', ls='dotted')
-    plt.savefig(opts.plots_directory + "./q_chi_eff.png", format='png')  # ,dpi=600)
+    plt.savefig(opts.plots_directory + "/q_chi_eff.png", format='png')  # ,dpi=600)
     plt.close()
 
 
@@ -388,7 +388,7 @@ def main():
     elif figsize == 'apj_page':
         ax1.legend()
 
-    plt.savefig(opts.plots_directory + "./r_chi_p.png", format='png')
+    plt.savefig(opts.plots_directory + "/r_chi_p.png", format='png')
     plt.close()
 
     # plt.figure()

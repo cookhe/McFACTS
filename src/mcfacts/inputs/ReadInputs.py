@@ -592,7 +592,9 @@ def construct_disk_pAGN(
             #'epsilon': rad_efficiency
             #'le': disk_bh_eddington_ratio,\
         Rg = smbh_mass * ct.M_sun * ct.G / (ct.c**2)
-        base_args['Rout'] = disk_radius_outer * Rg.to('m').value
+        # pAGN TQM disk models exclude `Rout`, so feed pAGN a slightly
+        # larger value (+1%) than the user set for `disk_radius_outer`
+        base_args['Rout'] = 1.01 * disk_radius_outer * Rg.to('m').value
     else:
         raise RuntimeError("unknown disk model: %s"%(disk_model_name))
 
