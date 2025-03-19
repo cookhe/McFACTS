@@ -37,7 +37,7 @@ binary_field_names = "bin_orb_a1 bin_orb_a2 mass1 mass2 spin1 spin2 theta1 theta
 
 # columns to write for incremental data files
 merger_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final", "mass_1", "mass_2",
-               "spin_1", "spin_2", "spin_angle_1", "spin_angle_2", "gen_1", "gen_2", "time_merged", ] # emily fix dis
+               "spin_1", "spin_2", "spin_angle_1", "spin_angle_2", "gen_1", "gen_2", "time_merged", ]
 binary_cols = ["orb_a_1", "orb_a_2", "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
                "bin_sep", "bin_orb_a", "time_to_merger_gw", "flag_merging", "time_merged", "bin_ecc",
                "gen_1", "gen_2", "bin_orb_ang_mom", "bin_orb_inc", "bin_orb_ecc", "gw_freq", "gw_strain", "id_num"]
@@ -1012,7 +1012,7 @@ def main():
                 if bh_binary_id_num_ionization.size > 0:
                     # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
                     # For now add 2 new orb ecc term of 0.01. inclination is 0.0 as well. TO DO: calculate v_kick and resulting perturbation to orb ecc.
-                    # emily fix this
+                    
                     new_orb_ecc = eccentricity.ionized_orb_ecc(bh_binary_id_num_ionization.size * 2, opts.disk_bh_orb_ecc_max_init)
                     blackholes_pro.add_blackholes(
                         new_mass=np.concatenate([
