@@ -194,7 +194,11 @@ INPUT_TYPES = {
     "mass_pile_up"                  : float,
     "save_snapshots"                : bool,
     "mean_harden_energy_delta"      : float,
-    "var_harden_energy_delta"       : float
+    "var_harden_energy_delta"       : float,
+    "torque_prescription"           : str,
+    "flag_phenom_turb"              : int,
+    "phenom_turb_centroid"          : float,
+    "phenom_turb_std_dev"          : float
 }
 
 
