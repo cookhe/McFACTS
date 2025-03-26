@@ -95,7 +95,7 @@ mcfacts_sim: clean
 		python ../${MCFACTS_SIM_EXE} \
 		--galaxy_num 100 \
 		--fname-ini ../${FNAME_INI} \
-		--fname-log out.log \
+		--fname-log mcfacts.log \
 		--seed ${SEED}
 
 
@@ -144,7 +144,7 @@ kaila_stars_movie: clean
 		python ../${MCFACTS_SIM_EXE} \
 		--galaxy_num 100 \
 		--fname-ini ../${FNAME_INI} \
-		--fname-log out.log \
+		--fname-log mcfacts.log \
 		--seed ${SEED} \
 		--save-snapshots
 
@@ -213,7 +213,7 @@ clean:
 	rm -rf ${wd}/time_of_merger.png
 	rm -rf ${wd}/merger_remnant_mass.png
 	rm -rf ${wd}/gw_strain.png
-	rm -rf ${wd}/out.log
+	rm -rf ${wd}/mcfacts.log
 	rm -rf ${wd}/mergers_cdf*.png
 	rm -rf ${wd}/mergers_nal*.png
 	rm -rf ${wd}/r_chi_p.png
@@ -229,7 +229,7 @@ clean_win:
 	del /q .\time_of_merger.png
 	del /q .\merger_remnant_mass.png
 	del /q .\gw_strain.png
-	del /q .\out.log
+	del /q .\mcfacts.log
 	for /d %%i in (.\mergers_cdf*.png) do rd /s /q "%%i"
 	for /d %%i in (.\mergers_nal*.png) do rd /s /q "%%i"
 	del /q .\r_chi_p.png
