@@ -362,6 +362,9 @@ def main():
     plt.xlabel(r"$M_1$ [$M_\odot$]")
     plt.ylabel(r"$M_2$ [$M_\odot$]")
 
+    plt.xlim(-10, 310)
+    plt.ylim(-10, 310)
+
     if figsize == 'apj_col':
         plt.legend(fontsize=6, title='Merged stars')
     elif figsize == 'apj_page':
@@ -392,14 +395,40 @@ def main():
 
 
     # ========================================
+    # Merged and exploded stars vs time
+    # ========================================
+    fig = plt.figure(figsize=plotting.set_size(figsize))
+
+    plt.scatter(stars_merge[:, 2], stars_merge[:, 3], s=styles.markersize_gen1, marker="o", edgecolor=styles.color_gen1, facecolor="None", alpha=styles.markeralpha_gen1, label="Merged star")
+    plt.scatter(stars_explode[:, 2], stars_explode[:, 3], s=styles.markersize_gen1, marker="o", edgecolor=styles.color_gen2, facecolor="None", alpha=styles.markeralpha_gen1, label="Exploded star")
+
+    plt.xlabel(r"Radius [$R_{\rm g}$]")
+    plt.ylabel(r"Mass [$M_\odot$]")
+
+    plt.axvline(trap_radius, color='k', linestyle='--', zorder=0,
+                label=f'Trap Radius = {trap_radius} ' + r'$R_g$')
+
+    plt.xscale("log")
+
+    if figsize == 'apj_col':
+        plt.legend(fontsize=6)
+    elif figsize == 'apj_page':
+        plt.legend()
+
+    plt.savefig(opts.plots_directory + "/stars_merge_explode_radius.png", format="png")
+    plt.close()
+
+
+    # ========================================
     # Merged and exploded stars vs time histogram
     # ========================================
     fig = plt.figure(figsize=plotting.set_size(figsize))
 
     bins = np.linspace(0, stars_merge[:, 1].max()/1e6, int(np.sqrt(min(len(stars_merge[:, 1]), len(stars_explode[:, 1])))))
     bins = np.linspace(0, stars_merge[:, 1].max()/1e6, 20)
+    bins = np.arange(0, 0.5, 0.02)
 
-    plt.hist([stars_merge[:, 1]/1e6, stars_explode[:, 1]/1e6], bins=bins, color=["#D47B7C", styles.color_gen2], label=["Merged star", "Exploded star"], stacked=True)
+    plt.hist([stars_merge[:, 1]/1e6, stars_explode[:, 1]/1e6], bins=bins, color=[styles.color_gen1, styles.color_gen2], label=["Merged star", "Exploded star"], stacked=True)
 
     plt.xlabel(r"Time [Myr]")
     plt.ylabel(r"Number")
