@@ -546,8 +546,6 @@ def main():
         while time_passed < time_final:
             # Record snapshots if user wishes
             if opts.save_snapshots == 1:
-                print("stars_inner_disk.orb_a at write",stars_inner_disk.orb_a)
-
                 blackholes_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_pro_{timestep_current_num}.dat"))
                 blackholes_retro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_retro_{timestep_current_num}.dat"))
                 blackholes_inner_disk.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_inner_disk_{timestep_current_num}.dat"))
@@ -924,8 +922,8 @@ def main():
                                                new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** stars_pro.at_id_num(star_merged_id_num_new, "log_radius")) * u.Rsun).value,
                                                new_direction=np.ones(star_merged_id_num_new.size),
                                                new_disk_inner_outer=np.ones(star_merged_id_num_new.size))
-                    filing_cabinet.remove_id_num(star_touch_id_nums.flatten())
-                    stars_pro.remove_id_num(star_touch_id_nums.flatten())
+                    filing_cabinet.remove_id_num(np.unique(star_touch_id_nums.flatten()))
+                    stars_pro.remove_id_num(np.unique(star_touch_id_nums.flatten()))
 
                 # Star-BH encounters (circular stars and eccentric BH)
                 stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums = dynamics.circular_singles_encounters_prograde_star_bh(
@@ -1654,11 +1652,11 @@ def main():
                                                new_orb_a=stars_pro.at_id_num(star_merged_id_num_new, "orb_a"),
                                                new_mass=stars_pro.at_id_num(star_merged_id_num_new, "mass"),
                                                new_orb_ecc=stars_pro.at_id_num(star_merged_id_num_new, "orb_ecc"),
-                                               new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** stars_pro.at_id_num(star_merged_id_num_new, "log_radius")) * astropy_units.Rsun).value,
+                                               new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** stars_pro.at_id_num(star_merged_id_num_new, "log_radius")) * u.Rsun).value,
                                                new_direction=np.ones(star_merged_id_num_new.size),
                                                new_disk_inner_outer=np.ones(star_merged_id_num_new.size))
                     filing_cabinet.remove_id_num(starstar_id_nums.flatten())
-                    stars_pro.remove_id_nums(starstar_id_nums.flatten())
+                    stars_pro.remove_id_num(starstar_id_nums.flatten())
 
             # After this time period, was there a disk capture via orbital grind-down?
             # To do: What eccentricity do we want the captured BH to have? Right now ecc=0.0? Should it be ecc<h at a?             
@@ -1707,7 +1705,7 @@ def main():
             if opts.flag_add_stars:
                 capture_stars = time_passed % opts.capture_time_yr
                 if capture_stars == 0:
-                    num_star_captured = 2
+                    num_star_captured = 1
                     star_mass_captured = setupdiskstars.setup_disk_stars_masses(star_num=num_star_captured,
                                                                                 disk_star_mass_min_init=opts.disk_star_mass_min_init,
                                                                                 disk_star_mass_max_init=opts.disk_star_mass_max_init,
