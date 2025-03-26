@@ -14,6 +14,7 @@ from importlib import resources as impresources
 from mcfacts.vis import data
 from mcfacts.vis import plotting
 from mcfacts.vis import styles
+from mcfacts.outputs.ReadOutputs import ReadLog
 
 # Use the McFACTS plot style
 plt.style.use("mcfacts.vis.mcfacts_figures")
@@ -37,6 +38,9 @@ def arg():
     parser.add_argument("--fname-lvk",
                         default="output_mergers_lvk.dat",
                         type=str, help="output_lvk file")
+    parser.add_argument("--fname-log",
+                        default="mcfacts.log",
+                        type=str, help="log file")
     opts = parser.parse_args()
     print(opts.fname_mergers)
     assert os.path.isfile(opts.fname_mergers)
@@ -144,9 +148,11 @@ def main():
     # Merger Mass vs Radius
     # ========================================
 
-    # TQM has a trap at 500r_g, SG has a trap radius at 700r_g.
-    # trap_radius = 500
-    trap_radius = 700
+    # Read the log file
+    log_data = ReadLog(opts.fname_log)
+
+    # Retrieve the migration trap radius used in run
+    trap_radius = log_data["disk_radius_trap"]
 
     # plt.title('Migration Trap influence')
     for i in range(len(mergers[:, 1])):
@@ -190,7 +196,7 @@ def main():
                 )
 
     plt.axvline(trap_radius, color='k', linestyle='--', zorder=0,
-                label=f'Trap Radius = {trap_radius} ' + r'$R_g$')
+                label=f'Trap Radius = {trap_radius:.0f} ' + r'$R_g$')
 
     # plt.text(650, 602, 'Migration Trap', rotation='vertical', size=18, fontweight='bold')
     plt.ylabel(r'Remnant Mass [$M_\odot$]')
@@ -373,6 +379,9 @@ def main():
                 facecolor='none',
                 alpha=styles.markeralpha_genX,
                 label=r'$\geq$3g-Ng')
+    
+    plt.axvline(np.log10(trap_radius), color='k', linestyle='--', zorder=0,
+                label=f'Trap Radius = {trap_radius:.0f} ' + r'$R_g$')
 
     # plt.title("In-plane effective Spin vs. Merger radius")
     ax1.set(
