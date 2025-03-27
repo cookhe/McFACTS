@@ -8,7 +8,7 @@ Inifile
         Use pAGN to generate disk model?
     "flag_add_stars"                : int
         Add stars to the disk
-    "flag_initial_stars_BH_immortal": float
+    "flag_initial_stars_BH_immortal": int
         If stars over disk_star_initial_mass_cutoff turn into BH (0) or hold at cutoff (1, immortal)
     "smbh_mass"                     : float
         Mass of the supermassive black hole (solMass)
