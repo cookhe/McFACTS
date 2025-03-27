@@ -82,7 +82,6 @@ def ReadLog(fname_log, verbose=0):
         # Strip the values of any whitespace
         key = key.strip()
         value = value.strip()
-        print(key, value)
         # Convert the values
         if key in OUTPUT_TYPES:
             log_dict[key] = value
@@ -96,7 +95,7 @@ def ReadLog(fname_log, verbose=0):
     # Warning if extra values are found
     if len(extra_values) > 0:
         print(f"~~~~~~~~~~~~~~~~~~~~~~\n",
-               "[ReadLog] Warning!: The log file you're using contains additional\n",
+               "[ReadOutputs.py] Warning!: The log file you're using contains additional\n",
                "entries not found in OUTPUT_TYPES. They have been added to the log\n",
                "dictionary as a STRING type. Please verify their types before you\n",
                "use them in your analysis or add them to the OUTPUT_TYPES dictionary.")
