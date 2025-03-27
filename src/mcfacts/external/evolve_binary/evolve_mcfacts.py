@@ -22,7 +22,7 @@ HERE = '/Users/sray/Documents/1Saavik_Barry/test_mcfacts'
 
 #### Scripts ####
 # Change final number of zeros depending on how many galaxies are initialized (example: 1 galaxy - 'runs/gal0'; 10 galaxies - 'runs/gal00'; 100 galaxies -'runs/gal000')
-MCFACTS_RUNS_GAL = HERE + '/runs/gal0'
+MCFACTS_RUNS_GAL = HERE + '/runs/gal000'
 MCFACTS_RUNS = HERE + '/runs'
 
 # Code that will match the number of objects and galaxies being run without the user having to change it manually
@@ -31,7 +31,7 @@ objects = int((len([entry for entry in os.listdir(dir_path) if os.path.isfile(os
 galaxies = len(next(os.walk(MCFACTS_RUNS))[1])
 
 # Change value of n - zfill(n) - to match the order of magnitude of number of galaxies being run
-gal = [str(i).zfill(1) for i in range(galaxies)]
+gal = [str(i).zfill(3) for i in range(galaxies)]
 obj = [str(i) for i in range(objects)]
 runs = [[] for _ in range(len(gal))]
 
@@ -119,68 +119,67 @@ for i in range(len(gal)):
             if bh_prev.empty:
                 print('no previously merged binaries')
             else:
-                for values in bh_prev:
+                for k, values in enumerate(bh_prev):
                     print('binary ', values, ' has merged...beginning surrogate model')
                     #merger_counter_obj.append(obj[j])
-                    for k in range(len(act_bin_prev['mass_1'])):
-                        mass_1 = act_bin_prev['mass_1'][k]
-                        mass_2 = act_bin_prev['mass_2'][k]
-                        spin_1_mag = act_bin_prev['spin_1'][k]
-                        spin_2_mag = act_bin_prev['spin_2'][k]
-                        spin_angle_1 = act_bin_prev['spin_angle_1'][k]
-                        spin_angle_2 = act_bin_prev['spin_angle_2'][k]
-                        radius = act_bin_prev['bin_orb_a'][k]
-                        gen_1 = act_bin_prev['gen_1'][k]
-                        gen_2 = act_bin_prev['gen_2'][k]
-                        phi_12 = spin_angle_2 - spin_angle_1
-                        # This should be in units of mass_1 + mass_2
-                        bin_sep = 1000
-                        bin_inc = [0, 0, 1]
-                        bin_phase = 0
-                        # These next three are used to correct the remnant velocity;
-                        # If they are None, no correction is applied.
-                        bin_orb_a = None
-                        mass_SMBH = None
-                        spin_SMBH = None
+                    mass_1 = act_bin_prev['mass_1'][k]
+                    mass_2 = act_bin_prev['mass_2'][k]
+                    spin_1_mag = act_bin_prev['spin_1'][k]
+                    spin_2_mag = act_bin_prev['spin_2'][k]
+                    spin_angle_1 = act_bin_prev['spin_angle_1'][k]
+                    spin_angle_2 = act_bin_prev['spin_angle_2'][k]
+                    radius = act_bin_prev['bin_orb_a'][k]
+                    gen_1 = act_bin_prev['gen_1'][k]
+                    gen_2 = act_bin_prev['gen_2'][k]
+                    phi_12 = spin_angle_2 - spin_angle_1
+                    # This should be in units of mass_1 + mass_2
+                    bin_sep = 1000
+                    bin_inc = [0, 0, 1]
+                    bin_phase = 0
+                    # These next three are used to correct the remnant velocity;
+                    # If they are None, no correction is applied.
+                    bin_orb_a = None
+                    mass_SMBH = None
+                    spin_SMBH = None
 
-                        surrogate = fit_modeler.GPRFitters.read_from_file(f"surrogate.joblib")
+                    surrogate = fit_modeler.GPRFitters.read_from_file(f"surrogate.joblib")
 
-                        start = time.time()
-                        M_f, spin_f, v_f = evolve_binary.evolve_binary(
-                            mass_1,
-                            mass_2,
-                            spin_1_mag,
-                            spin_2_mag,
-                            spin_angle_1,
-                            spin_angle_2,
-                            phi_12,
-                            bin_sep,
-                            bin_inc,
-                            bin_phase,
-                            bin_orb_a,
-                            mass_SMBH,
-                            spin_SMBH,
-                            surrogate,
-                            verbose=True,
-                        )
-                        end = time.time()
-                        
-                        run_time = end - start
+                    start = time.time()
+                    M_f, spin_f, v_f = evolve_binary.evolve_binary(
+                        mass_1,
+                        mass_2,
+                        spin_1_mag,
+                        spin_2_mag,
+                        spin_angle_1,
+                        spin_angle_2,
+                        phi_12,
+                        bin_sep,
+                        bin_inc,
+                        bin_phase,
+                        bin_orb_a,
+                        mass_SMBH,
+                        spin_SMBH,
+                        surrogate,
+                        verbose=True,
+                    )
+                    end = time.time()
+                    
+                    run_time = end - start
 
-                        mass_final.append(M_f)
-                        spin_final.append(spin_f)
-                        velocity_final.append(v_f)
-                        radius_final.append(radius)
-                        '''# Checking generation values to ensure that correct generation of remnant is allocated
-                        if int(gen_1) == 1 or int(gen_2) == 1:
-                            gen_final.append(gen_1 + gen_2)
+                    mass_final.append(M_f)
+                    spin_final.append(spin_f)
+                    velocity_final.append(v_f)
+                    radius_final.append(radius)
+                    '''# Checking generation values to ensure that correct generation of remnant is allocated
+                    if int(gen_1) == 1 or int(gen_2) == 1:
+                        gen_final.append(gen_1 + gen_2)
+                    else:
+                        if int(gen_1) > int(gen_2):
+                            gen_final.append(gen_1 + 1)
+                        elif int(gen_2) > int(gen_1):
+                            gen_final.append(gen_2 + 1)
                         else:
-                            if int(gen_1) > int(gen_2):
-                                gen_final.append(gen_1 + 1)
-                            elif int(gen_2) > int(gen_1):
-                                gen_final.append(gen_2 + 1)
-                            else:
-                                gen_final.append(gen_1 + 1)'''
+                            gen_final.append(gen_1 + 1)'''
                         
                     print("M_f = ", M_f)
                     print("spin_f = ", spin_f)
@@ -211,77 +210,76 @@ for i in range(len(gal)):
                 else:
                     print('binary ', value, ' has not yet mergered')
             
-            for value in bh_prev:
+            for k, value in enumerate(bh_prev):
                 if value not in bh:
                     print('binary ', value, ' has merged...beginning surrogate model')
                     #merger_counter_obj.append(obj[j])
-                    for k in range(len(act_bin_prev['mass_1'])):
-                        mass_1 = act_bin_prev['mass_1'][k]
-                        mass_2 = act_bin_prev['mass_2'][k]
-                        spin_1_mag = act_bin_prev['spin_1'][k]
-                        spin_2_mag = act_bin_prev['spin_2'][k]
-                        spin_angle_1 = act_bin_prev['spin_angle_1'][k]
-                        spin_angle_2 = act_bin_prev['spin_angle_2'][k]
-                        radius = act_bin_prev['bin_orb_a'][k]
-                        gen_1 = act_bin_prev['gen_1'][k]
-                        gen_2 = act_bin_prev['gen_2'][k]
-                        phi_12 = spin_angle_2 - spin_angle_1
-                        # This should be in units of mass_1 + mass_2
-                        bin_sep = 1000
-                        bin_inc = [0, 0, 1]
-                        bin_phase = 0
-                        # These next three are used to correct the remnant velocity;
-                        # If they are None, no correction is applied.
-                        bin_orb_a = None
-                        mass_SMBH = None
-                        spin_SMBH = None
+                    mass_1 = act_bin_prev['mass_1'][k]
+                    mass_2 = act_bin_prev['mass_2'][k]
+                    spin_1_mag = act_bin_prev['spin_1'][k]
+                    spin_2_mag = act_bin_prev['spin_2'][k]
+                    spin_angle_1 = act_bin_prev['spin_angle_1'][k]
+                    spin_angle_2 = act_bin_prev['spin_angle_2'][k]
+                    radius = act_bin_prev['bin_orb_a'][k]
+                    gen_1 = act_bin_prev['gen_1'][k]
+                    gen_2 = act_bin_prev['gen_2'][k]
+                    phi_12 = spin_angle_2 - spin_angle_1
+                    # This should be in units of mass_1 + mass_2
+                    bin_sep = 1000
+                    bin_inc = [0, 0, 1]
+                    bin_phase = 0
+                    # These next three are used to correct the remnant velocity;
+                    # If they are None, no correction is applied.
+                    bin_orb_a = None
+                    mass_SMBH = None
+                    spin_SMBH = None
 
-                        surrogate = fit_modeler.GPRFitters.read_from_file(f"surrogate.joblib")
+                    surrogate = fit_modeler.GPRFitters.read_from_file(f"surrogate.joblib")
 
-                        start = time.time()
-                        M_f, spin_f, v_f = evolve_binary.evolve_binary(
-                            mass_1,
-                            mass_2,
-                            spin_1_mag,
-                            spin_2_mag,
-                            spin_angle_1,
-                            spin_angle_2,
-                            phi_12,
-                            bin_sep,
-                            bin_inc,
-                            bin_phase,
-                            bin_orb_a,
-                            mass_SMBH,
-                            spin_SMBH,
-                            surrogate,
-                            verbose=False,
-                        )
-                        end = time.time()
-                        
-                        run_time = end - start
+                    start = time.time()
+                    M_f, spin_f, v_f = evolve_binary.evolve_binary(
+                        mass_1,
+                        mass_2,
+                        spin_1_mag,
+                        spin_2_mag,
+                        spin_angle_1,
+                        spin_angle_2,
+                        phi_12,
+                        bin_sep,
+                        bin_inc,
+                        bin_phase,
+                        bin_orb_a,
+                        mass_SMBH,
+                        spin_SMBH,
+                        surrogate,
+                        verbose=False,
+                    )
+                    end = time.time()
+                    
+                    run_time = end - start
 
-                        # These values are the surrogate outputs for each binary system that goes through a merger event
-                        mass_final.append(M_f)
-                        spin_final.append(spin_f)
-                        velocity_final.append(v_f)
-                        radius_final.append(radius)
-                        
-                        '''# Checking generation values to ensure that correct generation of remnant is allocated
-                        if int(gen_1) == 1 or int(gen_2) == 1:
-                            gen_final.append(gen_1 + gen_2)
+                    # These values are the surrogate outputs for each binary system that goes through a merger event
+                    mass_final.append(M_f)
+                    spin_final.append(spin_f)
+                    velocity_final.append(v_f)
+                    radius_final.append(radius)
+                    
+                    '''# Checking generation values to ensure that correct generation of remnant is allocated
+                    if int(gen_1) == 1 or int(gen_2) == 1:
+                        gen_final.append(gen_1 + gen_2)
+                    else:
+                        if int(gen_1) > int(gen_2):
+                            gen_final.append(gen_1 + 1)
+                        elif int(gen_2) > int(gen_1):
+                            gen_final.append(gen_2 + 1)
                         else:
-                            if int(gen_1) > int(gen_2):
-                                gen_final.append(gen_1 + 1)
-                            elif int(gen_2) > int(gen_1):
-                                gen_final.append(gen_2 + 1)
-                            else:
-                                gen_final.append(gen_1 + 1)'''
-                        
-                        # ============= Need to incorporate starting mass to determine the initial mass compared to final mass after merger =============
-                        starting_mass1.append(mass_1)
-                        starting_mass2.append(mass_2)
-                        starting_spin1.append(spin_1)
-                        starting_spin2.append(spin_2)
+                            gen_final.append(gen_1 + 1)'''
+                    
+                    # ============= Need to incorporate starting mass to determine the initial mass compared to final mass after merger =============
+                    starting_mass1.append(mass_1)
+                    starting_mass2.append(mass_2)
+                    starting_spin1.append(spin_1)
+                    starting_spin2.append(spin_2)
                         
                     print("M_f = ", M_f)
                     print("spin_f = ", spin_f)
@@ -442,4 +440,10 @@ plt.scatter(plot_radius, plot_mass)
 plt.xlabel('Radius ' r'($R_g$)')
 plt.ylabel('Remnant ' r'Mass ($M_{\odot}$)')
 plt.title('Merger mass at radius from SMBH ('r'$R_g$'')')
+plt.show()
+
+plt.scatter(vel_mag, chi_mag)
+plt.xlabel('Kick velocity (%c)')
+plt.ylabel('Spin')
+plt.title('Remnant spin per kick velocity')
 plt.show()

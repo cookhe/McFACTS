@@ -27,6 +27,9 @@ from mcfacts.physics import stellar_interpolation
 from mcfacts.physics import point_masses
 from mcfacts.physics import lum
 from mcfacts.physics import analytical_velo
+from mcfacts.physics import evolve_bin
+from mcfacts.external.evolve_binary import evolve_binary
+from mcfacts.external.evolve_binary import fit_modeler
 
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
@@ -1372,6 +1375,25 @@ def main():
                         bh_binary_id_num_merger = blackholes_binary.id_num[blackholes_binary.flag_merging < 0]
 
                     if (bh_binary_id_num_merger.size > 0):
+                        '''
+                        surrogate = fit_modeler.GPRFitters.read_from_file(f"surrogate.joblib")
+                        bh_mass_merged_sur, bh_spin_merged_sur, bh_kick_merged_sur = evolve_bin.surrogate(
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
+                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2") - blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
+                                1000, # binary seperation - in units of mass_1+mass_2 - shawn need to optimize seperation to speed up processing time 
+                                [0, 0, 1], # binary inclination - cartesian coords
+                                0, # binary phase angle - radians?
+                                # the following three None values are any correction needed to the values
+                                None, # bin_orb_a
+                                None, # mass_smbh
+                                None, # spin_smbh
+                                surrogate
+                            )'''
 
                         bh_mass_merged = merge.merged_mass(
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
@@ -2251,7 +2273,7 @@ def main():
     bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
     population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p", "lum_shock", "lum_jet"] # add "v_kick", to incorp
+                       "gen_1", "gen_2", "time_merged", "chi_p", "lum_shock", "lum_jet"]
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
     stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",

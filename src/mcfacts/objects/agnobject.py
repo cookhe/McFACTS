@@ -1437,6 +1437,8 @@ class AGNMergedBlackHole(AGNObject):
             effective spin prior to merger
         new_chi_p : numpy array
             precessing spin component of the binary prior to merger
+        new_v_kick: numpy array
+            merger remnant kick velocity in units %c
         new_lum_shock
         new_lum_jet
         # emily add
