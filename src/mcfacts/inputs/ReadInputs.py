@@ -123,6 +123,12 @@ Inifile
         Innermost Stable Circular Orbit around SMBH
     "mass_pile_up"                  : float
         Pile-up of masses caused by cutoff (M_sun)
+    "save_snapshots"
+        Save snapshots of the disk and NSC at each timestep
+    "mean_harden_energy_delta"
+        The Gaussian mean value for the energy change during a strong interaction
+    "var_harden_energy_delta"
+        The Gaussian variance value for the energy change during a strong interaction
 """
 # Things everyone needs
 import configparser as ConfigParser
