@@ -84,7 +84,10 @@ def ReadLog(fname_log, verbose=0):
         value = value.strip()
         # Convert the values
         if key in OUTPUT_TYPES:
-            log_dict[key] = value
+            log_dict[key] = OUTPUT_TYPES[key](value)
+        # Store unexpected lines to report below
+        if not (key in OUTPUT_TYPES):
+            log_dict[key] = OUTPUT_TYPES[key](value)
             extra_values[key] = value
         
     # Print the dictionary
@@ -95,9 +98,9 @@ def ReadLog(fname_log, verbose=0):
     # Warning if extra values are found
     if len(extra_values) > 0:
         print(f"~~~~~~~~~~~~~~~~~~~~~~\n",
-               "[ReadOutputs.py] Warning!: The log file you're using contains additional\n",
-               "entries not found in OUTPUT_TYPES. They have been added to the log\n",
-               "dictionary as a STRING type. Please verify their types before you\n",
+               f"[ReadOutputs.py] Warning!: The log file you're using contains {len(extra_values)} additional"
+               "entries not found in OUTPUT_TYPES. They have been added to the log"
+               "dictionary as a STRING type. Please verify their types before you"
                "use them in your analysis or add them to the OUTPUT_TYPES dictionary.")
         for key, value in extra_values.items():
             print(f"  {key}: {value}")

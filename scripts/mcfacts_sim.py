@@ -176,10 +176,15 @@ def arg():
     # Write parameters to log file
     with open(opts.work_directory / opts.fname_log, 'w') as F:
         for item in opts.__dict__:
-            line = "%s = %s\n" % (item, str(opts.__dict__[item]))
+            # Convert booleans to integers
+            if opts.__dict__[item] == False:
+                line = "%s = %s\n" % (item, 0)
+            elif opts.__dict__[item] == True:
+                line = "%s = %s\n" % (item, 1)
+            else: # everything else
+                line = "%s = %s\n" % (item, str(opts.__dict__[item]))
             F.write(line)
     return opts
-
 
 def main():
     """
