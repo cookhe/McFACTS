@@ -69,8 +69,8 @@ def arg():
     parser.add_argument("--fname-output", default="output.dat",
                         help="output file (if any)", type=str)
     parser.add_argument("--fname-snapshots-bh",
-                        default="output_bh_[single|binary]_$(index).dat",
-                        help="output of BH index file ")
+                        default="output_bh_[single|binary]_pro_$(timestep_current_num).dat",
+                        help="output of BH snapshot file ")
     parser.add_argument("--save-snapshots", action='store_true')
     parser.add_argument("--verbose", action='store_true')
     parser.add_argument("-w", "--work-directory",
@@ -80,8 +80,8 @@ def arg():
                         )
     parser.add_argument("--seed", type=int, default=None,
                         help="Set the random seed. Randomly sets one if not passed. Default: None")
-    parser.add_argument("--fname-log", default="mcfacts_sim.log", type=str,
-                        help="Specify a file to save the arguments for mcfacts")
+    parser.add_argument("--fname-log", default="mcfacts.log", type=str,
+                        help="Specify a file in which to save the arguments and some runtime information. Default: mcfacts.log")
 
     # Add inifile arguments
     # Read default inifile
@@ -176,10 +176,15 @@ def arg():
     # Write parameters to log file
     with open(opts.work_directory / opts.fname_log, 'w') as F:
         for item in opts.__dict__:
-            line = "%s = %s\n" % (item, str(opts.__dict__[item]))
+            # Convert booleans to integers
+            if opts.__dict__[item] == False:
+                line = "%s = %s\n" % (item, 0)
+            elif opts.__dict__[item] == True:
+                line = "%s = %s\n" % (item, 1)
+            else: # everything else
+                line = "%s = %s\n" % (item, str(opts.__dict__[item]))
             F.write(line)
     return opts
-
 
 def main():
     """
