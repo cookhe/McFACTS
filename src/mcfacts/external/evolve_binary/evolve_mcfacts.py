@@ -1,12 +1,13 @@
 import juliacall
 import numpy as np
-import fit_modeler
-import evolve_binary
 import pandas as pd
 import time, os
-import surrogate
 from astropy import constants as const
 import matplotlib.pyplot as plt
+
+from mcfacts.external.evolve_binary import fit_modeler
+from mcfacts.external.evolve_binary import evolve_binary
+from mcfacts.external.evolve_binary import surrogate
 
 from mcfacts.vis import plotting
 from mcfacts.vis import styles

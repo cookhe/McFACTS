@@ -2,7 +2,7 @@ import numpy as np
 import quaternionic
 from sxs import WaveformModes
 
-import fit_modeler
+from mcfacts.external.evolve_binary import fit_modeler
 
 import juliacall
 
