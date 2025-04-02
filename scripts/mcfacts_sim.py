@@ -1375,8 +1375,8 @@ def main():
                         bh_binary_id_num_merger = blackholes_binary.id_num[blackholes_binary.flag_merging < 0]
 
                     if (bh_binary_id_num_merger.size > 0):
-                        '''
-                        surrogate = fit_modeler.GPRFitters.read_from_file(f"surrogate.joblib")
+                        
+                        surrogate = fit_modeler.GPRFitters.read_from_file(f"../src/mcfacts/inputs/data/surrogate.joblib")
                         bh_mass_merged_sur, bh_spin_merged_sur, bh_kick_merged_sur = evolve_bin.surrogate(
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
@@ -1393,8 +1393,8 @@ def main():
                                 None, # mass_smbh
                                 None, # spin_smbh
                                 surrogate
-                            )'''
-
+                            )
+                        print("bh_mass_merged_sur :", bh_spin_merged_sur, bh_kick_merged_sur)
                         bh_mass_merged = merge.merged_mass(
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
