@@ -8,12 +8,15 @@ from pagn import Thompson
 from pagn import Sirko
 import scipy.interpolate
 
+from mcfacts.physics import point_masses
+
+from astropy import units as astropy_units
 
 class AGNGasDiskModel(object):
-    def __init__(self, disk_type="Sirko",**kwargs):
-        self.disk_type=disk_type
+    def __init__(self, disk_type="Sirko", **kwargs):
+        self.disk_type = disk_type
         if self.disk_type == "Sirko":
-            self.disk_model  = Sirko.SirkoAGN(**kwargs)
+            self.disk_model = Sirko.SirkoAGN(**kwargs)
         else:
             self.disk_model = Thompson.ThompsonAGN(**kwargs)
         self.disk_model.solve_disk(N=1e4)
@@ -26,12 +29,14 @@ class AGNGasDiskModel(object):
         obj: object
         Python object representing a solved AGN disk either from the Sirko & Goodman model
         or from the Thompson model
-        
+
+
         """
-        pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
-        prad = 4 * ct.sigmaSB * (sk.T ** 4) / (3 * ct.c)
-        cs = np.sqrt((pgas + prad) / (sk.rho))
-        omega = self.disk_model.Omega
+        #pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
+        #prad = 4 * ct.sigmaSB * (self.disk_model.T ** 4) / (3 * ct.c)
+        #cs = np.sqrt((pgas + prad) / (self.disk_model.rho))
+        cs = self.disk_model.h * self.disk_model.Omega
+        Omega = self.disk_model.Omega
         rho = self.disk_model.rho
         h = self.disk.model.h
         T = self.disk_model.T
@@ -43,21 +48,21 @@ class AGNGasDiskModel(object):
         else:
             np.savetxt(filename, np.vstack((R/ct.pc, Omega, T, rho, h, cs, tauV, Q)).T)
 
-    def return_disk_surf_model(self, flag_truncate_disk=False):
+    def return_disk_surf_model(self, flag_truncate_disk=0):
         """Generate disk surface model functions
 
         Interpolate and return disk surface model functions as a function of the disk radius.
           1) surface density (Sigma = 2 rho H) in  kg/m^2 given distance from SMBH in r_g = r_s/2
           2) aspect ratio (h/r)
           3) opacity (kappa = 2 * tau / Sigma) in m^2/kg
-          
+
         Default pagn internal units are SI.
-        
+
         Parameters
         ----------
-        flag_truncate_disk : bool, optional
-            If `True`, truncate these functions at the radius where star formation starts
-            in the gas disk. If `False`, do not truncate. By default `False`.
+        flag_truncate_disk : int, optional
+            If 1, truncate these functions at the radius where star formation starts
+            in the gas disk. If 0, do not truncate. By default 0.
 
         Returns
         -------
@@ -70,32 +75,45 @@ class AGNGasDiskModel(object):
         bonus_structures : dict
             Other disk model things we may want, which are only available
             for pAGN models
-            
+
         """
 
         # convert to R_g (=R/( M G/c^2) explicitly, using internal structures
         R = self.disk_model.R / (self.disk_model.Rs / 2)
         R_agn = self.disk_model.R_AGN / (self.disk_model.Rs / 2)
         Sigma = 2 * self.disk_model.h * self.disk_model.rho  # SI density
-        kappa = 2 * self.disk_model.tauV / Sigma # Opacity = 2*tau/Sigma
+        kappa = 2 * self.disk_model.tauV / Sigma  # Opacity = 2*tau/Sigma
+        cs = self.disk_model.h * self.disk_model.Omega
+        temp_midplane = self.disk_model.T # Disk midplane temp (K)
+        
 
         if flag_truncate_disk: # truncate to gas part of disk (no SFR)
             R = R[:self.disk_model.isf]
             Sigma = Sigma[:self.disk_model.isf]
             kappa = kappa[:self.disk_model.isf]
+            cs = cs[:self.disk_model.isf]
+        #Temp interpolator function
+        ln_temp_midplane = np.log(temp_midplane) # ln midplane temp.
+        temp_func_log = scipy.interpolate.CubicSpline(
+                                                            np.log(R),
+                                                            ln_temp_midplane,
+                                                            extrapolate=False
+                                                            )
+        temp_func = lambda x, f=temp_func_log: np.exp(f(np.log(x)))
 
         # Generate surface density (Sigma) interpolator function
-        ln_Sigma = np.log(Sigma) # log of SI density
+        ln_Sigma = np.log(Sigma)  # log of SI density
         surf_dens_func_log = scipy.interpolate.CubicSpline(
                                                            np.log(R),
                                                            ln_Sigma,
                                                            extrapolate=False
                                                            )
+        
         surf_dens_func = lambda x, f=surf_dens_func_log: np.exp(f(np.log(x)))
 
         # Generate aspect ratio (h/r) interpolator function
         ln_aspect_ratio = np.log(self.disk_model.h/self.disk_model.R)
-        #if flag_truncate_disk: # truncate to gas part of disk (no SFR)
+        # if flag_truncate_disk: # truncate to gas part of disk (no SFR)
         #    ln_aspect_ratio = ln_aspect_ratio[:self.disk_model.isf]
         aspect_func_log = scipy.interpolate.CubicSpline(
                                                         np.log(R),
@@ -113,6 +131,44 @@ class AGNGasDiskModel(object):
                                                          )
         opacity_func = lambda x, f=opacity_func_log: np.exp(f(np.log(x)))
 
+        # Generate sound speed (cs) interpolator function
+        ln_cs = np.log(cs)
+        sound_speed_func_log = scipy.interpolate.CubicSpline(
+                                                           np.log(R),
+                                                           ln_cs,
+                                                           extrapolate=False
+                                                           )
+        sound_speed_func = lambda x, f=sound_speed_func_log: np.exp(f(np.log(x)))
+
+        # Generate disk density (rho) interpolator function
+        ln_rho = np.log(self.disk_model.rho)
+        disk_density_func_log = scipy.interpolate.CubicSpline(
+                                                    np.log(R),
+                                                    ln_rho,
+                                                    extrapolate=False
+                                                    )
+        disk_density_func = lambda x, f=disk_density_func_log: np.exp(f(np.log(x)))
+
+        # Generate disk pressure gradient (dP/dR) interpolator function
+        pgas = self.disk_model.rho * self.disk_model.T * ct.Kb / ct.massU
+        prad = self.disk_model.tauV * ct.sigmaSB * self.disk_model.Teff4 / (2 * ct.c)
+        ptot = pgas + prad
+        disk_pressure_grad_func_interp = scipy.interpolate.CubicSpline(
+                                                                self.disk_model.R,
+                                                                np.gradient(ptot)/np.gradient(self.disk_model.R),
+                                                                extrapolate=False)
+        disk_pressure_grad_func = lambda x, f=disk_pressure_grad_func_interp: f(point_masses.si_from_r_g(
+            self.disk_model.Mbh * astropy_units.kg, x).value)
+
+        # Generate disk Omega interpolator function
+        ln_omega = np.log(self.disk_model.Omega)
+        disk_omega_func_log = scipy.interpolate.CubicSpline(
+                                                          np.log(R),
+                                                          ln_omega,
+                                                          extrapolate=False
+                                                          )
+        disk_omega_func = lambda x, f=disk_omega_func_log: np.exp(f(np.log(x)))
+
         bonus_structures = {}
         bonus_structures['R_agn'] = R_agn
         bonus_structures['R'] = R
@@ -123,7 +179,7 @@ class AGNGasDiskModel(object):
         bonus_structures["T"] = self.disk_model.T
         bonus_structures["tauV"] = self.disk_model.tauV
 
-        return surf_dens_func, aspect_func, opacity_func, bonus_structures
+        return surf_dens_func, aspect_func, opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, surf_dens_func_log, temp_func, bonus_structures
 
 
 
@@ -223,11 +279,11 @@ def dSigmadR(obj):
         Discrete array of the log surface density gradient.
 
     """
-    Sigma = 2*obj.rho*obj.h # descrete
-    rlog10 = np.log10(obj.R)  # descrete
-    Sigmalog10 = np.log10(Sigma)  # descrete
-    Sigmalog10_spline = UnivariateSpline(rlog10, Sigmalog10, k=3, s=0.005, ext=0)  # need scipy ver 1.10.0
-    dSigmadR_spline =  Sigmalog10_spline.derivative()
+    Sigma = 2*obj.rho*obj.h  # discrete
+    rlog10 = np.log10(obj.R)  # discrete
+    Sigmalog10 = np.log10(Sigma)  # discrete
+    Sigmalog10_spline = scipy.interpolate.UnivariateSpline(rlog10, Sigmalog10, k=3, s=0.005, ext=0)  # need scipy ver 1.10.0
+    dSigmadR_spline = Sigmalog10_spline.derivative()
     dSigmadR = dSigmadR_spline(rlog10)
     return dSigmadR
 
@@ -249,7 +305,7 @@ def dTdR(obj):
     """
     rlog10 = np.log10(obj.R)  # descrete
     Tlog10 = np.log10(obj.T)  # descrete
-    Tlog10_spline = UnivariateSpline(rlog10, Tlog10, k=3, s=0.005, ext=0)  # need scipy ver 1.10.0
+    Tlog10_spline = scipy.interpolate.UnivariateSpline(rlog10, Tlog10, k=3, s=0.005, ext=0)  # need scipy ver 1.10.0
     dTdR_spline = Tlog10_spline.derivative()
     dTdR = dTdR_spline(rlog10)
     return dTdR
@@ -275,7 +331,7 @@ def dPdR(obj):
     prad = obj.tauV*ct.sigmaSB*obj.Teff4/(2*ct.c)
     ptot = pgas + prad
     Plog10 = np.log10(ptot)  # descrete
-    Plog10_spline = UnivariateSpline(rlog10, Plog10, k=3, s=0.005, ext=0)  # need scipy ver 1.10.0
+    Plog10_spline = scipy.interpolate.UnivariateSpline(rlog10, Plog10, k=3, s=0.005, ext=0)  # need scipy ver 1.10.0
     dPdR_spline = Plog10_spline.derivative()
     dPdR = dPdR_spline(rlog10)
     return dPdR
@@ -399,7 +455,7 @@ def gamma_thermal(gamma, obj, q):
     mbh = obj.Mbh*q
     muth = xi * obj.cs / (ct.G * mbh)
     R_Bhalf = ct.G*mbh/obj.cs**2
-    muth[obj.h<R_Bhalf] = (xi / (obj.cs*obj.h))[obj.h<R_Bhalf]
+    muth[obj.h < R_Bhalf] = (xi / (obj.cs*obj.h))[obj.h < R_Bhalf]
 
     Lc = 4*np.pi*ct.G*mbh*obj.rho*xi/gamma
     lam = np.sqrt(2*xi/(3*gamma*obj.Omega))

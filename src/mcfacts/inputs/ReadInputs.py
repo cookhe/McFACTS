@@ -4,10 +4,12 @@ Inifile
 -------
     "disk_model_name"               : str
         'sirko_goodman' or 'thompson_etal'
-    "flag_use_pagn"                 : bool
+    "flag_use_pagn"                 : int
         Use pAGN to generate disk model?
-    "flag_add_stars"                : bool
+    "flag_add_stars"                : int
         Add stars to the disk
+    "flag_initial_stars_BH_immortal": int
+        If stars over disk_star_initial_mass_cutoff turn into BH (0) or hold at cutoff (1, immortal)
     "smbh_mass"                     : float
         Mass of the supermassive black hole (solMass)
     "disk_radius_trap"              : float
@@ -68,13 +70,12 @@ Inifile
         Initial mass distribution for stars is assumed Salpeter
     "nsc_imf_star_powerlaw_index"   : float
         Initial mass distribution for stars is assumed Salpeter, disk_alpha_viscosity = 2.35
-    "nsc_imf_star_mass_modex"       : float
+    "disk_star_scale_factor"        : float
+        Scale factor to go from number of BH to number of stars.
+    "disk_star_initial_mass_cutoff" : float
+        Cutoff for initial star behavior
+    "nsc_imf_star_mass_mode"       : float
         Mass mode for star IMF
-    "nsc_star_spin_dist_mu"         : float
-        Initial spin distribution for stars is assumed to be Gaussian
-    "nsc_star_spin_dist_sigma"      : float
-        Initial spin distribution for stars is assumed to be Gaussian
-        --standard deviation of spin dist
     "disk_star_torque_condition"    : float
         fraction of initial mass required to be accreted before star spin is torqued
         fully into alignment with the AGN disk. We don't know for sure but
@@ -101,9 +102,6 @@ Inifile
         Fraction of BBH that form retrograde to test (q,X_eff) relation. Default retro=0.1
     "flag_thermal_feedback"         : int
         Switch (1) turns feedback from embedded BH on.
-    "thermal_feedback_ratio_max"    : float
-        Impose this limit on the ratio of feedback to migration torques to prevent runaway
-        outward migration in low opacity disks
     "flag_orb_ecc_damping"          : int
         Switch (1) turns orb. ecc damping on.
         If switch = 0, assumes all bh are circularized (at e=e_crit)
@@ -125,6 +123,12 @@ Inifile
         Innermost Stable Circular Orbit around SMBH
     "mass_pile_up"                  : float
         Pile-up of masses caused by cutoff (M_sun)
+    "save_snapshots"
+        Save snapshots of the disk and NSC at each timestep
+    "mean_harden_energy_delta"
+        The Gaussian mean value for the energy change during a strong interaction
+    "var_harden_energy_delta"
+        The Gaussian variance value for the energy change during a strong interaction
 """
 # Things everyone needs
 import configparser as ConfigParser
@@ -143,8 +147,9 @@ from astropy import constants as ct
 # Dictionary of types
 INPUT_TYPES = {
     "disk_model_name"               : str,
-    "flag_use_pagn"                 : bool,
-    "flag_add_stars"                : bool,
+    "flag_use_pagn"                 : int,
+    "flag_add_stars"                : int,
+    "flag_initial_stars_BH_immortal": int,
     "smbh_mass"                     : float,
     "disk_radius_trap"              : float,
     "disk_radius_outer"             : float,
@@ -170,9 +175,9 @@ INPUT_TYPES = {
     "disk_star_mass_max_init"       : float,
     "disk_star_mass_min_init"       : float,
     "nsc_imf_star_powerlaw_index"   : float,
+    "disk_star_scale_factor"        : float,
+    "disk_star_initial_mass_cutoff" : float,
     "nsc_imf_star_mass_mode"        : float,
-    "nsc_star_spin_dist_mu"         : float,
-    "nsc_star_spin_dist_sigma"      : float,
     "disk_star_torque_condition"    : float,
     "disk_star_eddington_ratio"     : float,
     "disk_star_orb_ecc_max_init"    : float,
@@ -184,7 +189,6 @@ INPUT_TYPES = {
     "galaxy_num"                    : int,
     "fraction_bin_retro"            : float,
     "flag_thermal_feedback"         : int,
-    "thermal_feedback_ratio_max"    : float,
     "flag_orb_ecc_damping"          : int,
     "capture_time_yr"               : float,
     "disk_radius_capture_outer"     : float,
@@ -194,11 +198,20 @@ INPUT_TYPES = {
     "inner_disk_outer_radius"       : float,
     "disk_inner_stable_circ_orb"    : float,
     "mass_pile_up"                  : float,
-    "save_snapshots"                : bool,
+    "save_snapshots"                : int,
+    "mean_harden_energy_delta"      : float,
+    "var_harden_energy_delta"       : float,
+    "torque_prescription"           : str,
+    "flag_phenom_turb"              : int,
+    "phenom_turb_centroid"          : float,
+    "phenom_turb_std_dev"          : float
 }
+# Ensure none of the data types are bool to avoid issues casting ascii to boolean
+if bool in INPUT_TYPES.values():
+    raise ValueError("[ReadInputs.py] Boolean data types are not allowed in"
+                     "the INPUT_TYPES dictionary. Please use int instead.")
 
-
-def ReadInputs_ini(fname_ini, verbose=False):
+def ReadInputs_ini(fname_ini, verbose=0):
     """Input file parser
 
     This function reads your input choices from a file user specifies or
@@ -211,8 +224,8 @@ def ReadInputs_ini(fname_ini, verbose=False):
     ----------
     fname_ini : str
         Name of inifile for mcfacts
-    verbose : bool
-        Print extra things
+    verbose : int
+        Print extra things when 1. Default is 0.
 
     Returns
     -------
@@ -234,17 +247,18 @@ def ReadInputs_ini(fname_ini, verbose=False):
     for name in input_variables:
         # If we know what the type should be, use the type from INPUT_TYPES
         if name in INPUT_TYPES:
-            # Bools can behave strangely, so cast as int then convert back to bool
-            if INPUT_TYPES[name] == bool:
-                input_variables[name] = bool(int(input_variables[name]))
-            else:
-                input_variables[name] = INPUT_TYPES[name](input_variables[name])
+            input_variables[name] = INPUT_TYPES[name](input_variables[name])
         # If we can't figure it out, check if it's a floating point number
         elif '.' in input_variables[name]:
-            input_variables[name]=float(input_variables[name])
+            input_variables[name] = float(input_variables[name])
         # If it's not a floating point number, try an integer
         elif input_variables[name].isdigit():
-            input_variables[name] =int(input_variables[name])
+            input_variables[name] = int(input_variables[name])
+        # If it's a boolean string, raise an error
+        elif input_variables[name] in ["False", "false", "F", "True", "true", "T"]:
+            raise ValueError(f"[ReadInputs.py] Encountered `{{{name}: {input_variables[name]}}}` "
+                              "in the ini file. Boolean data types are not allowed. "
+                              "Please use int instead.")
         # If all else fails, leave it the way we found it
         else:
             input_variables[name] = str(input_variables[name])
@@ -256,7 +270,7 @@ def ReadInputs_ini(fname_ini, verbose=False):
 
     # Set default : not use pagn.  this allows us not to provide it
     if not ('flag_use_pagn' in input_variables):
-        input_variables['flag_use_pagn'] = False
+        input_variables['flag_use_pagn'] = 0
 
     ## Check outer disk radius in parsecs
     # Scale factor for parsec distance in r_g
@@ -292,10 +306,11 @@ def ReadInputs_ini(fname_ini, verbose=False):
     # Return the arguments
     return input_variables
 
+
 def load_disk_arrays(
     disk_model_name,
     disk_radius_outer,
-    verbose=False
+    verbose=0
     ):
     """Load the dictionary arrays from file (pAGN_off)
 
@@ -307,8 +322,8 @@ def load_disk_arrays(
         sirko_goodman or thompson_etal
     disk_radius_outer : float
         Outer disk radius we truncate at
-    verbose : bool
-        Print extra things
+    verbose : int
+        Print extra things when 1. Default is 0.
 
     Returns
     -------
@@ -318,23 +333,25 @@ def load_disk_arrays(
         The surface density array
     truncated_aspect_ratio : NumPy array (float)
         The aspect ratio array
+    truncated_temperature : NumPy array (float)
+        The temperature array
     """
 
     # Get density filename
-    fname_disk_density = disk_model_name + '_surface_density.txt'
+    fname_disk_surf_density = disk_model_name + '_surface_density.txt'
     # Look in the source data
-    fname_disk_density = impresources.files(mcfacts_input_data) / fname_disk_density
+    fname_disk_surf_density = impresources.files(mcfacts_input_data) / fname_disk_surf_density
     # Load data from the surface density file
-    disk_density_data = np.loadtxt(fname_disk_density)
+    disk_surf_density_data = np.loadtxt(fname_disk_surf_density)
 
     # Get the radii from the data (second column)
-    disk_model_radii = disk_density_data[:,1]
+    disk_model_radii = disk_surf_density_data[:,1]
     if verbose:
         print("disk_radius_outer", disk_radius_outer)
         print("disk_model_radii", disk_model_radii)
-    
+
     # Get the surface densities from the data (first column)
-    disk_surface_densities = disk_density_data[:,0]
+    disk_surface_densities = disk_surf_density_data[:,0]
     # truncate disk at outer radius
     truncated_disk_radii = np.extract(
         np.where(disk_model_radii < disk_radius_outer),
@@ -353,7 +370,7 @@ def load_disk_arrays(
     fname_disk_aspect_ratio = impresources.files(mcfacts_input_data) / fname_disk_aspect_ratio
     # Load data from the aspect ratio file
     disk_aspect_ratio_data = np.loadtxt(fname_disk_aspect_ratio)
-    disk_aspect_ratios = disk_aspect_ratio_data[:,0]
+    disk_aspect_ratios = disk_aspect_ratio_data[:, 0]
     # Truncate the aspect ratio array
     truncated_aspect_ratios = disk_aspect_ratios[0:len(truncated_disk_radii)]
 
@@ -364,17 +381,73 @@ def load_disk_arrays(
     # Load data from opacity file
     disk_opacity_data = np.loadtxt(fname_disk_opacity)
     # Get the opacities from the data (first column)
-    disk_opacities = disk_opacity_data[:,0]
+    disk_opacities = disk_opacity_data[:, 0]
     # Truncate disk at outer radius
     truncated_opacities = disk_opacities[0:len(truncated_disk_radii)]
 
+    # Get sound speed filename
+    fname_disk_sound_speed = disk_model_name + '_sound_speed.txt'
+    # Look in the source data
+    fname_disk_sound_speed = impresources.files(mcfacts_input_data) / fname_disk_sound_speed
+    # Load data from opacity file
+    disk_sound_speed_data = np.loadtxt(fname_disk_sound_speed)
+    # Get the opacities from the data (first column)
+    disk_sound_speeds = disk_sound_speed_data[:, 0]
+    # Truncate disk at outer radius
+    truncated_sound_speeds = disk_sound_speeds[0:len(truncated_disk_radii)]
+
+    # Get density filename
+    fname_disk_density = disk_model_name + '_density.txt'
+    # Look in the source data
+    fname_disk_density = impresources.files(mcfacts_input_data) / fname_disk_density
+    # Load data from opacity file
+    disk_density_data = np.loadtxt(fname_disk_density)
+    # Get the opacities from the data (first column)
+    disk_densities = disk_density_data[:, 0]
+    # Truncate disk at outer radius
+    truncated_densities = disk_densities[0:len(truncated_disk_radii)]
+
+    # Get omega filename
+    fname_disk_omega = disk_model_name + '_omega.txt'
+    # Look in the source data
+    fname_disk_omega = impresources.files(mcfacts_input_data) / fname_disk_omega
+    # Load data from opacity file
+    disk_omega_data = np.loadtxt(fname_disk_omega)
+    # Get the opacities from the data (first column)
+    disk_omegas = disk_omega_data[:, 0]
+    # Truncate disk at outer radius
+    truncated_omegas = disk_omegas[0:len(truncated_disk_radii)]
+
+    # Get pressure grad filename
+    fname_disk_pressure_gradient = disk_model_name + '_pressure_gradient.txt'
+    # Look in the source data
+    fname_disk_pressure_gradient = impresources.files(mcfacts_input_data) / fname_disk_pressure_gradient
+    # Load data from opacity file
+    disk_pressure_gradient_data = np.loadtxt(fname_disk_pressure_gradient)
+    # Get the opacities from the data (first column)
+    disk_pressure_gradients = disk_pressure_gradient_data[:, 0]
+    # Truncate disk at outer radius
+    truncated_pressure_gradients = disk_pressure_gradients[0:len(truncated_disk_radii)]
+
+    # Get temp filename
+    fname_disk_temperature = disk_model_name + '_temperature.txt'
+    # Look in the source data
+    fname_disk_temperature = impresources.files(mcfacts_input_data) / fname_disk_temperature
+    # Load data from opacity file
+    disk_temperature_data = np.loadtxt(fname_disk_temperature)
+    # Get the opacities from the data (first column)
+    disk_temperatures = disk_temperature_data[:, 0]
+    # Truncate disk at outer radius
+    truncated_temperatures = disk_temperatures[0:len(truncated_disk_radii)]
+
     # Now redefine arrays used to generate interpolating functions in terms of truncated arrays
-    return truncated_disk_radii, truncated_surface_densities, truncated_aspect_ratios, truncated_opacities
+    return truncated_disk_radii, truncated_surface_densities, truncated_aspect_ratios, truncated_opacities, truncated_sound_speeds, truncated_densities, truncated_omegas, truncated_pressure_gradients, truncated_temperatures
+
 
 def construct_disk_direct(
     disk_model_name,
     disk_radius_outer,
-    verbose=False
+    verbose=0
     ):
     """Construct a disk interpolation without pAGN
 
@@ -387,8 +460,8 @@ def construct_disk_direct(
         sirko_goodman or thompson_etal
     disk_radius_outer : float
         Outer disk radius we truncate at
-    verbose : bool
-        Print extra things
+    verbose : int
+        Print extra things when 1. Default is 0.
 
     Returns
     -------
@@ -398,17 +471,20 @@ def construct_disk_direct(
         Aspect ratio (radius)
     disk_opacity_func : lambda
         Opacity (radius)
+    sound_speed_func : lambda
+        sound speed (radius) [m/s] 
     disk_model_properties : dict
         Other disk model things we may want
     """
     # Call the load_disk_arrays function
-    disk_model_radii, surface_densities, aspect_ratios, opacities = \
+    disk_model_radii, surface_densities, aspect_ratios, opacities, sound_speeds, densities, omegas, pressure_gradients, temperatures = \
         load_disk_arrays(
         disk_model_name,
         disk_radius_outer,
         verbose=verbose
         )
-    print(disk_model_radii)
+    if verbose:
+        print("disk_model_radii\n", disk_model_radii)
     # Now generate interpolating functions
     # Create surface density function from input arrays
     disk_surf_dens_func_log = scipy.interpolate.CubicSpline(
@@ -425,13 +501,41 @@ def construct_disk_direct(
         np.log(disk_model_radii), np.log(opacities))
     disk_opacity_func = lambda x, f=disk_opacity_func_log: np.exp(f(np.log(x)))
 
+    # Create sound speeds function from input arrays
+    sound_speeds_func_log = scipy.interpolate.CubicSpline(
+        np.log(disk_model_radii), np.log(sound_speeds))
+    disk_sound_speed_func = lambda x, f=sound_speeds_func_log: np.exp(f(np.log(x)))
+
+    # Create densities function from input arrays
+    disk_densities_func_log = scipy.interpolate.CubicSpline(
+        np.log(disk_model_radii), np.log(densities))
+    disk_density_func = lambda x, f=disk_densities_func_log: np.exp(f(np.log(x)))
+
+    # Create omegas function from input arrays
+    disk_omegas_func_log = scipy.interpolate.CubicSpline(
+        np.log(disk_model_radii), np.log(omegas))
+    disk_omega_func = lambda x, f=disk_omegas_func_log: np.exp(f(np.log(x)))
+
+    # Create pressure gradients function from input arrays
+    # Need to preserve signs, since log only takes positive values
+    # Multiply final value by the correct sign
+    disk_pressure_gradient_func = scipy.interpolate.CubicSpline(
+        disk_model_radii, pressure_gradients)
+    #disk_pressure_gradient_func = lambda x, f=disk_pressure_gradients_func_raw: np.exp(f(np.log(x)))
+
+    # Create temperatures function from input arrays
+    disk_temperatures_func_log = scipy.interpolate.CubicSpline(
+        np.log(disk_model_radii), np.log(temperatures))
+    disk_temperature_func = lambda x, f=disk_temperatures_func_log: np.exp(f(np.log(x)))
+
     # Define properties we want to return
     disk_model_properties ={}
     disk_model_properties['Sigma'] = disk_surf_dens_func
     disk_model_properties['h_over_r'] = disk_aspect_ratio_func
     disk_model_properties['kappa'] = disk_opacity_func
 
-    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, disk_model_properties
+    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, disk_sound_speed_func, disk_density_func, disk_pressure_gradient_func, disk_omega_func, disk_surf_dens_func_log, disk_temperature_func, disk_model_properties
+
 
 def construct_disk_pAGN(
     disk_model_name,
@@ -475,6 +579,10 @@ def construct_disk_pAGN(
         Aspect ratio (radius)
     disk_opacity_func : lambda
         Opacity (radius)
+    sound_speed_func : lambda
+        sound speed (radius) [m/s]
+    disk_density_func : lambda
+        disk density (radius) [kg/m^3]
     disk_model_properties : dict
         Other disk model things we may want
     bonus_structures : dict
@@ -508,17 +616,18 @@ def construct_disk_pAGN(
     # note Rin default is 3 Rs
 
     # Run pAGN
-    pagn_model =dm_pagn.AGNGasDiskModel(disk_type=pagn_name,**base_args)
-    disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, bonus_structures = \
+    pagn_model = dm_pagn.AGNGasDiskModel(disk_type=pagn_name, **base_args)
+    disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, bonus_structures = \
         pagn_model.return_disk_surf_model()
 
     # Define properties we want to return
-    disk_model_properties ={}
+    disk_model_properties = {}
     disk_model_properties['Sigma'] = disk_surf_dens_func
     disk_model_properties['h_over_r'] = disk_aspect_ratio_func
     disk_model_properties['kappa'] = disk_opacity_func
-
-    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, disk_model_properties, bonus_structures
+    disk_model_properties['dSigmadR'] = disk_surf_dens_func_log
+    disk_model_properties['T'] = temp_func
+    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, disk_model_properties, bonus_structures
 
 
 def construct_disk_interp(
@@ -528,8 +637,8 @@ def construct_disk_interp(
     disk_alpha_viscosity,
     disk_bh_eddington_ratio,
     disk_radius_max_pc=0.,
-    flag_use_pagn=False,
-    verbose=False,
+    flag_use_pagn=0,
+    verbose=0,
     ):
     """Construct the disk array interpolators
 
@@ -543,10 +652,12 @@ def construct_disk_interp(
             disk viscosity 'alpha'
         disk_radius_max_pc : float
             Maximum disk size in parsecs (0. for off)
-        flag_use_pagn : bool
-            use pAGN?
-        verbose : bool
-            Print extra stuff?
+        flag_use_pagn : int
+            use pAGN if 1. Default is 0.
+        disk_model_name : str
+            Choice of disk model
+        verbose : int
+            Print extra stuff if 1. Default is 0.
 
     Returns
     ------
@@ -568,7 +679,7 @@ def construct_disk_interp(
     #   infile = model_surface_density.txt, where model is user choice
     if not(flag_use_pagn):
         # Load interpolators
-        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, disk_model_properties = \
+        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, disk_model_properties = \
             construct_disk_direct(
                 disk_model_name,
                 disk_radius_outer,
@@ -577,7 +688,7 @@ def construct_disk_interp(
 
     else:
         # instead, populate with pagn
-        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, disk_model_properties, bonus_structures = \
+        disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func, disk_model_properties, bonus_structures = \
             construct_disk_pAGN(
                 disk_model_name,
                 smbh_mass,
@@ -586,14 +697,14 @@ def construct_disk_interp(
                 disk_bh_eddington_ratio,
             )
 
-    #Truncate disk models at outer disk radius
+    # Truncate disk models at outer disk radius
     if verbose:
         print("I read and digested your disk model")
         print("Sending variables back")
 
-    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func
+    return disk_surf_dens_func, disk_aspect_ratio_func, disk_opacity_func, sound_speed_func, disk_density_func, disk_pressure_grad_func, disk_omega_func, disk_surf_dens_func_log, temp_func
 
-def ReadInputs_prior_mergers(fname='recipes/sg1Myrx2_survivors.dat', verbose=False):
+def ReadInputs_prior_mergers(fname='recipes/sg1Myrx2_survivors.dat', verbose=0):
     """This function reads your prior mergers from a file user specifies or
     default (recipies/prior_mergers_population.dat), and returns the chosen variables for
     manipulation by main.

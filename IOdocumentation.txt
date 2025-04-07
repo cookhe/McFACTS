@@ -12,18 +12,18 @@ star cluster variables second, and assorted other choices (time resolution etc.)
     smbh_mass : float
         supermassive black hole mass in units of solar masses
             default : 1.e8
-    flag_use_pagn : bool
-        Switch pAGN program on or off
+    flag_use_pagn : int
+        Switch pAGN program on (1) or off (0)
         Gangardt, Daria et al. 2024      
-            default : True  
+            default : 1  
     disk_model_name : string
         McFACTS comes with the following example options for disk models:
         sirko_goodman: from Sirko & Goodman 2003
         thompson_etal: from Thompson, Quataert & Murray 2005
 
-        If user sets pAGN to True, only sirko_goodman and thompson_etal are available to use   
+        If user sets pAGN to on (1), only sirko_goodman and thompson_etal are available to use   
             this variable sets the model used by pAGN Sirko & Goodman 2003 or Thompson, Quataert, and Murray 2005
-        If user sets pAGN to False, tabulated models will be used. Options included are sirko_goodman and thompson_etal
+        If user sets pAGN to off (0), tabulated models will be used. Options included are sirko_goodman and thompson_etal
             which will use the tablulated models within src/mcfacts/inputs/data/
             However, the intended use is for users that wish to input their own tabulated models 
         
@@ -139,11 +139,6 @@ star cluster variables second, and assorted other choices (time resolution etc.)
         feedback = 0 means no BH gas torque modifications (Type I migration only).
         Feedback model right now is Hanka et al. 2022
         default : 1
-    thermal_feedback_ratio_max : float
-        Set a maximum value for the ratio of Hankla+22 radiative feedback torque to type 1 migration
-        torque. When disks are extremely low opacity (like Thompson, Quataert, and Murray 06 disks)
-        the ratio can become exceedingly large which causes runaway outward migration.
-        default : 2
     flag_orb_ecc_damping : int
         Switch to incorporate orbital eccentricity damping.
         orb_ecc_damping = 1 gives all BH an initial orb eccentricity 
@@ -192,7 +187,7 @@ star cluster variables second, and assorted other choices (time resolution etc.)
     nsc_spheroid_normalization : float
         Normalization factor determines the departures from sphericity of the initial distribution of perturbers
         default : 1.0
-    save_snapshots : bool
+    save_snapshots : int
         Saving the snapshots of each object being per time step. Deafult is 0 [off] 
         default : 0
 
@@ -205,8 +200,6 @@ star cluster variables second, and assorted other choices (time resolution etc.)
     nsc_star_metallicity_x_init
     nsc_star_metallicity_y_init
     nsc_star_metallicity_z_init
-    nsc_star_spin_dist_mu
-    nsc_star_spin_dist_sigma
     nsc_imf_star_mass_mode
     nsc_imf_star_powerlaw_index
     
