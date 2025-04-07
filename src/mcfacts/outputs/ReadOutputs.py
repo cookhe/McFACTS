@@ -87,7 +87,7 @@ def ReadLog(fname_log, verbose=0):
             log_dict[key] = OUTPUT_TYPES[key](value)
         # Store unexpected lines to report below
         if not (key in OUTPUT_TYPES):
-            log_dict[key] = OUTPUT_TYPES[key](value)
+            log_dict[key] = value
             extra_values[key] = value
         
     # Print the dictionary
