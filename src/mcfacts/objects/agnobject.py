@@ -1402,7 +1402,7 @@ class AGNMergedBlackHole(AGNObject):
                        new_mass_final=empty_arr, new_spin_final=empty_arr, new_spin_angle_final=empty_arr,
                        new_mass_1=empty_arr, new_mass_2=empty_arr, new_spin_1=empty_arr, new_spin_2=empty_arr,
                        new_spin_angle_1=empty_arr, new_spin_angle_2=empty_arr, new_gen_1=empty_arr, new_gen_2=empty_arr,
-                       new_chi_eff=empty_arr, new_chi_p=empty_arr, new_v_kick=empty_arr, new_v_kick=empty_arr, new_lum_shock=empty_arr, 
+                       new_chi_eff=empty_arr, new_chi_p=empty_arr, new_v_kick=empty_arr, new_lum_shock=empty_arr, 
                        new_lum_jet=empty_arr,
                        new_time_merged=empty_arr, num_obj_merge=0): # add   new_lum_agn = empty_arr, to incoorporate
         """

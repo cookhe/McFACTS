@@ -71,7 +71,7 @@ def shock_luminosity(smbh_mass, m_f, bin_orb_a, disk_aspect_ratio, disk_density,
         time = 31556952.0 * ((r_hill_rg / 3) / (vk[i] / v_kick_scale))  # Timescale for energy dissipation
         Lshock = E / time  # Shock luminosity
         Lshock_final.append(float(Lshock[i]))
-    print("Lshock_final: ", Lshock_final)
+    #print("Lshock_final: ", Lshock_final)
     
     return Lshock_final
 
@@ -111,7 +111,7 @@ https://file+.vscode-resource.vscode-cdn.net/Users/emilymcpike/McFACTS/runs/time
         v_kick_scale = v_kick_scale.value
         LBHL = 2.5e45 * (0.1 / 0.1) * (mass_final[i] / 100)**2 * (vk[i] / v_kick_scale)**-3 * (disk_density_cgs / 10e-10)  # Jet luminosity
         LBHL_final.append(float(LBHL[i]))
-    print("LBHL_final: ", LBHL_final)
+    #print("LBHL_final: ", LBHL_final)
     return LBHL_final
 
 

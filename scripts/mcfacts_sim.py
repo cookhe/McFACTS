@@ -1599,43 +1599,6 @@ def main():
 
                     if (bh_binary_id_num_merger.size > 0):
                         
-                        surrogate = fit_modeler.GPRFitters.read_from_file(f"../src/mcfacts/inputs/data/surrogate.joblib")
-                        bh_mass_merged_sur, bh_spin_merged_sur, bh_kick_merged_sur = evolve_bin.surrogate(
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2") - blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                1000, # binary seperation - in units of mass_1+mass_2 - shawn need to optimize seperation to speed up processing time 
-                                [0, 0, 1], # binary inclination - cartesian coords
-                                0, # binary phase angle - radians?
-                                # the following three None values are any correction needed to the values
-                                None, # bin_orb_a
-                                None, # mass_smbh
-                                None, # spin_smbh
-                                surrogate
-                            )
-                        print("bh_mass_merged_sur: ", bh_mass_merged_sur)
-                        print("bh_spin_merged_sur: ", bh_spin_merged_sur) 
-                        print("bh_kick_merged_sur: ", bh_kick_merged_sur)
-                        bh_mass_merged = merge.merged_mass(
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2")
-                            )
-                        print("bh_mass_merged: ", bh_mass_merged)
-
-                        bh_spin_merged = merge.merged_spin(
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2")
-                            )
-                        print("bh_spin_merged: ", bh_spin_merged)
-
                         bh_chi_eff_merged = merge.chi_effective(
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
@@ -1665,27 +1628,63 @@ def main():
                                     blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
                                     blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2")
                                     )
+                            bh_mass_merged = merge.merged_mass(
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2")
+                                )
+                            #print("bh_mass_merged: ", bh_mass_merged)
+
+                            bh_spin_merged = merge.merged_spin(
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2")
+                                )
+                            #print("bh_spin_merged: ", bh_spin_merged)
                         else:
-                            bh_v_kick = 200 #evolve_binary.velocity()
+                            #bh_v_kick = 200 #evolve_binary.velocity()
+                            surrogate = fit_modeler.GPRFitters.read_from_file(f"../src/mcfacts/inputs/data/surrogate.joblib")
+                            bh_mass_merged, bh_spin_merged, bh_v_kick = evolve_bin.surrogate(
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2") - blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
+                                    1000, # binary seperation - in units of mass_1+mass_2 - shawn need to optimize seperation to speed up processing time 
+                                    [0, 0, 1], # binary inclination - cartesian coords
+                                    0, # binary phase angle - radians?
+                                    # the following three None values are any correction needed to the values
+                                    None, # bin_orb_a
+                                    None, # mass_smbh
+                                    None, # spin_smbh
+                                    surrogate
+                                )
+                            #print("bh_mass_merged_sur: ", bh_mass_merged)
+                            #print("bh_spin_merged_sur: ", bh_spin_merged) 
+                            #print("bh_kick_merged_sur: ", bh_v_kick)
 
                         #v_kick = 200. # comment out when using analytical mod
 
 
                         bh_lum_shock = lum.shock_luminosity(
                                 opts.smbh_mass,
-                                bh_mass_merged_sur,
+                                bh_mass_merged,
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
                                 disk_aspect_ratio,
                                 disk_density,
                                 bh_v_kick) # add bh_v_kick to incorp
-                        print("bh_lum_shock: ", bh_lum_shock)
+                        #print("bh_lum_shock: ", bh_lum_shock)
 
                         bh_lum_jet = lum.jet_luminosity(
-                                bh_mass_merged_sur,
+                                bh_mass_merged,
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
                                 disk_density,
                                 bh_v_kick) # add bh_v_kick to incorp
-                        print("bh_lum_jet: ", bh_lum_jet)
+                        #print("bh_lum_jet: ", bh_lum_jet)
 
                         # bin_a_agn_lum = lum.AGN_lum(temp_func,
                         #                             opts.smbh_mass,
@@ -1700,8 +1699,8 @@ def main():
                         blackholes_merged.add_blackholes(new_id_num=bh_binary_id_num_merger,
                                                          new_galaxy=np.full(bh_binary_id_num_merger.size, galaxy),
                                                          new_bin_orb_a=blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                                         new_mass_final=bh_mass_merged_sur,
-                                                         new_spin_final=bh_spin_merged_sur,
+                                                         new_mass_final=bh_mass_merged,
+                                                         new_spin_final=bh_spin_merged,
                                                          new_spin_angle_final=np.zeros(bh_binary_id_num_merger.size),
                                                          new_mass_1=blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
                                                          new_mass_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
@@ -1740,7 +1739,7 @@ def main():
                                               new_info=np.full(bh_binary_id_num_merger.size, 0))
                         filing_cabinet.update(id_num=bh_binary_id_num_merger,
                                               attr="mass",
-                                              new_info=bh_mass_merged_sur)
+                                              new_info=bh_mass_merged)
                         filing_cabinet.update(id_num=bh_binary_id_num_merger,
                                               attr="orb_ecc",
                                               new_info=bh_orb_ecc_merged)

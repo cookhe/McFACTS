@@ -15,7 +15,7 @@ from astropy import constants as const
 
 def surrogate(m1, m2, s1m, s2m, sa1, sa2, p12, bin_sep, bin_inc, bin_phase, bin_orb_a, mass_SMBH, spin_SMBH, surrogate):
 
-    print(m1, m2, s1m, s2m, sa1, sa2, p12)
+    #print(m1, m2, s1m, s2m, sa1, sa2, p12)
     mass_final, spin_final, kick_final = [], [], []
     mass_1, mass_2, spin_1_mag, spin_2_mag, spin_angle_1, spin_angle_2, phi_12 = [], [], [], [], [], [], []
     
