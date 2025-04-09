@@ -7,7 +7,7 @@ from astropy import units as u
 from astropy import constants as const
 from mcfacts.physics.point_masses import si_from_r_g
 
-def shock_luminosity(smbh_mass, mass_final, bin_orb_a, disk_aspect_ratio, disk_density, vk):
+def shock_luminosity(smbh_mass, m_f, bin_orb_a, disk_aspect_ratio, disk_density, kick):
     """
     Calculate the gas volume, Hill sphere volume, and Hill radius. McKernan et al. 2019
 
@@ -36,34 +36,44 @@ def shock_luminosity(smbh_mass, mass_final, bin_orb_a, disk_aspect_ratio, disk_d
     Returns:
     - Lshock: Shock luminosity (erg s^-1).
     """
-
-    r_hill_rg = bin_orb_a * ((mass_final / smbh_mass) / 3)**(1/3) 
-    r_hill_m = si_from_r_g(smbh_mass, r_hill_rg)
-
-    r_hill_m = r_hill_m.to('cm').value
-
-    disk_height_rg = disk_aspect_ratio(bin_orb_a) * bin_orb_a
-    disk_height_m = si_from_r_g(smbh_mass, disk_height_rg)
-    disk_height_m = disk_height_m.to('cm').value
-
-    v_hill = (4 / 3) * np.pi * r_hill_m**3  
-    v_hill_gas = abs(v_hill - (2 / 3) * np.pi * ((r_hill_m - disk_height_m)**2) * (3 * r_hill_m - (r_hill_m - disk_height_m)))
+    print(smbh_mass, m_f, bin_orb_a, disk_aspect_ratio, disk_density, kick)
+    mass_final, vk = [], []
+    Lshock_final = []
+    for value in m_f:
+        mass_final.append(value)
+    for value in kick:
+        vk.append(value)
     
-    disk_density_si = disk_density(bin_orb_a) * (u.kg / u.m**3)
-    disk_density_cgs = disk_density_si.to(u.g / u.cm**3)
+    for i in range(len(mass_final)):
+        r_hill_rg = bin_orb_a * ((mass_final[i] / smbh_mass) / 3)**(1/3) 
+        r_hill_m = si_from_r_g(smbh_mass, r_hill_rg)
 
-    disk_density_cgs = disk_density_cgs.value
-    msolar = const.M_sun.to('g').value
+        r_hill_m = r_hill_m.to('cm').value
 
-    r_hill_mass = (disk_density_cgs * v_hill_gas) / msolar
+        disk_height_rg = disk_aspect_ratio(bin_orb_a) * bin_orb_a
+        disk_height_m = si_from_r_g(smbh_mass, disk_height_rg)
+        disk_height_m = disk_height_m.to('cm').value
 
-    E = 10**46 * (r_hill_mass / 1) * (vk / 200)**2  # Energy of the shock
-    time = 31556952.0 * ((r_hill_rg / 3) / (vk / 200))  # Timescale for energy dissipation
-    Lshock = E / time  # Shock luminosity
+        v_hill = (4 / 3) * np.pi * r_hill_m**3  
+        v_hill_gas = abs(v_hill - (2 / 3) * np.pi * ((r_hill_m - disk_height_m)**2) * (3 * r_hill_m - (r_hill_m - disk_height_m)))
+        
+        disk_density_si = disk_density(bin_orb_a) * (u.kg / u.m**3)
+        disk_density_cgs = disk_density_si.to(u.g / u.cm**3)
+
+        disk_density_cgs = disk_density_cgs.value
+        msolar = const.M_sun.to('g').value
+
+        r_hill_mass = (disk_density_cgs * v_hill_gas) / msolar
+
+        E = 10**46 * (r_hill_mass / 1) * (vk[i] / 200)**2  # Energy of the shock
+        time = 31556952.0 * ((r_hill_rg / 3) / (vk[i] / 200))  # Timescale for energy dissipation
+        Lshock = E / time  # Shock luminosity
+        Lshock_final.append(float(Lshock[i]))
+    print("Lshock_final: ", Lshock_final)
     
-    return Lshock
+    return Lshock_final
 
-def jet_luminosity(mass_final, bin_orb_a, disk_density, vk):
+def jet_luminosity(m_f, bin_orb_a, disk_density, kick):
     """
     Calculate Bondi-Hoyle-Lyttleton luminosity based on the mass, density, and velocity. add eqn. please insert paper.
 
@@ -79,12 +89,23 @@ https://file+.vscode-resource.vscode-cdn.net/Users/emilymcpike/McFACTS/runs/time
     Returns:
     - LBHL: Jet luminosity (erg s^-1).
     """
-    disk_density_si = disk_density(bin_orb_a) * (u.kg / u.m**3)
+    print(m_f, bin_orb_a, disk_density, kick)
+    mass_final, vk = [], []
+    LBHL_final = []
+    for value in m_f:
+        mass_final.append(value)
+    for value in kick:
+        vk.append(value)
+        
+    for i in range(len(mass_final)):
+        disk_density_si = disk_density(bin_orb_a) * (u.kg / u.m**3)
 
-    disk_density_cgs = disk_density_si.to(u.g / u.cm**3)
-    disk_density_cgs = disk_density_cgs.value
-    # eta depends on spin t.f. isco, assuming eddington accretion... .06-.42 and so 0.1 is a good O approx.
-    # but.. bondi is greater mass accretion rate, t.f. L per mass acrreted will be less becayse so much shit 
-    # is trying to get in in so little space for light to escape
-    LBHL = 2.5e45 * (0.1 / 0.1) * (mass_final / 100)**2 * (vk / 200)**-3 * (disk_density_cgs / 10e-10)  # Jet luminosity
-    return LBHL
+        disk_density_cgs = disk_density_si.to(u.g / u.cm**3)
+        disk_density_cgs = disk_density_cgs.value
+        # eta depends on spin t.f. isco, assuming eddington accretion... .06-.42 and so 0.1 is a good O approx.
+        # but.. bondi is greater mass accretion rate, t.f. L per mass acrreted will be less becayse so much shit 
+        # is trying to get in in so little space for light to escape
+        LBHL = 2.5e45 * (0.1 / 0.1) * (mass_final[i] / 100)**2 * (vk[i] / 200)**-3 * (disk_density_cgs / 10e-10)  # Jet luminosity
+        LBHL_final.append(float(LBHL[i]))
+    print("LBHL_final: ", LBHL_final)
+    return LBHL_final

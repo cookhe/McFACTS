@@ -1319,7 +1319,7 @@ class AGNMergedBlackHole(AGNObject):
                  gen_2=empty_arr,
                  chi_eff=empty_arr,
                  chi_p=empty_arr,
-                 #v_kick=empty_arr,
+                 v_kick=empty_arr,
                  lum_shock=empty_arr, # emily add
                  lum_jet=empty_arr, # emily add
                  time_merged=empty_arr,
@@ -1387,7 +1387,7 @@ class AGNMergedBlackHole(AGNObject):
         self.gen_2 = gen_2
         self.chi_eff = chi_eff
         self.chi_p = chi_p
-        #self.v_kick = v_kick
+        self.v_kick = v_kick
         self.lum_shock = lum_shock
         self.lum_jet = lum_jet
         self.time_merged = time_merged
@@ -1400,8 +1400,8 @@ class AGNMergedBlackHole(AGNObject):
                        new_mass_final=empty_arr, new_spin_final=empty_arr, new_spin_angle_final=empty_arr,
                        new_mass_1=empty_arr, new_mass_2=empty_arr, new_spin_1=empty_arr, new_spin_2=empty_arr,
                        new_spin_angle_1=empty_arr, new_spin_angle_2=empty_arr, new_gen_1=empty_arr, new_gen_2=empty_arr,
-                       new_chi_eff=empty_arr, new_chi_p=empty_arr, new_lum_shock=empty_arr, new_lum_jet=empty_arr,
-                       new_time_merged=empty_arr, num_obj_merge=0): # add new_v_kick=empty_arr to incoorporate
+                       new_chi_eff=empty_arr, new_chi_p=empty_arr, new_v_kick=empty_arr, new_lum_shock=empty_arr, new_lum_jet=empty_arr,
+                       new_time_merged=empty_arr, num_obj_merge=0): # add  to incoorporate
         """
         Add blackholes to the AGNMergedBlackHoles object
 
@@ -1438,7 +1438,7 @@ class AGNMergedBlackHole(AGNObject):
         new_chi_p : numpy array
             precessing spin component of the binary prior to merger
         new_v_kick: numpy array
-            merger remnant kick velocity in units %c
+            merger remnant kick velocity in units km/s
         new_lum_shock
         new_lum_jet
         # emily add
@@ -1464,7 +1464,7 @@ class AGNMergedBlackHole(AGNObject):
         self.gen_2 = np.concatenate([self.gen_2, new_gen_2])
         self.chi_eff = np.concatenate([self.chi_eff, new_chi_eff])
         self.chi_p = np.concatenate([self.chi_p, new_chi_p])
-        #self.v_kick = np.concatenate([self.v_kick, new_v_kick])
+        self.v_kick = np.concatenate([self.v_kick, new_v_kick])
         self.lum_shock = np.concatenate([self.lum_shock, new_lum_shock])
         self.lum_jet = np.concatenate([self.lum_jet, new_lum_jet])
         self.time_merged = np.concatenate([self.time_merged, new_time_merged])
