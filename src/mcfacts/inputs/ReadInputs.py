@@ -204,7 +204,8 @@ INPUT_TYPES = {
     "torque_prescription"           : str,
     "flag_phenom_turb"              : int,
     "phenom_turb_centroid"          : float,
-    "phenom_turb_std_dev"          : float
+    "phenom_turb_std_dev"           : float,
+    "flag_use_surrogate"            : int
 }
 # Ensure none of the data types are bool to avoid issues casting ascii to boolean
 if bool in INPUT_TYPES.values():
