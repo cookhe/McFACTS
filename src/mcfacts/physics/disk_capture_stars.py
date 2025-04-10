@@ -101,7 +101,7 @@ def setup_captured_stars_masses(captured_star_mass, disk_star_mass_min_init, dis
 
     star_mass_average = setupdiskstars.setup_disk_stars_mass_avg(disk_star_mass_min_init, disk_star_mass_max_init, nsc_imf_star_powerlaw_index)
 
-    star_num = int(captured_star_mass / star_mass_average)
+    star_num = np.rint(captured_star_mass / star_mass_average)
 
     star_masses = setupdiskstars.setup_disk_stars_masses(star_num, disk_star_mass_min_init, disk_star_mass_max_init, nsc_imf_star_powerlaw_index)
     star_masses = np.sort(star_masses)[::-1]
