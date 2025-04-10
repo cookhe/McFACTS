@@ -16,14 +16,17 @@ def paardekooper10_torque(smbh_mass, disk_surf_density_func_log, disc_surf_densi
 
     #Need to have at least 2 elements in sorted_log_orbs_a below.
     # If insufficient elements, generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
-    if np.size(orbs_a) < 100:
-        orbs_a = np.linspace(10*disk_inner_stable_circ_orb,disk_radius_outer,num=100)
+    if np.size(orbs_a) < 50:
+        orbs_a = np.linspace(10*disk_inner_stable_circ_orb,disk_radius_outer,num=10)
         #sorted_log_orbs_a = np.log10(sorted_orbs_a)
     #Sort the radii of BH and get their log (radii)
+    orbs_a = np.where(orbs_a>disk_inner_stable_circ_orb, orbs_a, 10*disk_inner_stable_circ_orb)
     sorted_orbs_a = np.sort(orbs_a)
+    
     #Prevent accidental zeros or Nans!
     log_orbs_a = np.log10(orbs_a)
     sorted_log_orbs_a = np.sort(log_orbs_a)
+    sorted_log_orbs_a = np.nan_to_num(sorted_log_orbs_a)
 
     #sorted_log_orbs_a = np.nan_to_num(sorted_log_orbs_a)
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
@@ -44,18 +47,27 @@ def paardekooper10_torque(smbh_mass, disk_surf_density_func_log, disc_surf_densi
     #Evaluate disc surf density at locations of all BH
     #disc_surf_d = disc_surf_density(orbs_a)
     disc_surf_d = disc_surf_density(sorted_orbs_a)
-    disc_temp=np.nan_to_num(temp_func(sorted_orbs_a))
+    disc_temp = temp_func(sorted_orbs_a)
+    disc_temp=np.nan_to_num(disc_temp)
     disc_temp=np.abs(disc_temp)
     #Evaluate disc surf density at only migrating BH
     disc_surf_d_mig = disc_surf_density(new_orbs_a)
     #Get log of disc surf density
+    disc_surf_d=np.nan_to_num(disc_surf_d)
+    # Try removing zeros in disc_surf_d and rerun
+    disc_surf_d = np.where(disc_surf_d>0, disc_surf_d, 1.e4)
     log_disc_surf_d = np.log10(disc_surf_d)
     log_disc_surf_d = np.nan_to_num(log_disc_surf_d)
+    
     #Get log of disc midplane temperature
     #print("disc_temp",disc_temp)
+    disc_temp=np.nan_to_num(disc_temp)
+    # Try removing zeros in disc_temp and rerun
+    disc_temp = np.where(disc_temp >0, disc_temp, 1.e4)
     log_disc_temp = np.log10(disc_temp)
 
     log_disc_surf_d_mig = np.log10(disc_surf_d_mig)
+    log_disc_surf_d
     sort_log_orbs_a =np.sort(log_new_orbs_a)
 
 
