@@ -613,13 +613,10 @@ def main():
                     opts.disk_radius_outer,
                     opts.timestep_duration_yr
                 )
-
             # Alternatively, calculate actual torques from disk profiles.
             # Paardekooper torque coeff (default)
             if opts.torque_prescription == 'paardekooper':
                 paardekooper_torque_coeff = migration.paardekooper10_torque(
-                    opts.smbh_mass,
-                    disk_surface_density_log,
                     disk_surface_density,
                     temp_func,
                     blackholes_pro.orb_a,
@@ -1337,12 +1334,8 @@ def main():
                 #Paardekooper torque coeff (default)
                 if opts.torque_prescription == 'paardekooper':
                     paardekooper_torque_coeff = migration.paardekooper10_torque_binary(
-                        opts.smbh_mass,
-                        disk_surface_density_log,
                         disk_surface_density,
                         temp_func,
-                        blackholes_pro.orb_a,
-                        blackholes_pro.orb_ecc,
                         opts.disk_bh_pro_orb_ecc_crit,
                         blackholes_binary,
                         opts.disk_radius_outer,
@@ -1420,8 +1413,6 @@ def main():
                                 disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(-0.97)
                                 disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(0.099)
 
-
-
                         torque_mig_timescales = migration.torque_mig_timescale(
                             opts.smbh_mass,
                             blackholes_binary.bin_orb_a,
@@ -1449,7 +1440,6 @@ def main():
                             opts.nsc_imf_bh_mode,
                             opts.torque_prescription
                         )
-
 
                 # Update filing cabinet
                 filing_cabinet.update(id_num=blackholes_binary.id_num,
