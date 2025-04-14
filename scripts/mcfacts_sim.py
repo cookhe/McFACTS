@@ -728,7 +728,17 @@ def main():
                         opts.nsc_imf_bh_mode,
                         opts.torque_prescription
                     )
+            #Make sure no zeros in orb_a. Get indices of orbs_a that are less than disk_inner_stable_circ_orb
+            # Get indices of objects with orb_ecc <= opts.disk_inner_stable_circ_orb so we can remove them.
+            #plunging_indices = np.asarray(blackholes_pro.orb_a) <= opts.disk_inner_stable_circ_orb).nonzero()[0]
+            #blackholes_pro.orb_a = blackholes_pro.orb_a[~plunging_indices]
+            #blackholes_pro.orb_ecc = blackholes_pro.orb_ecc[~plunging_indices]
+            #blackholes_pro.mass = blackholes_pro.mass[~plunging_indices]
+            #blackholes_pro.spin = blackholes_pro.spin[~plunging_indices]
+            #blackholes_pro.spin_angle = blackholes_pro.spin_angle[~plunging_indices]
+            #blackholes_pro. = blackholes_pro.orb_ecc[~plunging_indices]
 
+            blackholes_pro.orb_a = np.where(blackholes_pro.orb_a >opts.disk_inner_stable_circ_orb, blackholes_pro.orb_a, 10*opts.disk_inner_stable_circ_orb)
             if new_orbs is not None:
                 # print("new_bh_orbs",new_orbs)
                 blackholes_pro.orb_a = new_orbs
@@ -755,12 +765,31 @@ def main():
                                   attr="orb_a",
                                   new_info=stars_pro.orb_a)
             # Check for orb_a unphysical
-            bh_pro_id_num_unphysical = blackholes_pro.id_num[blackholes_pro.orb_a == 0.]
+            bh_pro_id_num_unphysical = blackholes_pro.id_num[blackholes_pro.orb_a < opts.disk_inner_stable_circ_orb]
+            bh_pro_id_num_unphys1 = blackholes_pro.id_num[blackholes_pro.mass == 0.]
+            bh_pro_id_num_unphys2 = blackholes_pro.id_num[blackholes_pro.orb_ecc >1]
+            bh_pro_id_num_unphys3 = blackholes_pro.id_num[blackholes_pro.orb_a == np.nan]
+            bh_pro_id_num_nans = blackholes_pro.id_num[np.isnan(blackholes_pro.orb_a)]
             if bh_pro_id_num_unphysical.size > 0:
                 # The binary has unphysical eccentricity. Delete
                 blackholes_pro.remove_id_num(bh_pro_id_num_unphysical)
                 filing_cabinet.remove_id_num(bh_pro_id_num_unphysical)
-
+            if bh_pro_id_num_unphys1.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphys1)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphys1)
+            if bh_pro_id_num_unphys2.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphys2)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphys2)
+            if bh_pro_id_num_unphys3.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphys3)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphys3)
+            if bh_pro_id_num_nans.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_nans)
+                filing_cabinet.remove_id_num(bh_pro_id_num_nans)
             star_pro_id_num_unphysical = stars_pro.id_num[stars_pro.orb_a == 0.]
             if star_pro_id_num_unphysical.size > 0:
                 # The binary has unphysical eccentricity. Delete
@@ -842,6 +871,8 @@ def main():
             )
 
             # Damp orbital eccentricity
+            # If orb ecc. outside range [0,1], cap at 0.9
+            blackholes_pro.orb_ecc = np.where(blackholes_pro.orb_ecc<1, blackholes_pro.orb_ecc, 0.9)
             blackholes_pro.orb_ecc = eccentricity.orbital_ecc_damping(
                 opts.smbh_mass,
                 blackholes_pro.orb_a,

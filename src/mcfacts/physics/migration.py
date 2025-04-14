@@ -15,10 +15,12 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
 
+
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
     disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
     # Prevent accidental zeros or Nans!
     log_disk_radius_arr = np.log10(disk_radius_arr)
+
 
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
@@ -32,6 +34,7 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     new_orbs_a = orbs_a[migration_indices].copy()
 
     log_new_orbs_a = np.log10(new_orbs_a)
+    
     # Evaluate disc surf density at locations of all BH
     disc_surf_d = disc_surf_density(disk_radius_arr)
     disc_temp = np.nan_to_num(temp_func(disk_radius_arr))
@@ -45,6 +48,7 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
     Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
     # Find derivates of Sigmalog_spline
+
     dSigmadR_spline = Sigmalog_spline.derivative()
     dTempdR_spline = Templog_spline.derivative()
     # Evaluate dSigmadR_spline at the migrating orb_a values
