@@ -86,9 +86,9 @@ def orbital_separation_evolve(mass_1, mass_2, sep_initial, evolve_time):
     sep_initial = sep_initial.to('m').value
     evolve_time = evolve_time.to('s').value
     # Set up the constant as a single float
-    const = ((64 / 5) * (G ** 3)) * (c ** -5)
+    const_g_c = ((64 / 5) * (G ** 3)) * (c ** -5)
     # Calculate the beta array
-    beta_arr = const * mass_1 * mass_2 * (mass_1 + mass_2)
+    beta_arr = const_g_c * mass_1 * mass_2 * (mass_1 + mass_2)
     # Calculate an intermediate quantity
     quantity = (sep_initial ** 4) - (4 * beta_arr * evolve_time)
     # Calculate final separation
@@ -125,9 +125,9 @@ def orbital_separation_evolve_reverse(mass_1, mass_2, sep_final, evolve_time):
     sep_final = sep_final.to('m').value
     evolve_time = evolve_time.to('s').value
     # Set up the constant as a single float
-    const = ((64 / 5) * (G ** 3)) * (c ** -5)
+    const_g_c = ((64 / 5) * (G ** 3)) * (c ** -5)
     # Calculate the beta array
-    beta_arr = const * mass_1 * mass_2 * (mass_1 + mass_2)
+    beta_arr = const_g_c * mass_1 * mass_2 * (mass_1 + mass_2)
     # Calculate an intermediate quantity
     quantity = (sep_final ** 4) + (4 * beta_arr * evolve_time)
     # Calculate final separation
