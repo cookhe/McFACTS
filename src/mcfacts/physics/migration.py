@@ -552,7 +552,7 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     new_orbs_a = orbs_a[migration_indices].copy()
 
     # Array of migration timescales for each orbiter in seconds as calculated from torques elsewhere
-    tau = torque_mig_timescale
+    tau = np.abs(torque_mig_timescale)
 
     # Normalized masses of migrators (normalized to BH minimum mass)
     normalized_migrating_masses = masses[migration_indices]/bh_min_mass
@@ -562,19 +562,16 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     dt = timestep_duration_yr * (1 * u.yr).to(u.s).value / tau
     # migration distance is original locations times fraction of tau_mig elapsed
     migration_distance = new_orbs_a.copy() * dt
-    # print("torque_mig_distance",migration_distance)
 
     if flag_phenom_turb == 1:
         # Only need to perturb migrators for now
         # size_of_turbulent_array = np.size(migration_indices)
         # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
-        migration_distance = np.abs(migration_distance)
         # Calc migration distance as modified by turbulence.
         migration_distance = migration_distance*(1.0 + rng.normal(phenom_turb_centroid, phenom_turb_std_dev, size=migration_indices.size))/normalized_mig_masses_sq
 
     if torque_prescription == 'old' or torque_prescription == 'paardekooper':
         # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
-        migration_distance = np.abs(migration_distance)
         # Disk feedback ratio
         disk_feedback_ratio = disk_feedback_ratio_func[migration_indices]
         # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
@@ -626,7 +623,6 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     if torque_prescription == 'jiminez_masset':
         # If smbh_mass >10^8Msun --assume migration is always inwards
         if smbh_mass > 1.e8:
-            migration_distance = np.abs(migration_distance)
             new_orbs_a = new_orbs_a - migration_distance
         # If smbh_mass = 1.e8, assume trap at disk_radius_trap, but Type 1 migration inward everywhere.
         # ie. migrators interior & exterior to trap migrate inwards, but exteriors at trap stay there.
