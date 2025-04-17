@@ -738,9 +738,8 @@ def main():
             #blackholes_pro.spin_angle = blackholes_pro.spin_angle[~plunging_indices]
             #blackholes_pro. = blackholes_pro.orb_ecc[~plunging_indices]
 
-            blackholes_pro.orb_a = np.where(blackholes_pro.orb_a >opts.disk_inner_stable_circ_orb, blackholes_pro.orb_a, 10*opts.disk_inner_stable_circ_orb)
+            blackholes_pro.orb_a = np.where(blackholes_pro.orb_a > opts.disk_inner_stable_circ_orb, blackholes_pro.orb_a, 10*opts.disk_inner_stable_circ_orb)
             if new_orbs is not None:
-                # print("new_bh_orbs",new_orbs)
                 blackholes_pro.orb_a = new_orbs
 
             stars_pro.orb_a = migration.type1_migration_single(

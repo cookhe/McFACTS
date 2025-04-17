@@ -563,6 +563,12 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     # migration distance is original locations times fraction of tau_mig elapsed
     migration_distance = new_orbs_a.copy() * dt
 
+    # Calculate epsilon for trap radius --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
+    epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
+
+    # Calculate epsilon for outer edge of disk
+    epsilon_outer_radius = disk_radius_outer * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
+
     if flag_phenom_turb == 1:
         # Only need to perturb migrators for now
         # size_of_turbulent_array = np.size(migration_indices)
@@ -574,8 +580,6 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
         # Disk feedback ratio
         disk_feedback_ratio = disk_feedback_ratio_func[migration_indices]
-        # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
-        epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
 
         # Get masks for if objects are inside or outside the trap radius
         mask_out_trap = new_orbs_a > disk_radius_trap
@@ -627,8 +631,6 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         # If smbh_mass = 1.e8, assume trap at disk_radius_trap, but Type 1 migration inward everywhere.
         # ie. migrators interior & exterior to trap migrate inwards, but exteriors at trap stay there.
         if smbh_mass == 1.e8:
-            # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
-            epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
             # Get masks for if objects are inside or outside the trap radius (fixed to disk_radius_trap)
             mask_out_trap = new_orbs_a > disk_radius_trap
             mask_in_trap = new_orbs_a < (disk_radius_trap - epsilon_trap_radius)
@@ -643,8 +645,6 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
             new_orbs_a[mask_in_trap] = temp_orbs_a
 
         if smbh_mass < 1.e8 and smbh_mass > 1.e6:
-            # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
-            epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
             # Trap radius changes as a function of mass.
             # Also new(!) anti-trap radius. Region between trap and anti-trap migrates out, all others migrate inwards
             # Calc new trap radius from Grishin+24
@@ -670,20 +670,11 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
             # If migration takes object outside trap, fix at trap. No use, outside trap to keep at trap.
             #temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
             #new_orbs_a[mask_in_trap] = temp_orbs_a
-            #if np.size(new_orbs_a[mask_in_trap])>0:
-            #    print("in trap",new_orbs_a[mask_in_trap])
-
             new_orbs_a[mask_in_trap] = disk_radius_trap + epsilon_trap_radius[mask_in_trap]
-
-            #if np.size(new_orbs_a[mask_in_trap])> 0:
-            #    print("new_orbs_a_outmig",new_orbs_a[mask_in_trap])
-
             #If inside anti_trap migrate inwards
             temp_orbs_a = new_orbs_a[mask_in_anti_trap] + migration_distance[mask_in_anti_trap]
             new_orbs_a[mask_in_anti_trap] = temp_orbs_a
         if smbh_mass < 1.e6:
-            # Calculate epsilon --amount to adjust from disk_radius_trap for objects that will be set to disk_radius_trap
-            epsilon_trap_radius = disk_radius_trap * ((masses[migration_indices] / (3 * (masses[migration_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=migration_indices.size)
             # Trap radius changes as a function of mass.
             # Also new(!) anti-trap radius. Region between trap and anti-trap migrates out, all others migrate inwards
             # Calc new trap radius from Grishin+24
@@ -710,11 +701,11 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
             temp_orbs_a = new_orbs_a[mask_in_anti_trap] - migration_distance[mask_in_anti_trap]
             new_orbs_a[mask_in_anti_trap] = temp_orbs_a
 
-
+    # Assert that objects cannot migrate out of the disk
+    new_orbs_a[new_orbs_a > disk_radius_outer] = disk_radius_outer - epsilon_outer_radius[new_orbs_a > disk_radius_outer]
 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
-    #print("new_orbs_a_torque",new_orbs_a)
 
     assert np.all(~np.isnan(orbs_a))
 
