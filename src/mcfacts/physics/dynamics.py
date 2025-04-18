@@ -1485,9 +1485,9 @@ def bin_spheroid_encounter(
         disk_bins_bhbh.bin_orb_inc[chances_of_encounter < enc_rate] = bin_orb_inc
 
     # Test new values
-    assert np.all(bin_ecc < 1.), \
+    assert np.all(disk_bins_bhbh.bin_ecc < 1.), \
         "bin_ecc has values greater than 1"
-    assert np.all(bin_orb_ecc < 1.), \
+    assert np.all(disk_bins_bhbh.bin_orb_ecc < 1.), \
         "bin_orb_ecc has values greater than 1"
 
     return (disk_bins_bhbh)
