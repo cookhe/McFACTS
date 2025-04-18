@@ -243,7 +243,6 @@ def make_batch(opts, wkdir, smbh_mass, nsc_mass):
         cmd = "rm -rf %s/run*"%wkdir
         print(cmd)
         os.system(cmd)
-    raise Exception
 
 ######## Main ########
 def main():
