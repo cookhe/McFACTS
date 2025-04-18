@@ -15,7 +15,6 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
 
-
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
     disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
     # Prevent accidental zeros or Nans!
@@ -29,12 +28,12 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
 
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        return ()
+        return np.array([])
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
     log_new_orbs_a = np.log10(new_orbs_a)
-    
+
     # Evaluate disc surf density at locations of all BH
     disc_surf_d = disc_surf_density(disk_radius_arr)
     disc_temp = np.nan_to_num(temp_func(disk_radius_arr))
@@ -82,7 +81,7 @@ def paardekooper10_torque_binary(disc_surf_density, temp_func, orb_ecc_crit, bla
 
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        return ()
+        return np.array([])
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = bin_orb_a[migration_indices].copy()
 
@@ -144,7 +143,7 @@ def normalized_torque(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, disk_su
 
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        return ()
+        return np.array([])
 
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
@@ -208,7 +207,7 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
 
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        return ()
+        return np.array([])
 
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
@@ -275,7 +274,7 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
 
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        return ()
+        return np.array([])
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
@@ -359,7 +358,7 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
     """
     # If no feedback then end the function
     if flag_thermal_feedback == 0:
-        return ()
+        return np.array([])
 
     # Constants
     # Define adiabatic index (assume monatomic gas)
@@ -381,7 +380,7 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
 
     # If nothing will migrate then end the function
     if migration_indices.shape == (0,):
-        return ()
+        return np.array([])
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
@@ -708,6 +707,8 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     orbs_a[migration_indices] = new_orbs_a
 
     assert np.all(~np.isnan(orbs_a))
+    assert np.all(new_orbs_a < disk_radius_outer), \
+        "new_orbs_a contains values greater than disk_radius_outer"
 
     return (orbs_a)
 
