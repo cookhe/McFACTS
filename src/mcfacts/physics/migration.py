@@ -161,8 +161,7 @@ def normalized_torque(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, disk_su
     # find mass ratios
     mass_ratios = (masses[migration_indices]/smbh_mass)
     # Convert orb_a of migrating BH to meters. r_g =GM_smbh/c^2.
-    # Usefully, 1_rg=GM_smbh/c^2= 6.7e-11*2.e38/(9e16)~1.5e11m=1AU
-    orb_a_in_meters = new_orbs_a*smbh_mass_in_kg*scipy.constants.G / (scipy.constants.c)**(2.0)
+    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
     # Omega of migrating BH
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2
@@ -212,21 +211,7 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
-    # Get surface density function or process if just a float
-    #if isinstance(disk_surf_density_func, float):
-    #    disk_surface_density = disk_surf_density_func
-    #else:
-    #    disk_surface_density = disk_surf_density_func(orbs_a)[migration_indices]
-    # Get aspect ratio function or process if just a float
-    #if isinstance(disk_aspect_ratio_func, float):
-    #    disk_aspect_ratio = disk_aspect_ratio_func
-    #else:
-    #    disk_aspect_ratio = disk_aspect_ratio_func(orbs_a)[migration_indices]
-    # find mass ratios
-    #mass_ratios = (masses[migration_indices]/smbh_mass)
-    #Convert orb_a of migrating BH to meters. r_g =GM_smbh/c^2.
-    # Usefully, 1_rg=GM_smbh/c^2= 6.7e-11*2.e38/(9e16)~1.5e11m=1AU
-    orb_a_in_meters = new_orbs_a*smbh_mass_in_kg*scipy.constants.G / (scipy.constants.c)**(2.0)
+    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
     #Omega of migrating BH in s^-1
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     #masses of BH in kg
@@ -663,14 +648,12 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
 
             # If inside trap, but outside anti_trap, migrate outwards
             # Commented out this out-migration line
-            #temp_orbs_a = new_orbs_a[mask_in_trap] + migration_distance[mask_in_trap]
-            #Anything in out-migrating region ends up on trap in <0.01Myr (ie 1 timestep)
+            # temp_orbs_a = new_orbs_a[mask_in_trap] + migration_distance[mask_in_trap]
+            # Anything in out-migrating region ends up on trap in <0.01Myr (ie 1 timestep)
 
             # If migration takes object outside trap, fix at trap. No use, outside trap to keep at trap.
-            #temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
-            #new_orbs_a[mask_in_trap] = temp_orbs_a
             new_orbs_a[mask_in_trap] = disk_radius_trap + epsilon_trap_radius[mask_in_trap]
-            #If inside anti_trap migrate inwards
+            # If inside anti_trap migrate inwards
             temp_orbs_a = new_orbs_a[mask_in_anti_trap] + migration_distance[mask_in_anti_trap]
             new_orbs_a[mask_in_anti_trap] = temp_orbs_a
         if smbh_mass < 1.e6:
@@ -690,13 +673,13 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
             temp_orbs_a[temp_orbs_a <= disk_radius_trap] = disk_radius_trap - epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
             new_orbs_a[mask_out_trap] = temp_orbs_a
 
-            #If inside trap, but outside anti_trap, migrate outwards
+            # If inside trap, but outside anti_trap, migrate outwards
             temp_orbs_a = new_orbs_a[mask_in_trap] + migration_distance[mask_in_trap]
             # If migration takes object outside trap, fix at trap
             temp_orbs_a[temp_orbs_a >= disk_radius_trap] = disk_radius_trap + epsilon_trap_radius[mask_out_trap][temp_orbs_a <= disk_radius_trap]
             new_orbs_a[mask_in_trap] = temp_orbs_a
 
-            #If inside anti_trap migrate inwards
+            # If inside anti_trap migrate inwards
             temp_orbs_a = new_orbs_a[mask_in_anti_trap] - migration_distance[mask_in_anti_trap]
             new_orbs_a[mask_in_anti_trap] = temp_orbs_a
 
