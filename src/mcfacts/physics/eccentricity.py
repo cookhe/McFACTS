@@ -149,6 +149,9 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
     # print("Old ecc, New ecc",disk_bh_pro_orbs_ecc,new_disk_bh_pro_orbs_ecc)
     assert np.isfinite(new_disk_bh_pro_orbs_ecc).all(), \
         "Finite check failed for new_disk_bh_pro_orbs_ecc"
+    assert np.all(new_disk_bh_pro_orbs_ecc < 1.), \
+        "new_disk_bh_pro_orbs_ecc has values greater than 1"
+
     return new_disk_bh_pro_orbs_ecc
 
 
@@ -258,6 +261,9 @@ def orbital_bin_ecc_damping(smbh_mass, blackholes_binary, disk_surf_density_func
         "Finite check failed for new_bin_orb_ecc"
 
     blackholes_binary.bin_orb_ecc = new_bin_orb_ecc
+
+    assert np.all(new_bin_orb_ecc < 1.), \
+        "new_bin_orb_ecc has values greater than 1"
 
     return (blackholes_binary)
 
@@ -397,6 +403,9 @@ def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk
     # Check new eccentricities
     assert np.isfinite(new_disk_bh_pro_orbs_ecc).all(),\
         "Finite check failed for new_disk_bh_pro_orbs_ecc"
+    assert np.all(new_disk_bh_pro_orbs_ecc < 1.), \
+        "new_disk_bh_pro_orbs_ecc has values greater than 1"
+
     return new_disk_bh_pro_orbs_ecc
 
 
@@ -411,5 +420,8 @@ def ionized_orb_ecc(num_bh, orb_ecc_max):
         Maximum allowed orb_ecc
     """
     orb_eccs = rng.uniform(low=0.0, high=orb_ecc_max, size=num_bh)
+
+    assert np.all(orb_eccs < 1.), \
+        "orb_eccs has values greater than 1"
 
     return (orb_eccs)

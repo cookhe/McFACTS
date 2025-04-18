@@ -97,6 +97,9 @@ def orb_inc_damping(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_
 
     disk_bh_retro_orbs_ecc_new = inc * (1.0 - frac_change)
 
+    assert np.all(disk_bh_retro_orbs_ecc_new < 1.), \
+        "disk_bh_retro_orbs_ecc_new has values greater than 1"
+
     return disk_bh_retro_orbs_ecc_new
 
 
@@ -378,6 +381,11 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
     epsilon_orb_a = disk_radius_outer * ((disk_bh_retro_masses / (3 * (disk_bh_retro_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(disk_bh_retro_masses))
     disk_bh_retro_orbs_a_new[disk_bh_retro_orbs_a_new > disk_radius_outer] = disk_radius_outer - epsilon_orb_a[disk_bh_retro_orbs_a_new > disk_radius_outer]
+
+    assert np.all(disk_bh_retro_orbs_ecc_new < 1.), \
+        "disk_bh_retro_orbs_ecc_new has values greater than 1"
+    assert np.all(disk_bh_retro_orbs_a_new < disk_radius_outer), \
+        "disk_bh_retro_orbs_a_new has values greater than disk_radius_outer"
 
     return disk_bh_retro_orbs_ecc_new, disk_bh_retro_orbs_a_new, disk_bh_retro_orbs_inc_new
 

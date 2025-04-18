@@ -856,7 +856,10 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
-    #print("new_orbs_a_default",new_orbs_a)
+
+    assert np.all(new_orbs_a < disk_radius_outer), \
+        "new_orbs_a has values greater than disk_radius_outer"
+
     return (orbs_a)
 
 

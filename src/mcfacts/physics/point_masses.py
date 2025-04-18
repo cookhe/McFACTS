@@ -55,6 +55,10 @@ def time_of_orbital_shrinkage(mass_1, mass_2, sep_initial, sep_final):
     time_of_shrinkage = ((sep_initial ** 4) - (sep_final ** 4)) / 4 / beta_arr
     # Assign units
     time_of_shrinkage = time_of_shrinkage * u.s
+
+    assert np.all(time_of_shrinkage > 0), \
+        "time_of_shrinkage contains values <= 0"
+
     return time_of_shrinkage
 
 

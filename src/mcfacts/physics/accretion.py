@@ -65,6 +65,9 @@ def star_wind_mass_loss(disk_star_pro_masses,
 
     star_new_masses = ((star_mass + (mdot_Edd * timestep_duration_yr_si)).to("Msun")).value
 
+    assert np.all(star_new_masses > 0), \
+        "star_new_masses has values <= 0"
+
     return (star_new_masses, mass_lost.sum())
 
 
@@ -140,6 +143,9 @@ def accrete_star_mass(disk_star_pro_masses,
     # Any extra mass over the immortal cutoff is blown off the star and back into the disk
     immortal_mass_lost = mass_gained[disk_star_pro_new_masses == disk_star_initial_mass_cutoff] - immortal_mass_diff
 
+    assert np.all(disk_star_pro_new_masses > 0), \
+        "disk_star_pro_new_masses has values <= 0"
+
     return disk_star_pro_new_masses, mass_gained.sum(), immortal_mass_lost.sum()
 
 
@@ -170,6 +176,9 @@ def change_bh_mass(disk_bh_pro_masses, disk_bh_eddington_ratio, disk_bh_eddingto
     """
     # Mass grows exponentially for length of timestep:
     disk_bh_pro_new_masses = disk_bh_pro_masses*np.exp(disk_bh_eddington_mass_growth_rate*disk_bh_eddington_ratio*timestep_duration_yr)
+
+    assert np.all(disk_bh_pro_new_masses > 0), \
+        "disk_bh_pro_new_masses has values <= 0"
 
     return disk_bh_pro_new_masses
 

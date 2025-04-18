@@ -1918,6 +1918,7 @@ def main():
                     # New orb_a is the center of mass of the two stars
                     star_merged_orbs_a = ((stars_pro.at_id_num(starstar_id_nums[0], "mass") * stars_pro.at_id_num(starstar_id_nums[0], "orb_a")) +
                                           (stars_pro.at_id_num(starstar_id_nums[1], "mass") * stars_pro.at_id_num(starstar_id_nums[1], "orb_a"))) / star_merged_mass
+                    assert np.all(star_merged_orbs_a < opts.disk_radius_outer), "star_merged_orbs_a has values greater than disk_radius_outer"
                     # After doing the weighted average for orb_a we then cut off stars with mass > disk_star_initial_mass_cutoff
                     star_merged_mass[star_merged_mass > opts.disk_star_initial_mass_cutoff] = opts.disk_star_initial_mass_cutoff
                     # Radius, luminosity, Teff are all interpolated based on the new mass

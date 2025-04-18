@@ -304,4 +304,7 @@ def add_to_binary_obj(blackholes_binary, blackholes_pro, bh_pro_id_num_binary, i
                                    new_id_num=id_nums,
                                    new_galaxy=galaxy)
 
+    assert np.all(blackholes_binary.bin_sep > 0), \
+        "blackholes_binary.bin_sep has values <=0"
+
     return (blackholes_binary, id_nums)
