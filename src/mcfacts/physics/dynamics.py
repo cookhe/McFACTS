@@ -202,14 +202,15 @@ def circular_singles_encounters_prograde(
             num_poss_ints = 0
             num_encounters = 0
 
-    # Reset semi-major axis to outer disk radius if an encounter pushed one outside it
-    disk_bh_pro_orbs_a[disk_bh_pro_orbs_a > disk_radius_outer] = disk_radius_outer
-
     # Check finite
     assert np.isfinite(disk_bh_pro_orbs_a).all(), \
         "Finite check failed for disk_bh_pro_orbs_a"
     assert np.isfinite(disk_bh_pro_orbs_ecc).all(), \
         "Finite check failed for disk_bh_pro_orbs_ecc"
+    assert np.all(disk_bh_pro_orbs_a < disk_radius_outer), \
+        "disk_bh_pro_orbs_a contains values greater than disk_radius_outer"
+    assert np.all(disk_bh_pro_orbs_ecc < 1.), \
+        "disk_bh_pro_orbs_ecc contains values greater than 1"
     return (disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
 
@@ -421,6 +422,10 @@ def circular_singles_encounters_prograde_stars(
         "Finite check failed for disk_star_pro_orbs_a"
     assert np.isfinite(disk_star_pro_orbs_ecc).all(), \
         "Finite check failed for disk_star_pro_orbs_ecc"
+    assert np.all(disk_star_pro_orbs_a < disk_radius_outer), \
+        "disk_star_pro_orbs_a contains values greater than disk_radius_outer"
+    assert np.all(disk_star_pro_orbs_ecc < 1.), \
+        "disk_star_pro_orbs_ecc contains values greater than 1"
 
     # Put ID nums array into correct shape
     id_nums_touch = np.array(id_nums_touch)
@@ -649,6 +654,14 @@ def circular_singles_encounters_prograde_star_bh(
         "Finite check failed for disk_bh_pro_orbs_a"
     assert np.isfinite(disk_bh_pro_orbs_ecc).all(), \
         "Finite check failed for disk_bh_pro_orbs_ecc"
+    assert np.all(disk_star_pro_orbs_a < disk_radius_outer), \
+        "disk_star_pro_orbs_a contains values greater than disk_radius_outer"
+    assert np.all(disk_star_pro_orbs_ecc < 1.), \
+        "disk_star_pro_orbs_ecc contains values greater than 1"
+    assert np.all(disk_bh_pro_orbs_a < disk_radius_outer), \
+        "disk_bh_pro_orbs_a contains values greater than disk_radius_outer"
+    assert np.all(disk_bh_pro_orbs_ecc < 1.), \
+        "disk_bh_pro_orbs_ecc contains values greater than 1"
 
     # Put ID nums array into correct shape
     id_nums_touch = np.array(id_nums_touch)
@@ -882,6 +895,9 @@ def circular_binaries_encounters_ecc_prograde(
                         disk_bins_bhbh.bin_ecc[i] = 1.0 - epsilon
                     if disk_bins_bhbh.bin_orb_ecc[i] >= 1:
                         disk_bins_bhbh.bin_orb_ecc[i] = 1.0 - epsilon
+                    # Catch if single BHs have ecc >= 1
+                    if ecc_prograde_population_eccentricities[j] >= 1:
+                        ecc_prograde_population_eccentricities[j] = 1.0 - epsilon
 
     # TODO: ALSO return new array of singletons with changed params.
     disk_bh_pro_orbs_a[ecc_prograde_population_indices] = ecc_prograde_population_locations
@@ -894,7 +910,14 @@ def circular_binaries_encounters_ecc_prograde(
         "Finite check failure: bin_orbital_eccentricities"
     assert np.isfinite(disk_bins_bhbh.bin_ecc).all(), \
         "Finite check failure: bin_eccentricities"
-    assert np.sum(disk_bins_bhbh.bin_ecc > 1) == 0, "bin_ecc has values greater than 1"
+    assert np.all(disk_bins_bhbh.bin_ecc < 1.), \
+        "bin_ecc has values greater than 1"
+    assert np.all(disk_bins_bhbh.bin_orb_ecc < 1.), \
+        "bin_orb_ecc has values greater than 1"
+    assert np.all(ecc_prograde_population_locations < disk_radius_outer), \
+        "ecc_prograde_population_locations has values greater than disk_radius_outer"
+    assert np.all(ecc_prograde_population_eccentricities < 1.), \
+        "disk_bh_pro_orbs_ecc has values greater than 1"
 
     return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
@@ -1140,9 +1163,28 @@ def circular_binaries_encounters_circ_prograde(
                         disk_bins_bhbh.bin_ecc[i] = 1.0 - epsilon
                     if (disk_bins_bhbh.bin_orb_ecc[i] >= 1):
                         disk_bins_bhbh.bin_orb_ecc[i] = 1.0 - epsilon
+                    # Catch where single BHs have ecc >= 1
+                    if circ_prograde_population_eccentricities[j] >= 1:
+                        circ_prograde_population_eccentricities[j] = 1.0 - epsilon
 
     disk_bh_pro_orbs_a[circ_prograde_population_indices] = circ_prograde_population_locations
     disk_bh_pro_orbs_ecc[circ_prograde_population_indices] = circ_prograde_population_eccentricities
+
+    # Check finite
+    assert np.isfinite(disk_bins_bhbh.bin_sep).all(), \
+        "Finite check failure: bin_separations"
+    assert np.isfinite(disk_bins_bhbh.bin_orb_ecc).all(), \
+        "Finite check failure: bin_orbital_eccentricities"
+    assert np.isfinite(disk_bins_bhbh.bin_ecc).all(), \
+        "Finite check failure: bin_eccentricities"
+    assert np.all(disk_bins_bhbh.bin_ecc < 1.), \
+        "bin_ecc has values greater than 1"
+    assert np.all(disk_bins_bhbh.bin_orb_ecc < 1.), \
+        "bin_orb_ecc has values greater than 1"
+    assert np.all(circ_prograde_population_locations < disk_radius_outer), \
+        "ecc_prograde_population_locations has values greater than disk_radius_outer"
+    assert np.all(circ_prograde_population_eccentricities < 1.), \
+        "disk_bh_pro_orbs_ecc has values greater than 1"
 
     return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
@@ -1441,6 +1483,12 @@ def bin_spheroid_encounter(
         disk_bins_bhbh.bin_ecc[chances_of_encounter < enc_rate] = bin_ecc
         disk_bins_bhbh.bin_orb_ecc[chances_of_encounter < enc_rate] = bin_orb_ecc
         disk_bins_bhbh.bin_orb_inc[chances_of_encounter < enc_rate] = bin_orb_inc
+
+    # Test new values
+    assert np.all(bin_ecc < 1.), \
+        "bin_ecc has values greater than 1"
+    assert np.all(bin_orb_ecc < 1.), \
+        "bin_orb_ecc has values greater than 1"
 
     return (disk_bins_bhbh)
 
