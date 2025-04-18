@@ -148,7 +148,10 @@ def make_batch(opts, wkdir, smbh_mass, nsc_mass):
         if not mcfacts_input_variables["flag_use_pagn"]:
             raise NotImplementedError
         # Load pAGN disk model
-        pagn_surf_dens_func, pagn_aspect_ratio_func, pagn_opacity_func, pagn_model, bonus_structures =\
+        #pagn_surf_dens_func, pagn_aspect_ratio_func, pagn_opacity_func, pagn_model, bonus_structures =\
+        pagn_surf_dens_func, pagn_aspect_ratio_func, pagn_opacity_func, pagn_sound_speed_func, \
+            disk_density_func, disk_pressure_grad_func, disk_omega_func, \
+            disk_surf_dens_func_log, temp_func, pagn_model, bonus_structures = \
             construct_disk_pAGN(
                 mcfacts_input_variables["disk_model_name"],
                 smbh_mass,
@@ -240,6 +243,7 @@ def make_batch(opts, wkdir, smbh_mass, nsc_mass):
         cmd = "rm -rf %s/run*"%wkdir
         print(cmd)
         os.system(cmd)
+    raise Exception
 
 ######## Main ########
 def main():
