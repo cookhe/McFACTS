@@ -246,6 +246,9 @@ def change_bh_spin_magnitudes(disk_bh_pro_spins,
     disk_bh_pro_spins_new[disk_bh_pro_spins_new < disk_bh_pro_spin_min] = disk_bh_pro_spin_min
     disk_bh_pro_spins_new[disk_bh_pro_spins_new > disk_bh_pro_spin_max] = disk_bh_pro_spin_max
 
+    assert np.isfinite(disk_bh_pro_spins_new).all(), \
+        "Finite check failure: disk_bh_pro_spins_new"
+
     return disk_bh_pro_spins_new
 
 
@@ -301,7 +304,6 @@ def change_bh_spin_angles(disk_bh_pro_spin_angles,
     # Singleton BH with orb ecc < disk_star_pro_orbs_ecc_crit will spin up b/c accrete prograde
     indices_bh_spin_up = np.asarray(disk_bh_pro_orbs_ecc <= disk_bh_pro_orbs_ecc_crit).nonzero()[0]
 
-
     # Spin up BH are torqued towards zero (ie alignment with disk, so decrease mag of spin angle)
     disk_bh_spin_angles_new[indices_bh_spin_up] = disk_bh_pro_spin_angles[indices_bh_spin_up] - spin_torque_iteration
     # Spin down BH with orb ecc > disk_bh_pro_orbs_ecc_crit are torqued toward anti-alignment with disk, incr mag of spin angle.
@@ -313,5 +315,8 @@ def change_bh_spin_angles(disk_bh_pro_spin_angles,
     bh_max_spin_angle = 3.10
     disk_bh_spin_angles_new[disk_bh_spin_angles_new < disk_bh_spin_minimum_resolution] = 0.0
     disk_bh_spin_angles_new[disk_bh_spin_angles_new > bh_max_spin_angle] = bh_max_spin_angle
+
+    assert np.isfinite(disk_bh_spin_angles_new).all(), \
+        "Finite check failure: disk_bh_spin_angles_new"
 
     return disk_bh_spin_angles_new

@@ -449,6 +449,9 @@ def tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
                             SI_orbiter_mass * disk_surf_density_func(disk_bh_retro_orbs_a) * np.pi * (semi_lat_rec ** 2)) \
                 / kappa
 
+    assert np.isfinite(tau_i_dyn).all(), \
+        "Finite check failure: tau_i_dyn"
+
     return tau_i_dyn
 
 
@@ -529,6 +532,9 @@ def tau_semi_lat(smbh_mass, retrograde_bh_locations, retrograde_bh_masses, retro
                             retro_mass * disk_surf_model(retrograde_bh_locations) * np.pi * (semi_lat_rec ** 2)) \
                 / (np.sqrt(2)) * kappa * np.abs(np.cos(inc) - zeta)
 
+    assert np.isfinite(tau_p_dyn).all(), \
+        "Finite check failure: tau_p_dyn"
+
     return tau_p_dyn
 
 
@@ -596,5 +602,10 @@ def tau_ecc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
                 kappa_bar * np.abs(np.cos(inc) - zeta_bar))
     # WZL Eqn 73
     tau_e_dyn = (2.0 * (ecc ** 2) / (1.0 - (ecc ** 2))) * 1.0 / np.abs(1.0 / tau_a_dyn - 1.0 / tau_p_dyn)
+
+    assert np.isfinite(tau_e_dyn).all(), \
+        "Finite check failure: tau_e_dyn"
+    assert np.isfinite(tau_a_dyn).all(), \
+        "Finite check failure: tau_a_dyn"
 
     return tau_e_dyn, tau_a_dyn

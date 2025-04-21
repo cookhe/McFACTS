@@ -98,6 +98,11 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
         strain_factor[nu_gw > (1e-6) * u.Hz] = 4.e3
     char_strain = strain_factor*strain
 
+    assert np.isfinite(char_strain.value).all(), \
+        "Finite check failure: char_strain.value"
+    assert np.isfinite(nu_gw.value).all(), \
+        "Finite check failure: nu_gw.value"
+
     return (char_strain.value, nu_gw.value)
 
 

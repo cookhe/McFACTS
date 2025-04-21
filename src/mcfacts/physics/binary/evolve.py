@@ -49,7 +49,7 @@ def change_bin_mass(blackholes_binary, disk_bh_eddington_ratio,
 
     assert np.all(blackholes_binary.mass_1 > 0), \
         "blackholes_binary.mass_1 has values <=0"
-    assert np.all(blackholes_binary.mass_2), \
+    assert np.all(blackholes_binary.mass_2 > 0), \
         "blackholes_binary.mass_2 has values <=0"
 
     return (blackholes_binary)
@@ -242,6 +242,9 @@ def bin_com_feedback_hankla(blackholes_binary, disk_surface_density, disk_opacit
     # set ratio = 1 (no migration) for binaries at or beyond the disk outer radius
     ratio_heat_mig_torques_bin_com[blackholes_binary.bin_orb_a > disk_radius_outer] = 1.0
 
+    assert np.isfinite(ratio_heat_mig_torques_bin_com).all(),\
+        "Finite check failure: ratio_heat_mig_torques_bin_com"
+
     return (ratio_heat_mig_torques_bin_com)
 
 
@@ -330,6 +333,9 @@ def bin_contact_check(blackholes_binary, smbh_mass):
     # If binary separation <= contact condition, set binary separation to contact condition
     blackholes_binary.bin_sep[mask_condition] = contact_condition[mask_condition]
     blackholes_binary.flag_merging[mask_condition] = -2
+
+    assert np.all(~np.isnan(blackholes_binary.flag_merging)), \
+        "blackholes_binary.flag_merging contains NaN values"
 
     return (blackholes_binary)
 

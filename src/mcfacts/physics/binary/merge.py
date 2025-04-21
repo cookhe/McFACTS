@@ -214,7 +214,7 @@ def merged_mass(masses_1, masses_2, spins_1, spins_2):
     mass_factors = 1.0 - (0.2 * nu) - (0.208 * nu_squared * total_spins)
     merged_masses = total_masses*mass_factors
 
-    assert np.all(merged_mass > 0), \
+    assert np.all(merged_masses > 0), \
         "merged_mass has values <= 0"
 
     return (merged_masses)
