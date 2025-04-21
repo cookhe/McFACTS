@@ -33,9 +33,9 @@ EMILY_PLOTS = ${HERE}/scripts/emily_plots.py
 SEED=3456789108 # put an 8 here
 #FNAME_INI= ${HERE}/recipes/p1_thompson.ini
 FNAME_INI= ${HERE}/recipes/model_choice_old.ini
-FNAME_INI_MSTAR_PAGN= ${HERE}/recipes/paper_3/p3_pAGN_on.ini
-FNAME_INI_MSTAR_FIXED= ${HERE}/recipes/paper_3/p3_pAGN_off.ini
-MSTAR_RUNS_WKDIR_PAGN = ${HERE}/runs_mstar_bins_pAGN
+FNAME_INI_MSTAR_SCALE= ${HERE}/recipes/paper_3/p3_scale.ini
+FNAME_INI_MSTAR_FIXED= ${HERE}/recipes/paper_3/p3_fixed.ini
+MSTAR_RUNS_WKDIR_SCALE = ${HERE}/runs_mstar_bins_scale
 MSTAR_RUNS_WKDIR_FIXED = ${HERE}/runs_mstar_bins_fixed
 # NAL files might not exist unless you download them from
 # https://gitlab.com/xevra/nal-data
@@ -112,9 +112,9 @@ vera_plots: mcfacts_sim
 		--cdf-fields chi_eff chi_p final_mass gen1 gen2 time_merge \
 		--verbose
 
-mstar_runs_pagn:
+mstar_runs_scale:
 	python ${MSTAR_RUNS_EXE} \
-		--fname-ini ${FNAME_INI_MSTAR_PAGN} \
+		--fname-ini ${FNAME_INI_MSTAR_SCALE} \
 		--timestep_num 1000 \
 		--bin_num_max 10000 \
 		--nbins 33 \
@@ -123,7 +123,7 @@ mstar_runs_pagn:
 		--mstar-max 1e13 \
 		--scrub \
 		--fname-nal ${FNAME_GWTC2_NAL} \
-		--wkdir ${MSTAR_RUNS_WKDIR_PAGN} \
+		--wkdir ${MSTAR_RUNS_WKDIR_SCALE} \
 		--truncate-opacity
 		#--nbins 33 
 		#--timestep_num 1000 \
