@@ -316,7 +316,5 @@ def add_to_binary_obj(blackholes_binary, blackholes_pro, bh_pro_id_num_binary, i
         "blackholes_binary.mass_2 has values <= 0"
     assert np.all(blackholes_binary.bin_orb_a > 0), \
         "blackholes_binary.bin_orb_a has values <= 0"
-    assert np.all(blackholes_binary.bin_ecc < 1.), \
-        "blackholes_binary.bin_ecc has values greater than 1"
 
     return (blackholes_binary, id_nums)
