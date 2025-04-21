@@ -36,7 +36,7 @@ def shock_luminosity(smbh_mass, m_f, bin_orb_a, disk_aspect_ratio, disk_density,
     Returns:
     - Lshock: Shock luminosity (erg s^-1).
     """
-    print(smbh_mass, m_f, bin_orb_a, disk_aspect_ratio, disk_density, kick)
+    #print(smbh_mass, m_f, bin_orb_a, disk_aspect_ratio, disk_density, kick)
     mass_final, vk = [], []
     Lshock_final = []
     for value in m_f:
@@ -91,7 +91,7 @@ https://file+.vscode-resource.vscode-cdn.net/Users/emilymcpike/McFACTS/runs/time
     Returns:
     - LBHL: Jet luminosity (erg s^-1).
     """
-    print(m_f, bin_orb_a, disk_density, kick)
+    #print(m_f, bin_orb_a, disk_density, kick)
     mass_final, vk = [], []
     LBHL_final = []
     for value in m_f:

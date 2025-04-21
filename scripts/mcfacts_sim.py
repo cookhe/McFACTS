@@ -2557,7 +2557,8 @@ def main():
         np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_gained mass_lost")
 
     toc_perf = time.perf_counter()
-    print("Perf time: %0.2f"%(toc_perf - tic_perf))
+    fin_perf = toc_perf - tic_perf
+    print("Performance time: %0.2f"%(fin_perf), " [", int(fin_perf/60), 'min -', int(fin_perf % 60), "sec ]")   
 
 if __name__ == "__main__":
     main()
