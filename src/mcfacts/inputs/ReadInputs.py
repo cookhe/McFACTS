@@ -200,7 +200,12 @@ INPUT_TYPES = {
     "mass_pile_up"                  : float,
     "save_snapshots"                : int,
     "mean_harden_energy_delta"      : float,
-    "var_harden_energy_delta"       : float
+    "var_harden_energy_delta"       : float,
+    "torque_prescription"           : str,
+    "flag_phenom_turb"              : int,
+    "phenom_turb_centroid"          : float,
+    "phenom_turb_std_dev"           : float,
+    "flag_use_surrogate"            : int
 }
 # Ensure none of the data types are bool to avoid issues casting ascii to boolean
 if bool in INPUT_TYPES.values():
@@ -603,7 +608,9 @@ def construct_disk_pAGN(
             #'epsilon': rad_efficiency
             #'le': disk_bh_eddington_ratio,\
         Rg = smbh_mass * ct.M_sun * ct.G / (ct.c**2)
-        base_args['Rout'] = disk_radius_outer * Rg.to('m').value
+        # pAGN TQM disk models exclude `Rout`, so feed pAGN a slightly
+        # larger value (+1%) than the user set for `disk_radius_outer`
+        base_args['Rout'] = 1.01 * disk_radius_outer * Rg.to('m').value
     else:
         raise RuntimeError("unknown disk model: %s"%(disk_model_name))
 

@@ -209,10 +209,7 @@ def main():
                                          flag_use_pagn=opts.flag_use_pagn,
                                          verbose=opts.verbose
                                          )
-    #print("disk_surface_density",disk_surface_density)
-    #print("disk_surface_density_log",disk_surface_density_log)
-    #print("temp_func",temp_func)
-    #print("gradient_disk_surface_density_log",gradient_disk_surface_density_log)
+
     blackholes_merged_pop = AGNMergedBlackHole()
     emris_pop = AGNBlackHole()
     blackholes_binary_gw_pop = AGNBinaryBlackHole()
@@ -293,8 +290,10 @@ def main():
 
         # generate initial BH parameter arrays
         print("Generate initial BH parameter arrays")
-        bh_orb_a_initial = setupdiskblackholes.setup_disk_blackholes_location(
-                disk_bh_num, opts.disk_radius_outer, opts.disk_inner_stable_circ_orb)
+        bh_orb_a_initial = setupdiskblackholes.setup_disk_blackholes_location_NSC_powerlaw(
+                disk_bh_num, opts.disk_radius_outer, opts.disk_inner_stable_circ_orb,
+                opts.smbh_mass, opts.nsc_radius_crit, opts.nsc_density_index_inner,
+                opts.nsc_density_index_outer, volume_scaling=True)
         bh_mass_initial = setupdiskblackholes.setup_disk_blackholes_masses(
                 disk_bh_num,
                 opts.nsc_imf_bh_mode, opts.nsc_imf_bh_mass_max, opts.nsc_imf_bh_powerlaw_index, opts.mass_pile_up)
@@ -324,7 +323,7 @@ def main():
                                   orb_ecc=bh_orb_ecc_initial,
                                   orb_arg_periapse=bh_orb_arg_periapse_initial,
                                   bh_num=disk_bh_num,
-                                  galaxy=np.zeros(disk_bh_num),
+                                  galaxy=np.full(disk_bh_num, galaxy),
                                   time_passed=np.zeros(disk_bh_num))
 
         # Initialize filing_cabinet
@@ -338,7 +337,7 @@ def main():
 
         # Initialize stars
         if opts.flag_add_stars:
-            stars, disk_star_num = initializediskstars.init_single_stars(opts, disk_aspect_ratio, id_start_val=filing_cabinet.id_max+1)
+            stars, disk_star_num = initializediskstars.init_single_stars(opts, disk_aspect_ratio, galaxy, id_start_val=filing_cabinet.id_max+1)
         else:
             stars, disk_star_num = AGNStar(), 0
 
@@ -595,20 +594,154 @@ def main():
                 ratio_heat_mig_torques = np.ones(blackholes_pro.num)
                 ratio_heat_mig_stars_torques = np.ones(stars_pro.num)
 
-            # then migrate as usual
-            blackholes_pro.orb_a = migration.type1_migration_single(
-                opts.smbh_mass,
-                blackholes_pro.orb_a,
-                blackholes_pro.mass,
-                blackholes_pro.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit,
-                disk_surface_density,
-                disk_aspect_ratio,
-                ratio_heat_mig_torques,
-                opts.disk_radius_trap,
-                opts.disk_radius_outer,
-                opts.timestep_duration_yr
-            )
+            # Migration, choose your torque_prescription
+            new_orbs = None  # Set empty variable, we'll fill it based on torque_prescription
+
+            # Old is the original approximation used in v.0.1.0, based off (but not identical to Paardekooper 2010)-usually within factor [0.5-2]
+            if opts.torque_prescription == 'old':
+                # Old migration prescription
+                new_orbs = migration.type1_migration_single(
+                    opts.smbh_mass,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.mass,
+                    blackholes_pro.orb_ecc,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    disk_surface_density,
+                    disk_aspect_ratio,
+                    ratio_heat_mig_torques,
+                    opts.disk_radius_trap,
+                    opts.disk_radius_outer,
+                    opts.timestep_duration_yr
+                )
+            # Alternatively, calculate actual torques from disk profiles.
+            # Paardekooper torque coeff (default)
+            if opts.torque_prescription == 'paardekooper':
+                paardekooper_torque_coeff = migration.paardekooper10_torque(
+                    disk_surface_density,
+                    temp_func,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.orb_ecc,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    opts.disk_radius_outer,
+                    opts.disk_inner_stable_circ_orb
+                )
+
+            # Jiminez-Masset torque coeff (from Grishin+24)
+            if opts.torque_prescription == 'jiminez_masset':
+                jiminez_masset_torque_coeff = migration.jiminezmasset17_torque(
+                    opts.smbh_mass,
+                    disk_surface_density,
+                    disk_opacity,
+                    disk_aspect_ratio,
+                    temp_func,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.orb_ecc,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    opts.disk_radius_outer,
+                    opts.disk_inner_stable_circ_orb
+                )
+
+                # Thermal torque from JM17 (if flag_thermal_feedback off, this component is 0.)
+                jiminez_masset_thermal_torque_coeff = migration.jiminezmasset17_thermal_torque_coeff(
+                    opts.smbh_mass,
+                    disk_surface_density,
+                    disk_opacity,
+                    disk_aspect_ratio,
+                    temp_func,
+                    disk_sound_speed,
+                    disk_density,
+                    opts.disk_bh_eddington_ratio,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.orb_ecc,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    blackholes_pro.mass,
+                    opts.flag_thermal_feedback,
+                    opts.disk_radius_outer,
+                    opts.disk_inner_stable_circ_orb
+                )
+
+                if opts.flag_thermal_feedback == 1:
+                    total_jiminez_masset_torque = jiminez_masset_torque_coeff + jiminez_masset_thermal_torque_coeff
+                else:
+                    total_jiminez_masset_torque = jiminez_masset_torque_coeff
+
+            # Normalized torque (multiplies torque coeff)
+            if opts.torque_prescription == 'paardekooper' or opts.torque_prescription == 'jiminez_masset':
+                normalized_torque = migration.normalized_torque(
+                    opts.smbh_mass,
+                    blackholes_pro.orb_a,
+                    blackholes_pro.mass,
+                    blackholes_pro.orb_ecc,
+                    opts.disk_bh_pro_orb_ecc_crit,
+                    disk_surface_density,
+                    disk_aspect_ratio
+                )
+
+                if np.size(normalized_torque) > 0:
+                    if opts.torque_prescription == 'paardekooper':
+                        torque = paardekooper_torque_coeff * normalized_torque
+                        disk_trap_radius = opts.disk_radius_trap
+                        disk_anti_trap_radius = opts.disk_radius_trap
+                    if opts.torque_prescription == 'jiminez_masset':
+                        torque = total_jiminez_masset_torque * normalized_torque
+                        # Set up trap scaling as a function of mass for Jiminez-Masset (for SG-like disk)
+                        # No traps if M_smbh >10^8Msun (approx.)
+                        if opts.smbh_mass > 1.e8:
+                            disk_trap_radius = opts.disk_inner_stable_circ_orb
+                            disk_anti_trap_radius = opts.disk_inner_stable_circ_orb
+                        if opts.smbh_mass == 1.e8:
+                            disk_trap_radius = opts.disk_radius_trap
+                            disk_anti_trap_radius = opts.disk_radius_trap
+                        # Trap changes as a function of r_g if M_smbh <10^8Msun (default trap radius ~700r_g). Grishin+24
+                        if opts.smbh_mass < 1.e8 and opts.smbh_mass > 1.e6:
+                            disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass / 1.e8) ** (-1.225)
+                            disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass / 1.e8) ** (0.099)
+                        # Trap location changes again at low SMBH mass (Grishin+24)
+                        if opts.smbh_mass < 1.e6:
+                            disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass / 1.e8) ** (-0.97)
+                            disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass / 1.e8) ** (0.099)
+                    # Timescale on which migration happens based on overall torque
+                    torque_mig_timescales = migration.torque_mig_timescale(
+                        opts.smbh_mass,
+                        blackholes_pro.orb_a,
+                        blackholes_pro.mass,
+                        blackholes_pro.orb_ecc,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        torque
+                    )
+                    # Calculate new bh_orbs_a using torque (here including details from Jiminez& Masset '17 & Grishin+'24)
+                    new_orbs = migration.type1_migration_distance(
+                        opts.smbh_mass,
+                        blackholes_pro.orb_a,
+                        blackholes_pro.mass,
+                        blackholes_pro.orb_ecc,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        torque_mig_timescales,
+                        ratio_heat_mig_torques,
+                        disk_trap_radius,
+                        disk_anti_trap_radius,
+                        opts.disk_radius_outer,
+                        opts.timestep_duration_yr,
+                        opts.flag_phenom_turb,
+                        opts.phenom_turb_centroid,
+                        opts.phenom_turb_std_dev,
+                        opts.nsc_imf_bh_mode,
+                        opts.torque_prescription
+                    )
+            #Make sure no zeros in orb_a. Get indices of orbs_a that are less than disk_inner_stable_circ_orb
+            # Get indices of objects with orb_ecc <= opts.disk_inner_stable_circ_orb so we can remove them.
+            #plunging_indices = np.asarray(blackholes_pro.orb_a) <= opts.disk_inner_stable_circ_orb).nonzero()[0]
+            #blackholes_pro.orb_a = blackholes_pro.orb_a[~plunging_indices]
+            #blackholes_pro.orb_ecc = blackholes_pro.orb_ecc[~plunging_indices]
+            #blackholes_pro.mass = blackholes_pro.mass[~plunging_indices]
+            #blackholes_pro.spin = blackholes_pro.spin[~plunging_indices]
+            #blackholes_pro.spin_angle = blackholes_pro.spin_angle[~plunging_indices]
+            #blackholes_pro. = blackholes_pro.orb_ecc[~plunging_indices]
+
+            blackholes_pro.orb_a = np.where(blackholes_pro.orb_a >opts.disk_inner_stable_circ_orb, blackholes_pro.orb_a, 10*opts.disk_inner_stable_circ_orb)
+            if new_orbs is not None:
+                # print("new_bh_orbs",new_orbs)
+                blackholes_pro.orb_a = new_orbs
 
             stars_pro.orb_a = migration.type1_migration_single(
                 opts.smbh_mass,
@@ -623,37 +756,6 @@ def main():
                 opts.disk_radius_outer,
                 opts.timestep_duration_yr
             )
-            paardekooper_torque_coeff = migration.paardekooper10_torque(
-                opts.smbh_mass,
-                disk_surface_density_log,
-                disk_surface_density,
-                temp_func,
-                blackholes_pro.orb_a,
-                blackholes_pro.orb_ecc,
-                opts.disk_bh_pro_orb_ecc_crit
-            )
-            normalized_torque = migration.normalized_torque(
-                opts.smbh_mass,
-                blackholes_pro.orb_a,
-                blackholes_pro.mass, 
-                blackholes_pro.orb_ecc, 
-                opts.disk_bh_pro_orb_ecc_crit,
-                disk_surface_density,
-                disk_aspect_ratio
-            )
-            #print("paardekooper_torque_coeff",paardekooper_torque_coeff)
-            #print("normalized paardekooper torque",normalized_torque)
-            if np.size(normalized_torque) > 0:
-                paardekooper_torque =  paardekooper_torque_coeff*normalized_torque
-                #print("paardekooper torque",paardekooper_torque_coeff*normalized_torque)
-            
-            torque_mig_timescales = migration.torque_mig_timescale(
-                opts.smbh_mass,
-                blackholes_pro.orb_a,
-                blackholes_pro.mass,
-                blackholes_pro.orb_ecc, 
-                opts.disk_bh_pro_orb_ecc_crit,
-                paardekooper_torque)
 
             # Update filing cabinet
             filing_cabinet.update(id_num=blackholes_pro.id_num,
@@ -662,14 +764,32 @@ def main():
             filing_cabinet.update(id_num=stars_pro.id_num,
                                   attr="orb_a",
                                   new_info=stars_pro.orb_a)
-
             # Check for orb_a unphysical
-            bh_pro_id_num_unphysical = blackholes_pro.id_num[blackholes_pro.orb_a == 0.]
+            bh_pro_id_num_unphysical = blackholes_pro.id_num[blackholes_pro.orb_a < opts.disk_inner_stable_circ_orb]
+            bh_pro_id_num_unphys1 = blackholes_pro.id_num[blackholes_pro.mass == 0.]
+            bh_pro_id_num_unphys2 = blackholes_pro.id_num[blackholes_pro.orb_ecc >1]
+            bh_pro_id_num_unphys3 = blackholes_pro.id_num[blackholes_pro.orb_a == np.nan]
+            bh_pro_id_num_nans = blackholes_pro.id_num[np.isnan(blackholes_pro.orb_a)]
             if bh_pro_id_num_unphysical.size > 0:
                 # The binary has unphysical eccentricity. Delete
                 blackholes_pro.remove_id_num(bh_pro_id_num_unphysical)
                 filing_cabinet.remove_id_num(bh_pro_id_num_unphysical)
-
+            if bh_pro_id_num_unphys1.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphys1)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphys1)
+            if bh_pro_id_num_unphys2.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphys2)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphys2)
+            if bh_pro_id_num_unphys3.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_unphys3)
+                filing_cabinet.remove_id_num(bh_pro_id_num_unphys3)
+            if bh_pro_id_num_nans.size > 0:
+                # The binary has unphysical eccentricity. Delete
+                blackholes_pro.remove_id_num(bh_pro_id_num_nans)
+                filing_cabinet.remove_id_num(bh_pro_id_num_nans)
             star_pro_id_num_unphysical = stars_pro.id_num[stars_pro.orb_a == 0.]
             if star_pro_id_num_unphysical.size > 0:
                 # The binary has unphysical eccentricity. Delete
@@ -751,6 +871,8 @@ def main():
             )
 
             # Damp orbital eccentricity
+            # If orb ecc. outside range [0,1], cap at 0.9
+            blackholes_pro.orb_ecc = np.where(blackholes_pro.orb_ecc<1, blackholes_pro.orb_ecc, 0.9)
             blackholes_pro.orb_ecc = eccentricity.orbital_ecc_damping(
                 opts.smbh_mass,
                 blackholes_pro.orb_a,
@@ -1225,16 +1347,130 @@ def main():
                         opts.disk_alpha_viscosity,
                         opts.disk_radius_outer
                     )
-
                 else:
                     ratio_heat_mig_torques_bin_com = np.ones(blackholes_binary.num)
 
                 # Migrate binaries center of mass
-                blackholes_binary = migration.type1_migration_binary(
-                    opts.smbh_mass, blackholes_binary,
-                    opts.disk_bh_pro_orb_ecc_crit,
-                    disk_surface_density, disk_aspect_ratio, ratio_heat_mig_torques_bin_com,
-                    opts.disk_radius_trap, opts.disk_radius_outer, opts.timestep_duration_yr)
+                # Choose torque prescription for binary migration
+                # Old is the original approximation used in v.0.1.0, based off (but not identical to Paardekooper 2010)-usually within factor [0.5-2]
+                #if opts.torque_prescription == 'old' or opts.torque_prescription == 'paardekooper':
+                if opts.torque_prescription == 'old':
+                    blackholes_binary = migration.type1_migration_binary(
+                        opts.smbh_mass, blackholes_binary,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        disk_surface_density, disk_aspect_ratio, ratio_heat_mig_torques_bin_com,
+                        opts.disk_radius_trap, opts.disk_radius_outer, opts.timestep_duration_yr)
+
+                #Alternatively, calculate actual torques from disk profiles.
+                #Paardekooper torque coeff (default)
+                if opts.torque_prescription == 'paardekooper':
+                    paardekooper_torque_coeff = migration.paardekooper10_torque_binary(
+                        disk_surface_density,
+                        temp_func,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        blackholes_binary,
+                        opts.disk_radius_outer,
+                        opts.disk_inner_stable_circ_orb
+                    )
+
+                #Jiminez-Masset torque coeff (from Grishin+24)
+                if opts.torque_prescription == 'jiminez_masset':
+                    jiminez_masset_torque_coeff = migration.jiminezmasset17_torque(
+                        opts.smbh_mass,
+                        disk_surface_density,
+                        disk_opacity,
+                        disk_aspect_ratio,
+                        temp_func,
+                        blackholes_binary.bin_orb_a,
+                        blackholes_binary.bin_orb_ecc,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        opts.disk_radius_outer,
+                        opts.disk_inner_stable_circ_orb
+                    )
+                    jiminez_masset_thermal_torque_coeff = migration.jiminezmasset17_thermal_torque_coeff(
+                        opts.smbh_mass,
+                        disk_surface_density,
+                        disk_opacity,
+                        disk_aspect_ratio,
+                        temp_func,
+                        disk_sound_speed,
+                        disk_density,
+                        opts.disk_bh_eddington_ratio,
+                        blackholes_binary.bin_orb_a,
+                        blackholes_binary.bin_orb_ecc,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        blackholes_binary.mass_1 + blackholes_binary.mass_2,
+                        opts.flag_thermal_feedback,
+                        opts.disk_radius_outer,
+                        opts.disk_inner_stable_circ_orb
+                    )
+                    if opts.flag_thermal_feedback > 0:
+                        total_jiminez_masset_torque = jiminez_masset_torque_coeff + jiminez_masset_thermal_torque_coeff
+                    else:
+                        total_jiminze_masset_torque = jiminez_masset_torque_coeff
+                #Normalized torque (multiplies torque coeff)
+                if opts.torque_prescription == 'paardekooper' or opts.torque_prescription == 'jiminez_masset':
+                    normalized_torque = migration.normalized_torque(
+                        opts.smbh_mass,
+                        blackholes_binary.bin_orb_a,
+                        blackholes_binary.mass_1 + blackholes_binary.mass_2,
+                        blackholes_binary.bin_orb_ecc,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        disk_surface_density,
+                        disk_aspect_ratio
+                    )
+
+                    if np.size(normalized_torque) > 0:
+                        if opts.torque_prescription == 'paardekooper':
+                            torque =  paardekooper_torque_coeff*normalized_torque
+                            disk_trap_radius = opts.disk_radius_trap
+                            disk_anti_trap_radius = opts.disk_radius_trap
+                        if opts.torque_prescription == 'jiminez_masset':
+                            torque = total_jiminez_masset_torque*normalized_torque
+                        # Set up trap scaling as a function of mass for Jiminez-Masset (for SG-like disk)
+                        # No traps if M_smbh >10^8Msun (approx.)
+                            if opts.smbh_mass > 1.e8:
+                                disk_trap_radius = opts.disk_inner_stable_circ_orb
+                                disk_anti_trap_radius = opts.disk_inner_stable_circ_orb
+                            if opts.smbh_mass == 1.e8:
+                                disk_trap_radius = opts.disk_radius_trap
+                                disk_anti_trap_radius = opts.disk_radius_trap
+                            # Trap changes as a function of r_g if M_smbh <10^8Msun (default trap radius ~700r_g). Grishin+24
+                            if opts.smbh_mass < 1.e8 and opts.smbh_mass > 1.e6:
+                                disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(-1.225)
+                                disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(0.099)
+                            #Trap location changes again at low SMBH mass (Grishin+24)
+                            if opts.smbh_mass < 1.e6:
+                                disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(-0.97)
+                                disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(0.099)
+
+                        torque_mig_timescales = migration.torque_mig_timescale(
+                            opts.smbh_mass,
+                            blackholes_binary.bin_orb_a,
+                            blackholes_binary.mass_1 + blackholes_binary.mass_2,
+                            blackholes_binary.bin_orb_ecc,
+                            opts.disk_bh_pro_orb_ecc_crit,
+                            torque
+                        )
+                        #Calculate new bh_orbs_a using torque
+                        blackholes_binary.bin_orb_a = migration.type1_migration_distance(
+                            opts.smbh_mass,
+                            blackholes_binary.bin_orb_a,
+                            blackholes_binary.mass_1 + blackholes_binary.mass_2,
+                            blackholes_binary.bin_orb_ecc,
+                            opts.disk_bh_pro_orb_ecc_crit,
+                            torque_mig_timescales,
+                            ratio_heat_mig_torques_bin_com,
+                            disk_trap_radius,
+                            disk_anti_trap_radius,
+                            opts.disk_radius_outer,
+                            opts.timestep_duration_yr,
+                            opts.flag_phenom_turb,
+                            opts.phenom_turb_centroid,
+                            opts.phenom_turb_std_dev,
+                            opts.nsc_imf_bh_mode,
+                            opts.torque_prescription
+                        )
 
                 # Update filing cabinet
                 filing_cabinet.update(id_num=blackholes_binary.id_num,
@@ -1303,6 +1539,7 @@ def main():
                 if bh_binary_id_num_ionization.size > 0:
                     # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
                     # For now add 2 new orb ecc term of 0.01. inclination is 0.0 as well. TO DO: calculate v_kick and resulting perturbation to orb ecc.
+
                     new_orb_ecc = eccentricity.ionized_orb_ecc(bh_binary_id_num_ionization.size * 2, opts.disk_bh_orb_ecc_max_init)
                     new_id_nums = np.arange(filing_cabinet.id_max+1, filing_cabinet.id_max + 1 + bh_binary_id_num_ionization.size * 2, 1)
                     blackholes_pro.add_blackholes(
@@ -1414,26 +1651,42 @@ def main():
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_inc")
                                 )
                         # TODO: calculate v_kick and resulting perturbation to orb ecc. For now set v_kick to 200 km/s
-                        #bh_v_kick = analytical_velo.analytical_kick_velocity(
-                         #       len(bh_binary_id_num_merger))
-                        v_kick = 200.                        
-                        bh_lum_shock = lum.shock_luminosity( 
+                        if opts.flag_use_surrogate == 0:
+                            bh_v_kick = analytical_velo.analytical_kick_velocity(
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
+                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2")
+                                    )
+                        else:
+                            bh_v_kick = 200 #evolve_binary.velocity()
+
+                        #v_kick = 200. # comment out when using analytical mod
+
+
+                        bh_lum_shock = lum.shock_luminosity(
                                 opts.smbh_mass,
                                 bh_mass_merged,
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
                                 disk_aspect_ratio,
                                 disk_density,
-                                v_kick) # add bh_v_kick to incorp
-                                
+                                bh_v_kick) # add bh_v_kick to incorp
+
                         bh_lum_jet = lum.jet_luminosity(
                                 bh_mass_merged,
                                 blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
                                 disk_density,
-                                v_kick) # add bh_v_kick to incorp
-                                
+                                bh_v_kick) # add bh_v_kick to incorp
+
+                        # bin_a_agn_lum = lum.AGN_lum(temp_func,
+                        #                             opts.smbh_mass,
+                        #                             blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"))
+
 
                         bh_orb_ecc_merged = merge.merged_orb_ecc(blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                                                 np.full(bh_binary_id_num_merger.size, v_kick), # add bh_v_kick to incorp
+                                                                 np.full(bh_binary_id_num_merger.size, bh_v_kick), # add bh_v_kick to incorp
                                                                  opts.smbh_mass)
 
                         # Append new merged BH to arrays of single BH locations, masses, spins, spin angles & gens
@@ -1453,9 +1706,10 @@ def main():
                                                          new_gen_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "gen_2"),
                                                          new_chi_eff=bh_chi_eff_merged,
                                                          new_chi_p=bh_chi_p_merged,
-                                                         #new_v_kick=bh_v_kick,
+                                                         new_v_kick=bh_v_kick,
                                                          new_lum_shock=bh_lum_shock,
                                                          new_lum_jet=bh_lum_jet,
+                                                         #new_lum_agn=bin_a_agn_lum,
                                                          new_time_merged=np.full(bh_binary_id_num_merger.size, time_passed))
 
                         # # New bh generation is max of generations involved in merger plus 1
@@ -1670,8 +1924,10 @@ def main():
             # Assuming captured objects are not in the inner disk? (KN)
             capture = time_passed % opts.capture_time_yr
             if capture == 0:
-                bh_orb_a_captured = setupdiskblackholes.setup_disk_blackholes_location(
-                    1, opts.disk_radius_capture_outer, opts.disk_inner_stable_circ_orb)
+                bh_orb_a_captured = setupdiskblackholes.setup_disk_blackholes_location_NSC_powerlaw(
+                    1, opts.disk_radius_capture_outer, opts.disk_inner_stable_circ_orb,
+                    opts.smbh_mass, opts.nsc_radius_crit, opts.nsc_density_index_inner,
+                    opts.nsc_density_index_outer, volume_scaling=True)
                 bh_mass_captured = setupdiskblackholes.setup_disk_blackholes_masses(
                     1, opts.nsc_imf_bh_mode, opts.nsc_imf_bh_mass_max, opts.nsc_imf_bh_powerlaw_index, opts.mass_pile_up)
                 bh_spin_captured = setupdiskblackholes.setup_disk_blackholes_spins(
@@ -2119,9 +2375,10 @@ def main():
                                              new_gen_2=blackholes_merged.gen_2,
                                              new_chi_eff=blackholes_merged.chi_eff,
                                              new_chi_p=blackholes_merged.chi_p,
-                                             #new_v_kick=blackholes_merged.v_kick,
+                                             new_v_kick=blackholes_merged.v_kick,
                                              new_lum_shock=blackholes_merged.lum_shock,
                                              new_lum_jet=blackholes_merged.lum_jet,
+                                             #new_lum_agn = blackholes_merged.lum_agn,
                                              new_time_merged=blackholes_merged.time_merged)
 
         # Add list of all binaries formed to the population level object
@@ -2220,7 +2477,7 @@ def main():
                                     new_galaxy=stars_explode.galaxy,
                                     new_time_sn=stars_explode.time_sn
                                     )
-        
+
         stars_merge_pop.add_stars(new_id_num=stars_merge.id_num,
                                   new_galaxy=stars_merge.galaxy,
                                   new_orb_a_final=stars_merge.orb_a_final,
@@ -2233,12 +2490,12 @@ def main():
                                   new_log_radius_final=stars_merge.log_radius_final,
                                   new_orb_ecc=stars_merge.orb_ecc,
                                   new_time_merged=stars_merge.time_merged)
-        
+
         # Add mass cycled info to population arrays
         disk_arr_timestep_pop = np.concatenate([disk_arr_timestep_pop, disk_arr_timestep])
         disk_arr_mass_gained_pop = np.concatenate([disk_arr_mass_gained_pop, disk_arr_mass_gained])
         disk_arr_mass_lost_pop = np.concatenate([disk_arr_mass_lost_pop, disk_arr_mass_lost])
-        
+
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
     population_save_name = f"{basename}_population{extension}"
@@ -2258,7 +2515,7 @@ def main():
     bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
     population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p", "lum_shock", "lum_jet"] # add "v_kick", to incorp
+                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet"]#, "lum_agn"] # add "v_kick", to incorp
     binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
     stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
