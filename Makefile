@@ -33,8 +33,8 @@ EMILY_PLOTS = ${HERE}/scripts/emily_plots.py
 SEED=3456789108 # put an 8 here
 #FNAME_INI= ${HERE}/recipes/p1_thompson.ini
 FNAME_INI= ${HERE}/recipes/model_choice_old.ini
-FNAME_INI_MSTAR_PAGN= ${HERE}/recipes/p3_pAGN_on.ini
-FNAME_INI_MSTAR_FIXED= ${HERE}/recipes/p3_pAGN_off.ini
+FNAME_INI_MSTAR_PAGN= ${HERE}/recipes/paper_3/p3_pAGN_on.ini
+FNAME_INI_MSTAR_FIXED= ${HERE}/recipes/paper_3/p3_pAGN_off.ini
 MSTAR_RUNS_WKDIR_PAGN = ${HERE}/runs_mstar_bins_pAGN
 MSTAR_RUNS_WKDIR_FIXED = ${HERE}/runs_mstar_bins_fixed
 # NAL files might not exist unless you download them from
