@@ -191,13 +191,13 @@ def circular_singles_encounters_prograde(
                         # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
                         # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
                         if disk_bh_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                            disk_bh_pro_orbs_ecc[circ_idx] = delta_energy_strong
-                            disk_bh_pro_orbs_a[circ_idx] = disk_bh_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
+                            disk_bh_pro_orbs_ecc[circ_idx] = delta_energy_strong * np.sqrt(disk_bh_pro_masses[ecc_idx]/disk_bh_pro_masses[circ_idx])
+                            disk_bh_pro_orbs_a[circ_idx] = disk_bh_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong * np.sqrt(disk_bh_pro_masses[ecc_idx]/disk_bh_pro_masses[circ_idx]))
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_bh_pro_orbs_a[circ_idx] > disk_radius_outer):
                                 disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
-                            disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
-                            disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                            disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_bh_pro_masses[circ_idx]/disk_bh_pro_masses[ecc_idx]))
+                            disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_bh_pro_masses[circ_idx]/disk_bh_pro_masses[ecc_idx]))
                     num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
@@ -399,13 +399,13 @@ def circular_singles_encounters_prograde_stars(
                         # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
                         # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
                         if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong
-                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
+                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong * np.sqrt(disk_star_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx])
+                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong * np.sqrt(disk_star_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx]))
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
                                 disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
-                            disk_star_pro_orbs_ecc[ecc_idx] = disk_star_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
-                            disk_star_pro_orbs_a[ecc_idx] = disk_star_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                            disk_star_pro_orbs_ecc[ecc_idx] = disk_star_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_star_pro_masses[ecc_idx]))
+                            disk_star_pro_orbs_a[ecc_idx] = disk_star_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_star_pro_masses[ecc_idx]))
                             # Look for stars that are inside each other's Hill spheres and if so return them as mergers
                             separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_star_pro_orbs_a[ecc_idx])
                             center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_star_pro_orbs_a[ecc_idx]],
@@ -650,13 +650,13 @@ def circular_singles_encounters_prograde_star_bh(
                         # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
                         # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
                         if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong
-                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
+                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong * np.sqrt(disk_bh_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx])
+                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong * np.sqrt(disk_bh_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx]))
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
                                 disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon_star[i]
-                            disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
-                            disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                            disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_bh_pro_masses[ecc_idx]))
+                            disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_bh_pro_masses[ecc_idx]))
                             # Look for stars that are inside each other's Hill spheres and if so return them as mergers
                             separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_bh_pro_orbs_a[ecc_idx])
                             center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_bh_pro_orbs_a[ecc_idx]],
