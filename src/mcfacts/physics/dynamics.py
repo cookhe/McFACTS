@@ -377,7 +377,8 @@ def circular_singles_encounters_prograde_stars(
     ecc_orb_max = disk_star_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_star_pro_orbs_ecc[ecc_prograde_population_indices])
     num_poss_ints = 0
     num_encounters = 0
-    id_nums_touch = []
+    id_nums_poss_touch = []
+    frac_rhill_sep = []
     if len(circ_prograde_population_indices) > 0:
         for i, circ_idx in enumerate(circ_prograde_population_indices):
             for j, ecc_idx in enumerate(ecc_prograde_population_indices):
@@ -411,7 +412,8 @@ def circular_singles_encounters_prograde_stars(
                                                         weights=[disk_star_pro_masses[circ_idx], disk_star_pro_masses[ecc_idx]])
                             rhill_poss_encounter = center_of_mass * ((disk_star_pro_masses[circ_idx] + disk_star_pro_masses[ecc_idx]) / (3. * smbh_mass)) ** (1./3.)
                             if (separation - rhill_poss_encounter < 0):
-                                id_nums_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_star_pro_id_nums[ecc_idx]]))
+                                id_nums_poss_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_star_pro_id_nums[ecc_idx]]))
+                                frac_rhill_sep.append(separation / rhill_poss_encounter)
                     num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
@@ -424,8 +426,31 @@ def circular_singles_encounters_prograde_stars(
     assert np.all(disk_star_pro_orbs_a < disk_radius_outer), \
         "disk_star_pro_orbs_a contains values greater than disk_radius_outer"
 
-    # Put ID nums array into correct shape
-    id_nums_touch = np.array(id_nums_touch)
+    id_nums_poss_touch = np.array(id_nums_poss_touch)
+    frac_rhill_sep = np.array(frac_rhill_sep)
+
+    # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
+    if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
+        sort_idx = np.argsort(frac_rhill_sep)
+        id_nums_poss_touch = id_nums_poss_touch[sort_idx]
+        uniq_vals, unq_counts = np.unique(id_nums_poss_touch, return_counts=True)
+        dupe_vals = uniq_vals[unq_counts > 1]
+        dupe_rows = id_nums_poss_touch[np.any(np.isin(id_nums_poss_touch, dupe_vals), axis=1)]
+        uniq_rows = id_nums_poss_touch[np.all(~np.isin(id_nums_poss_touch, dupe_vals), axis=1)]
+
+        rm_rows = []
+        for row in dupe_rows:
+            dupe_indices = np.any(np.isin(dupe_rows, row), axis=1).nonzero()[0][1:]
+            rm_rows.append(dupe_indices)
+        rm_rows = np.unique(np.concatenate(rm_rows))
+        keep_mask = np.ones(len(dupe_rows))
+        keep_mask[rm_rows] = 0
+
+        id_nums_touch = np.concatenate((dupe_rows[keep_mask.astype(bool)], uniq_rows))
+
+    else:
+        id_nums_touch = id_nums_poss_touch
+
     id_nums_touch = id_nums_touch.T
     return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch)
 
@@ -603,7 +628,8 @@ def circular_singles_encounters_prograde_star_bh(
     ecc_orb_max = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_bh_pro_orbs_a[ecc_prograde_population_indices])
     num_poss_ints = 0
     num_encounters = 0
-    id_nums_touch = []
+    id_nums_poss_touch = []
+    frac_rhill_sep = []
     if len(circ_prograde_population_indices) > 0:
         for i, circ_idx in enumerate(circ_prograde_population_indices):
             for j, ecc_idx in enumerate(ecc_prograde_population_indices):
@@ -637,7 +663,8 @@ def circular_singles_encounters_prograde_star_bh(
                                                         weights=[disk_star_pro_masses[circ_idx], disk_bh_pro_masses[ecc_idx]])
                             rhill_poss_encounter = center_of_mass * ((disk_star_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]) / (3. * smbh_mass)) ** (1./3.)
                             if (separation - rhill_poss_encounter < 0):
-                                id_nums_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_bh_pro_id_nums[ecc_idx]]))
+                                id_nums_poss_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_bh_pro_id_nums[ecc_idx]]))
+                                frac_rhill_sep.append(separation / rhill_poss_encounter)
                     num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
@@ -657,7 +684,31 @@ def circular_singles_encounters_prograde_star_bh(
         "disk_bh_pro_orbs_a contains values greater than disk_radius_outer"
 
     # Put ID nums array into correct shape
-    id_nums_touch = np.array(id_nums_touch)
+    id_nums_poss_touch = np.array(id_nums_poss_touch)
+    frac_rhill_sep = np.array(frac_rhill_sep)
+
+    # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
+    if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
+        sort_idx = np.argsort(frac_rhill_sep)
+        id_nums_poss_touch = id_nums_poss_touch[sort_idx]
+        uniq_vals, unq_counts = np.unique(id_nums_poss_touch, return_counts=True)
+        dupe_vals = uniq_vals[unq_counts > 1]
+        dupe_rows = id_nums_poss_touch[np.any(np.isin(id_nums_poss_touch, dupe_vals), axis=1)]
+        uniq_rows = id_nums_poss_touch[np.all(~np.isin(id_nums_poss_touch, dupe_vals), axis=1)]
+
+        rm_rows = []
+        for row in dupe_rows:
+            dupe_indices = np.any(np.isin(dupe_rows, row), axis=1).nonzero()[0][1:]
+            rm_rows.append(dupe_indices)
+        rm_rows = np.unique(np.concatenate(rm_rows))
+        keep_mask = np.ones(len(dupe_rows))
+        keep_mask[rm_rows] = 0
+
+        id_nums_touch = np.concatenate((dupe_rows[keep_mask.astype(bool)], uniq_rows))
+
+    else:
+        id_nums_touch = id_nums_poss_touch
+
     id_nums_touch = id_nums_touch.T
     return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, id_nums_touch)
 
