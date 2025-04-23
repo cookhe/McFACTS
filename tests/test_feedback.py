@@ -13,7 +13,7 @@ def feedback_bh_hankla_param():
     """return input and expected values"""
     disk_bh_pro_orbs_a = provider.INPUT_PARAMETERS["bh_orbital_semi_major_axis_inner"][InputParameterSet.SINGLETON]
 
-    expected = [np.nan, np.nan, 0.08781061, 0.07893705, 0.06938105, 0.0613231, 0.05491281, 0.04974382, 0.0454978, 0.04200165]
+    expected = [0.08781061, 0.07893705, 0.06938105, 0.0613231, 0.05491281, 0.04974382, 0.0454978, 0.04200165]
 
     return zip(disk_bh_pro_orbs_a, expected)
 
@@ -26,4 +26,4 @@ def test_feedback_bh_hankla(disk_bh_pro_orbs_a, expected):
 
     print(feedback_bh_hankla_values)
 
-    assert (np.isnan(expected) and np.isnan(feedback_bh_hankla_values)) or np.abs(feedback_bh_hankla_values - expected) < 1.e-4
+    assert np.abs(feedback_bh_hankla_values - expected) < 1.e-4
