@@ -8,6 +8,8 @@ Inifile
         Use pAGN to generate disk model?
     "flag_add_stars"                : int
         Add stars to the disk
+    "flag_coalesce_initial_stars"   : int
+        Keep stars as is (0) or coalesce before time loop starts (1)
     "flag_initial_stars_BH_immortal": int
         If stars over disk_star_initial_mass_cutoff turn into BH (0) or hold at cutoff (1, immortal)
     "smbh_mass"                     : float
@@ -149,6 +151,7 @@ INPUT_TYPES = {
     "disk_model_name"               : str,
     "flag_use_pagn"                 : int,
     "flag_add_stars"                : int,
+    "flag_coalesce_initial_stars"   : int,
     "flag_initial_stars_BH_immortal": int,
     "smbh_mass"                     : float,
     "disk_radius_trap"              : float,
