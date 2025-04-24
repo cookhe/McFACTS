@@ -379,6 +379,9 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     epsilon_orb_a = disk_radius_outer * ((disk_bh_retro_masses / (3 * (disk_bh_retro_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(disk_bh_retro_masses))
     disk_bh_retro_orbs_a_new[disk_bh_retro_orbs_a_new > disk_radius_outer] = disk_radius_outer - epsilon_orb_a[disk_bh_retro_orbs_a_new > disk_radius_outer]
 
+    assert np.all(disk_bh_retro_orbs_a_new < disk_radius_outer), \
+        "disk_bh_retro_orbs_a_new has values greater than disk_radius_outer"
+
     return disk_bh_retro_orbs_ecc_new, disk_bh_retro_orbs_a_new, disk_bh_retro_orbs_inc_new
 
 
@@ -440,6 +443,9 @@ def tau_inc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
                 * (SI_smbh_mass ** 2) * period / (
                             SI_orbiter_mass * disk_surf_density_func(disk_bh_retro_orbs_a) * np.pi * (semi_lat_rec ** 2)) \
                 / kappa
+
+    assert np.isfinite(tau_i_dyn).all(), \
+        "Finite check failure: tau_i_dyn"
 
     return tau_i_dyn
 
@@ -521,6 +527,9 @@ def tau_semi_lat(smbh_mass, retrograde_bh_locations, retrograde_bh_masses, retro
                             retro_mass * disk_surf_model(retrograde_bh_locations) * np.pi * (semi_lat_rec ** 2)) \
                 / (np.sqrt(2)) * kappa * np.abs(np.cos(inc) - zeta)
 
+    assert np.isfinite(tau_p_dyn).all(), \
+        "Finite check failure: tau_p_dyn"
+
     return tau_p_dyn
 
 
@@ -588,5 +597,10 @@ def tau_ecc_dyn(smbh_mass, disk_bh_retro_orbs_a, disk_bh_retro_masses, disk_bh_r
                 kappa_bar * np.abs(np.cos(inc) - zeta_bar))
     # WZL Eqn 73
     tau_e_dyn = (2.0 * (ecc ** 2) / (1.0 - (ecc ** 2))) * 1.0 / np.abs(1.0 / tau_a_dyn - 1.0 / tau_p_dyn)
+
+    assert np.isfinite(tau_e_dyn).all(), \
+        "Finite check failure: tau_e_dyn"
+    assert np.isfinite(tau_a_dyn).all(), \
+        "Finite check failure: tau_a_dyn"
 
     return tau_e_dyn, tau_a_dyn

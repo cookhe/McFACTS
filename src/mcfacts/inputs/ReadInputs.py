@@ -125,12 +125,14 @@ Inifile
         Innermost Stable Circular Orbit around SMBH
     "mass_pile_up"                  : float
         Pile-up of masses caused by cutoff (M_sun)
-    "save_snapshots"
+    "save_snapshots"                : int
         Save snapshots of the disk and NSC at each timestep
-    "mean_harden_energy_delta"
+    "mean_harden_energy_delta"      : float
         The Gaussian mean value for the energy change during a strong interaction
-    "var_harden_energy_delta"
+    "var_harden_energy_delta"       : float
         The Gaussian variance value for the energy change during a strong interaction
+    "flag_use_surrogate"            : int
+        Switch (0) uses analytical kick prescription from Akiba et al. (2024). Switch (1) sets 200 km/s for each merger's kick velocity.
 """
 # Things everyone needs
 import configparser as ConfigParser

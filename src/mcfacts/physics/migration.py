@@ -56,7 +56,8 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
 
     Torque_paardekooper_coeff = -0.85 + dSigmadR + (0.9 * dTempdR)
 
-    assert np.all(~np.isnan(Torque_paardekooper_coeff))
+    assert np.isfinite(Torque_paardekooper_coeff).all(), \
+        "Finite check failure: Torque_paardekooper_coeff"
 
     return Torque_paardekooper_coeff
 
@@ -105,7 +106,8 @@ def paardekooper10_torque_binary(disc_surf_density, temp_func, orb_ecc_crit, bla
 
     Torque_paardekooper_coeff = -0.85 + dSigmadR + (0.9 * dTempdR)
 
-    assert np.all(~np.isnan(Torque_paardekooper_coeff))
+    assert np.isfinite(Torque_paardekooper_coeff).all(), \
+        "Finite check failure: Torque_paardekooper_coeff"
 
     return Torque_paardekooper_coeff
 
@@ -161,13 +163,14 @@ def normalized_torque(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, disk_su
     # find mass ratios
     mass_ratios = (masses[migration_indices]/smbh_mass)
     # Convert orb_a of migrating BH to meters. r_g =GM_smbh/c^2.
-    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
+    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     # Omega of migrating BH
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2
     normalized_torque = ((mass_ratios/disk_aspect_ratio)**(2.0))*disk_surface_density*((orb_a_in_meters)**(4.0))*(Omega_bh**(2.0))
 
-    assert np.all(~np.isnan(normalized_torque))
+    assert np.isfinite(normalized_torque).all(), \
+        "Finite check failure: normalized_torque"
 
     return normalized_torque
 
@@ -211,7 +214,7 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
-    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
+    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     #Omega of migrating BH in s^-1
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     #masses of BH in kg
@@ -220,7 +223,8 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     torque_mig_timescale = bh_masses*Omega_bh*((orb_a_in_meters)**(2.0))/(2.0*migration_torque)
     #print("torque_mig_timescale",torque_mig_timescale)
 
-    assert np.all(~np.isnan(torque_mig_timescale))
+    assert np.isfinite(torque_mig_timescale).all(), \
+        "Finite check failure: torque_mig_timescale"
 
     return torque_mig_timescale
 
@@ -311,7 +315,8 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
 
     Torque_jiminezmasset_coeff = (0.46 + 0.96 * dSigmadR - 1.8 * dTempdR)/gamma + (-2.34 - 0.1*dSigmadR + 1.5 * dTempdR) * factor
 
-    assert np.all(~np.isnan(Torque_jiminezmasset_coeff))
+    assert np.isfinite(Torque_jiminezmasset_coeff).all(), \
+        "Finite check failure: Torque_jiminezmasset_coeff"
 
     return Torque_jiminezmasset_coeff
 
@@ -471,7 +476,8 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
 
     Thermal_torque_coeff = Thermal_torque_coeff * decay_factor
 
-    assert np.all(~np.isnan(Thermal_torque_coeff))
+    assert np.isfinite(Thermal_torque_coeff).all(), \
+        "Finite check failure: Thermal_torque_coeff"
 
     return Thermal_torque_coeff
 
@@ -689,7 +695,8 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
 
-    assert np.all(~np.isnan(orbs_a))
+    assert np.isfinite(orbs_a).all(), \
+        "Finite check failure: orbs_a"
     assert np.all(new_orbs_a < disk_radius_outer), \
         "new_orbs_a contains values greater than disk_radius_outer"
 
@@ -856,7 +863,12 @@ def type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
 
     # Update orbs_a
     orbs_a[migration_indices] = new_orbs_a
-    #print("new_orbs_a_default",new_orbs_a)
+
+    assert np.isfinite(new_orbs_a).all(), \
+        "Finite check failure: new_orbs_a"
+    assert np.all(new_orbs_a < disk_radius_outer), \
+        "new_orbs_a has values greater than disk_radius_outer"
+
     return (orbs_a)
 
 
@@ -907,7 +919,7 @@ def type1_migration_single(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     new_orbs_a = type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
                                  disk_surf_density_func, disk_aspect_ratio_func, disk_feedback_ratio_func,
                                  disk_radius_trap, disk_radius_outer, timestep_duration_yr)
-    #print("new_orbs_a",new_orbs_a)
+
     return (new_orbs_a)
 
 

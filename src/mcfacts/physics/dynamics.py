@@ -209,7 +209,6 @@ def circular_singles_encounters_prograde(
         "Finite check failed for disk_bh_pro_orbs_ecc"
     assert np.all(disk_bh_pro_orbs_a < disk_radius_outer), \
         "disk_bh_pro_orbs_a contains values greater than disk_radius_outer"
-
     return (disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
 
@@ -876,7 +875,7 @@ def circular_binaries_encounters_ecc_prograde(
     epsilon_orb_a = disk_radius_outer * ((ecc_prograde_population_masses / (3 * (ecc_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(ecc_prograde_population_masses))
 
     if disk_bins_bhbh.num == 0:
-        return (disk_bins_bhbh)
+        return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
     # Create array of random numbers for the chances of encounters
     chances = rng.uniform(size=(disk_bins_bhbh.num, ecc_prograde_population_indices.size))
@@ -957,7 +956,7 @@ def circular_binaries_encounters_ecc_prograde(
     assert np.all(ecc_prograde_population_locations < disk_radius_outer), \
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
 
-    return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
+    return disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
 
 
 def circular_binaries_encounters_circ_prograde(
@@ -1139,7 +1138,7 @@ def circular_binaries_encounters_circ_prograde(
     epsilon_orb_a = disk_radius_outer * ((circ_prograde_population_masses / (3 * (circ_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(circ_prograde_population_masses))
 
     if (disk_bins_bhbh.num == 0):
-        return (disk_bins_bhbh)
+        return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
     # Set up random numbers
     chances = rng.uniform(size=(disk_bins_bhbh.num, len(circ_prograde_population_locations)))
@@ -1516,6 +1515,8 @@ def bin_spheroid_encounter(
         disk_bins_bhbh.bin_orb_ecc[chances_of_encounter < enc_rate] = bin_orb_ecc
         disk_bins_bhbh.bin_orb_inc[chances_of_encounter < enc_rate] = bin_orb_inc
 
+    # Test new values
+
     return (disk_bins_bhbh)
 
 
@@ -1562,6 +1563,9 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
     bin_orb_inc[bwtwn_crit_inc1_inc2_mask] = bin_orb_inc[bwtwn_crit_inc1_inc2_mask] * (1. - ((timestep_duration_yr/5.e7) * (bin_mass[bwtwn_crit_inc1_inc2_mask] / 10.) * (bin_orb_a[bwtwn_crit_inc1_inc2_mask] / 1.e4)))
 
     blackholes_binary.bin_orb_inc[idx_gtr_0] = bin_orb_inc
+
+    assert np.isfinite(blackholes_binary.bin_orb_inc).all(), \
+        "Finite check failure: blackholes_binary.bin_orb_inc"
 
     return (blackholes_binary)
 
@@ -1631,5 +1635,8 @@ def bh_near_smbh(
     new_location_r_g[new_location_r_g < 1.] = 1.
     # Only update when less than min_safe_distance
     new_disk_bh_pro_orbs_a[disk_bh_pro_orbs_a < min_safe_distance] = new_location_r_g
+
+    assert np.isfinite(new_disk_bh_pro_orbs_a).all(), \
+        "Finite check failure: new_disk_bh_pro_orbs_a"
 
     return new_disk_bh_pro_orbs_a

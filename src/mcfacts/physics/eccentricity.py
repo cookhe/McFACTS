@@ -149,6 +149,7 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
     # print("Old ecc, New ecc",disk_bh_pro_orbs_ecc,new_disk_bh_pro_orbs_ecc)
     assert np.isfinite(new_disk_bh_pro_orbs_ecc).all(), \
         "Finite check failed for new_disk_bh_pro_orbs_ecc"
+
     return new_disk_bh_pro_orbs_ecc
 
 
@@ -397,6 +398,7 @@ def bin_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, disk
     # Check new eccentricities
     assert np.isfinite(new_disk_bh_pro_orbs_ecc).all(),\
         "Finite check failed for new_disk_bh_pro_orbs_ecc"
+
     return new_disk_bh_pro_orbs_ecc
 
 
