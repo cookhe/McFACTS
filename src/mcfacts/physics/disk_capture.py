@@ -357,16 +357,24 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
         ~np.isfinite(disk_bh_retro_orbs_inc_new) \
     )
     if np.sum(nan_mask) > 0:
-        print("nan_mask:",np.where(nan_mask))
-        print("nan old ecc:",disk_bh_retro_orbs_ecc[nan_mask])
-        print("disk_bh_retro_masses:", disk_bh_retro_masses[nan_mask])
-        print("disk_bh_retro_orbs_a:", disk_bh_retro_orbs_a[nan_mask])
-        print("disk_bh_retro_orbs_inc:",disk_bh_retro_orbs_inc[nan_mask])
-        print("disk_bh_retro_arg_periapse:",disk_bh_retro_arg_periapse[nan_mask])
-        disk_bh_retro_orbs_ecc_new[nan_mask] = 2.
-        disk_bh_retro_orbs_a_new[nan_mask] = 0.
-        disk_bh_retro_orbs_inc_new[nan_mask] = 0.
-        raise RuntimeError("Finite check failed for disk_bh_retro_orbs_ecc_new")
+        # Check for objects inside 12.1 R_g
+        if all(disk_bh_retro_orbs_a[nan_mask] < 12.1):
+            disk_bh_retro_orbs_ecc_new[nan_mask] = disk_bh_retro_orbs_ecc[nan_mask]
+            # Inside ACTUAL ISCO; might get caught better
+            disk_bh_retro_orbs_a_new[nan_mask] = 5.9
+            # It's been eaten
+            disk_bh_retro_orbs_inc_new[nan_mask] = 0.
+        else:
+            print("nan_mask:",np.where(nan_mask))
+            print("nan old ecc:",disk_bh_retro_orbs_ecc[nan_mask])
+            print("disk_bh_retro_masses:", disk_bh_retro_masses[nan_mask])
+            print("disk_bh_retro_orbs_a:", disk_bh_retro_orbs_a[nan_mask])
+            print("disk_bh_retro_orbs_inc:",disk_bh_retro_orbs_inc[nan_mask])
+            print("disk_bh_retro_arg_periapse:",disk_bh_retro_arg_periapse[nan_mask])
+            disk_bh_retro_orbs_ecc_new[nan_mask] = 2.
+            disk_bh_retro_orbs_a_new[nan_mask] = 0.
+            disk_bh_retro_orbs_inc_new[nan_mask] = 0.
+            raise RuntimeError("Finite check failed for disk_bh_retro_orbs_ecc_new")
     # Check Finite
     assert np.isfinite(disk_bh_retro_orbs_a_new).all(), \
         "Finite check failed for disk_bh_retro_orbs_a_new"
