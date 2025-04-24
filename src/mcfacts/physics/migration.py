@@ -380,7 +380,7 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
     # Convert migrating orbs_a to meters
     # Convert orb_a of migrating BH to meters. r_g =GM_smbh/c^2.
     # Usefully, 1_rg=GM_smbh/c^2= 6.7e-11*2.e38/(9e16)~1.5e11m=1AU
-    orb_a_in_meters = new_orbs_a*smbh_mass_in_kg*scipy.constants.G / (scipy.constants.c)**(2.0)
+    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     # Omega of migrating BH in s^-1
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
 
