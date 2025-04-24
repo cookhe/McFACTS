@@ -123,7 +123,7 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
     # Check if nan's exist
     index_nan = np.argwhere(np.isnan(t_damp))
     # Check for any other nans
-    if index_nan:
+    if any(index_nan):
         # Check for things inside 12 R_g causing nans
         if all(disk_bh_pro_orbs_a[index_nan] < 12.1):
             # This is an interpolation error caused by pAGN not searching
