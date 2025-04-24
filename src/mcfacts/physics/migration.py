@@ -5,21 +5,56 @@ Module for calculating the timescale of migrations.
 import numpy as np
 import astropy.constants as const
 import astropy.units as u
+import scipy.interpolate
 from mcfacts.mcfacts_random_state import rng
 from mcfacts.physics.point_masses import si_from_r_g
 import scipy
 
 
-def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
+def disk_derivative_quantities(disk_surface_density_func, disk_temp_func, disk_sound_speed_func, disk_density_func, disk_inner_stable_circ_orb, disk_radius_outer):
+    """Return interpolators for dSigma/dR, dTemp/dR, dMidplanePressure/dR
+
+    Parameters
+    ----------
+    disk_surface_density : function
+        disk surface density [kg/m^2]
+    disk_temp_func : function
+        disk temperature [K]
+    disk_sound_speed : function
+        disk sound speed [m/s]
+    disk_density : function
+        disk density [kg/m^3]
+    """
+
+    disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
+    log_disk_radius_arr = np.log10(disk_radius_arr)
+
+    log_disk_surface_density = np.log10(disk_surface_density_func(disk_radius_arr))
+    log_disk_temp = np.log10(disk_temp_func(disk_radius_arr))
+    disk_sound_speed = disk_sound_speed_func(disk_radius_arr)
+    disk_density = disk_density_func(disk_radius_arr)
+    log_disk_midplane_pressure = np.log10((disk_sound_speed ** 2.0) / disk_density)
+
+    Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disk_surface_density, extrapolate=False)
+    Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disk_temp, extrapolate=False)
+    Pressurelog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disk_midplane_pressure, extrapolate=False)
+
+    dSigmadR_spline = Sigmalog_spline.derivative()
+    dTempdR_spline = Templog_spline.derivative()
+    dPressuredR_spline = Pressurelog_spline.derivative()
+
+    return dSigmadR_spline, dTempdR_spline, dPressuredR_spline
+
+
+def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb, dSigmadR_spline, dTempdR_spline):
     """Return the Paardekooper (2010) torque coefficient for Type 1 migration
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
 
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
-    disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
+    #disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
     # Prevent accidental zeros or Nans!
-    log_disk_radius_arr = np.log10(disk_radius_arr)
-
+    #log_disk_radius_arr = np.log10(disk_radius_arr)
 
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
@@ -35,21 +70,21 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     log_new_orbs_a = np.log10(new_orbs_a)
 
     # Evaluate disc surf density at locations of all BH
-    disc_surf_d = disc_surf_density(disk_radius_arr)
-    disc_temp = np.nan_to_num(temp_func(disk_radius_arr))
-    disc_temp = np.abs(disc_temp)
+    #disc_surf_d = disc_surf_density(disk_radius_arr)
+    #disc_temp = np.nan_to_num(temp_func(disk_radius_arr))
+    #disc_temp = np.abs(disc_temp)
     # Get log of disc surf density
-    log_disc_surf_d = np.log10(disc_surf_d)
-    log_disc_surf_d = np.nan_to_num(log_disc_surf_d)
+    #log_disc_surf_d = np.log10(disc_surf_d)
+    #log_disc_surf_d = np.nan_to_num(log_disc_surf_d)
     # Get log of disc midplane temperature
-    log_disc_temp = np.log10(disc_temp)
+    #log_disc_temp = np.log10(disc_temp)
 
-    Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
-    Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
+    #Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
+    #Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
     # Find derivates of Sigmalog_spline
 
-    dSigmadR_spline = Sigmalog_spline.derivative()
-    dTempdR_spline = Templog_spline.derivative()
+    #dSigmadR_spline = Sigmalog_spline.derivative()
+    #dTempdR_spline = Templog_spline.derivative()
     # Evaluate dSigmadR_spline at the migrating orb_a values
     dSigmadR = dSigmadR_spline(log_new_orbs_a)
     dTempdR = dTempdR_spline(log_new_orbs_a)
@@ -62,7 +97,7 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     return Torque_paardekooper_coeff
 
 
-def paardekooper10_torque_binary(disc_surf_density, temp_func, orb_ecc_crit, blackholes_binary, disk_radius_outer, disk_inner_stable_circ_orb):
+def paardekooper10_torque_binary(disc_surf_density, temp_func, orb_ecc_crit, blackholes_binary, disk_radius_outer, disk_inner_stable_circ_orb, dSigmadR_spline, dTempdR_spline):
     """Return the Paardekooper (2010) torque coefficient for Type 1 migration for binaries
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
@@ -72,8 +107,8 @@ def paardekooper10_torque_binary(disc_surf_density, temp_func, orb_ecc_crit, bla
     bin_orb_ecc = blackholes_binary.bin_orb_ecc
 
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
-    disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
-    log_disk_radius_arr = np.log10(disk_radius_arr)
+    #disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
+    #log_disk_radius_arr = np.log10(disk_radius_arr)
 
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
@@ -88,18 +123,18 @@ def paardekooper10_torque_binary(disc_surf_density, temp_func, orb_ecc_crit, bla
 
     log_new_orbs_a = np.log10(new_orbs_a)
     # Evaluate disc surf density at locations of all BH
-    disc_surf_d = disc_surf_density(disk_radius_arr)
-    disc_temp = temp_func(disk_radius_arr)
+    #disc_surf_d = disc_surf_density(disk_radius_arr)
+    #disc_temp = temp_func(disk_radius_arr)
     # Get log of disc surf density
-    log_disc_surf_d = np.log10(disc_surf_d)
+    #log_disc_surf_d = np.log10(disc_surf_d)
     # Get log of disc midplane temperature
-    log_disc_temp = np.log10(disc_temp)
+    #log_disc_temp = np.log10(disc_temp)
 
-    Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
-    Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
+    #Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
+    #Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
     # Find derivates of Sigmalog_spline
-    dSigmadR_spline = Sigmalog_spline.derivative()
-    dTempdR_spline = Templog_spline.derivative()
+    #dSigmadR_spline = Sigmalog_spline.derivative()
+    #dTempdR_spline = Templog_spline.derivative()
     # Evaluate dSigmadR_spline at the migrating orb_a values
     dSigmadR = dSigmadR_spline(log_new_orbs_a)
     dTempdR = dTempdR_spline(log_new_orbs_a)
@@ -163,7 +198,7 @@ def normalized_torque(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, disk_su
     # find mass ratios
     mass_ratios = (masses[migration_indices]/smbh_mass)
     # Convert orb_a of migrating BH to meters. r_g =GM_smbh/c^2.
-    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
+    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     # Omega of migrating BH
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2
@@ -201,7 +236,6 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
 
 
     """
-    smbh_mass_in_kg = smbh_mass * u.Msun.to("kg")
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
     # Get indices of objects with orb_ecc <= ecc_crit so we can only update orb_a for those.
@@ -214,22 +248,23 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
-    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
-    #Omega of migrating BH in s^-1
-    Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
-    #masses of BH in kg
-    bh_masses = u.Msun.to("kg")*masses[migration_indices]
-    #Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2 (in units of seconds)
-    torque_mig_timescale = bh_masses*Omega_bh*((orb_a_in_meters)**(2.0))/(2.0*migration_torque)
-    #print("torque_mig_timescale",torque_mig_timescale)
+    # Convert to using astropy units
+    smbh_mass_si = smbh_mass * u.Msun
+    migration_torque_si = migration_torque * u.newton * u.meter
+    masses_si = masses[migration_indices] * u.Msun
+    new_orbs_a_si = si_from_r_g(smbh_mass_si, new_orbs_a)
+
+    # Omega of migrating BH in s^-1
+    Omega_bh = np.sqrt(const.G * smbh_mass_si/((new_orbs_a_si)**(3.0)))
+    # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2 (in units of seconds)
+    torque_mig_timescale = (masses_si*Omega_bh*((new_orbs_a_si)**(2.0))/(2.0*migration_torque_si)).to("s")
 
     assert np.isfinite(torque_mig_timescale).all(), \
         "Finite check failure: torque_mig_timescale"
+    return torque_mig_timescale.value
 
-    return torque_mig_timescale
 
-
-def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
+def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb, dSigmadR_spline, dTempdR_spline):
     """Return the Jiminez & Masset (2017) torque coefficient for Type 1 migration
         Jiminez-Masset_torque = [0.46 + 0.96dSigmadR -1/8dTdR]/gamma
                                 +[-2.34 -0.1dSigmadR +1.5dTdR]*factor
@@ -253,8 +288,8 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
     smbh_mass_in_kg = smbh_mass * u.Msun.to("kg")
 
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
-    disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
-    log_disk_radius_arr = np.log10(disk_radius_arr)
+    #disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
+    #log_disk_radius_arr = np.log10(disk_radius_arr)
 
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
@@ -278,26 +313,25 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
     orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     # Omega of migrating BH in s^-1
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
-
     log_new_orbs_a = np.log10(new_orbs_a)
     # Evaluate disc surf density at locations of all BH
-    disc_surf_d = disc_surf_density(disk_radius_arr)
+    #disc_surf_d = disc_surf_density(disk_radius_arr)
     # Evaluate disc temp at locations of all BH
-    disc_temp = temp_func(disk_radius_arr)
+    #disc_temp = temp_func(disk_radius_arr)
 
     # For migrating BH
     # Evaluate disc surf density at only migrating BH
     disc_surf_d_mig = disc_surf_density(new_orbs_a)
     # Get log of disc surf density
-    log_disc_surf_d = np.log10(disc_surf_d)
+    #log_disc_surf_d = np.log10(disc_surf_d)
     # Get log of disc midplane temperature
-    log_disc_temp = np.log10(disc_temp)
+    #log_disc_temp = np.log10(disc_temp)
 
-    Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
-    Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
+    #Sigmalog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_surf_d, extrapolate=False)
+    #Templog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_disc_temp, extrapolate=False)
     # Find derivates of Sigmalog_spline
-    dSigmadR_spline = Sigmalog_spline.derivative()
-    dTempdR_spline = Templog_spline.derivative()
+    #dSigmadR_spline = Sigmalog_spline.derivative()
+    #dTempdR_spline = Templog_spline.derivative()
     # Evaluate dSigmadR_spline at the migrating orb_a values
     dSigmadR = dSigmadR_spline(log_new_orbs_a)
     # Evaluate dTempdR_spline at the migrating orb_a values
@@ -312,7 +346,6 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
     xfactor = xfactor_1/xfactor_2
     sqrtfactor = np.sqrt(xfactor/2)
     factor = (sqrtfactor + 1.0/gamma)/(sqrtfactor + 1.0)
-
     Torque_jiminezmasset_coeff = (0.46 + 0.96 * dSigmadR - 1.8 * dTempdR)/gamma + (-2.34 - 0.1*dSigmadR + 1.5 * dTempdR) * factor
 
     assert np.isfinite(Torque_jiminezmasset_coeff).all(), \
@@ -321,7 +354,7 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
     return Torque_jiminezmasset_coeff
 
 
-def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, sound_speed_func, density_func, disk_bh_eddington_ratio, orbs_a, orbs_ecc, orb_ecc_crit, bh_masses, flag_thermal_feedback, disk_radius_outer, disk_inner_stable_circ_orb):
+def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, sound_speed_func, density_func, disk_bh_eddington_ratio, orbs_a, orbs_ecc, orb_ecc_crit, bh_masses, flag_thermal_feedback, disk_radius_outer, disk_inner_stable_circ_orb, dPressuredR_spline):
     """Return the Jiminez & Masset (2017) thermal torque coefficient for Type 1 migration
         Jiminez-Masset_thermal_torque_coeff = Torque_hot*(4mu_thermal/(1+4.*mu_thermal))+ Torque_cold*(2mu_thermal/(1+2.*mu_thermal))
             Given   Torque_hot=thermal_factor*(L/L_c)
@@ -361,7 +394,7 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
 
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
     disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
-    log_disk_radius_arr = np.log10(disk_radius_arr)
+    #log_disk_radius_arr = np.log10(disk_radius_arr)
 
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
@@ -404,17 +437,17 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
 
     log_new_orbs_a = np.log10(new_orbs_a)
     # Evaluate disc surf density at locations of all BH
-    disc_surf_d = disc_surf_density(disk_radius_arr)
+    #disc_surf_d = disc_surf_density(disk_radius_arr)
     # Evaluate disc temp at locations of all BH
-    disc_temp = temp_func(disk_radius_arr)
+    #disc_temp = temp_func(disk_radius_arr)
     # Evaluate disc opacity at locations of all BH
-    disc_opacity = disk_opacity_func(disk_radius_arr)
+    #disc_opacity = disk_opacity_func(disk_radius_arr)
     # Evaluate disc sound speed at locations of all BH
-    disk_sound_speed = sound_speed_func(disk_radius_arr)
+    #disk_sound_speed = sound_speed_func(disk_radius_arr)
     # Evaluate disc density at locations of all BH
-    disk_density = density_func(disk_radius_arr)
+    #disk_density = density_func(disk_radius_arr)
     # Disc total pressure midplane is c_s^2/rho
-    disk_midplane_Pressure = (disk_sound_speed**2.0)/disk_density
+    #disk_midplane_Pressure = (disk_sound_speed**2.0)/disk_density
 
     # For migrating BH
     # Evaluate disc surf density at only migrating BH
@@ -422,20 +455,20 @@ def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opac
     # Evaluate sound speed at only migrating BH
     disc_sound_speed = sound_speed
     # Get log of disc surf density
-    log_disc_surf_d = np.log10(disc_surf_d)
+    #log_disc_surf_d = np.log10(disc_surf_d)
     # Get log of disc midplane temperature
-    log_disc_temp = np.log10(disc_temp)
+    #log_disc_temp = np.log10(disc_temp)
     # Get log of disc opacity
-    log_disc_opacity = np.log10(disc_opacity)
+    #log_disc_opacity = np.log10(disc_opacity)
     # Log of disk midplane pressure
-    log_midplane_pressure = np.log10(disk_midplane_Pressure)
+    #log_midplane_pressure = np.log10(disk_midplane_Pressure)
 
-    log_disc_surf_d_mig = np.log10(disc_surf_d_mig)
-    sort_log_orbs_a = np.sort(log_new_orbs_a)
+    #log_disc_surf_d_mig = np.log10(disc_surf_d_mig)
+    #sort_log_orbs_a = np.sort(log_new_orbs_a)
 
-    Pressurelog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_midplane_pressure, extrapolate=False)
+    #Pressurelog_spline = scipy.interpolate.CubicSpline(log_disk_radius_arr, log_midplane_pressure, extrapolate=False)
     # Find derivative of Pressurelog_spline
-    dPressuredR_spline = Pressurelog_spline.derivative()
+    #dPressuredR_spline = Pressurelog_spline.derivative()
 
     # Evaluate dPressuredR_spline at the migrating orb_a values
     dPressuredR = dPressuredR_spline(log_new_orbs_a)
@@ -699,6 +732,8 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         "Finite check failure: orbs_a"
     assert np.all(new_orbs_a < disk_radius_outer), \
         "new_orbs_a contains values greater than disk_radius_outer"
+    assert np.all(new_orbs_a > 0), \
+        "new_orbs_a contains values <= 0"
 
     return (orbs_a)
 
