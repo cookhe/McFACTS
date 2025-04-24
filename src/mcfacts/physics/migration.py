@@ -11,7 +11,7 @@ from mcfacts.physics.point_masses import si_from_r_g
 import scipy
 
 
-def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
+def paardekooper10_torque(disk_surf_density, disk_temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
     """Return the Paardekooper (2010) torque coefficient for Type 1 migration
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
@@ -35,8 +35,8 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     log_new_orbs_a = np.log10(new_orbs_a)
 
     # Evaluate disc surf density at locations of all BH
-    disc_surf_d = disc_surf_density(disk_radius_arr)
-    disc_temp = np.nan_to_num(temp_func(disk_radius_arr))
+    disc_surf_d = disk_surf_density(disk_radius_arr)
+    disc_temp = np.nan_to_num(disk_temp_func(disk_radius_arr))
     disc_temp = np.abs(disc_temp)
     # Get log of disc surf density
     log_disc_surf_d = np.log10(disc_surf_d)

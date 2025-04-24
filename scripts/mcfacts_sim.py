@@ -209,7 +209,6 @@ def main():
                                          flag_use_pagn=opts.flag_use_pagn,
                                          verbose=opts.verbose
                                          )
-    disk_dSigmadR_func, disk_dTempdR_func, disk_dPressuredR_func = migration.disk_derivative_quantities(disk_surface_density, disk_temp_func, disk_sound_speed, disk_density, opts.disk_inner_stable_circ_orb, opts.disk_radius_outer)
 
     blackholes_merged_pop = AGNMergedBlackHole()
     emris_pop = AGNBlackHole()
@@ -645,8 +644,6 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.disk_radius_outer,
                     opts.disk_inner_stable_circ_orb,
-                    disk_dSigmadR_func,
-                    disk_dTempdR_func
                 )
 
                 paardekooper_torque_coeff_star = migration.paardekooper10_torque(
@@ -657,8 +654,6 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.disk_radius_outer,
                     opts.disk_inner_stable_circ_orb,
-                    disk_dSigmadR_func,
-                    disk_dTempdR_func
                 )
 
             # Jiminez-Masset torque coeff (from Grishin+24)
@@ -674,8 +669,6 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.disk_radius_outer,
                     opts.disk_inner_stable_circ_orb,
-                    disk_dSigmadR_func,
-                    disk_dTempdR_func
                 )
 
                 jiminez_masset_torque_coeff_star = migration.jiminezmasset17_torque(
@@ -689,8 +682,6 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.disk_radius_outer,
                     opts.disk_inner_stable_circ_orb,
-                    disk_dSigmadR_func,
-                    disk_dTempdR_func
                 )
 
                 # Thermal torque from JM17 (if flag_thermal_feedback off, this component is 0.)
@@ -710,7 +701,6 @@ def main():
                     opts.flag_thermal_feedback,
                     opts.disk_radius_outer,
                     opts.disk_inner_stable_circ_orb,
-                    disk_dPressuredR_func
                 )
 
                 jiminez_masset_thermal_torque_coeff_star = migration.jiminezmasset17_thermal_torque_coeff(
@@ -729,7 +719,6 @@ def main():
                     opts.flag_thermal_feedback,
                     opts.disk_radius_outer,
                     opts.disk_inner_stable_circ_orb,
-                    disk_dPressuredR_func
                 )
 
                 if opts.flag_thermal_feedback == 1:
@@ -1625,8 +1614,6 @@ def main():
                         blackholes_binary,
                         opts.disk_radius_outer,
                         opts.disk_inner_stable_circ_orb,
-                        disk_dSigmadR_func,
-                        disk_dTempdR_func
                     )
 
                 #Jiminez-Masset torque coeff (from Grishin+24)
@@ -1642,8 +1629,6 @@ def main():
                         opts.disk_bh_pro_orb_ecc_crit,
                         opts.disk_radius_outer,
                         opts.disk_inner_stable_circ_orb,
-                        disk_dSigmadR_func,
-                        disk_dTempdR_func
                     )
                     jiminez_masset_thermal_torque_coeff_bh = migration.jiminezmasset17_thermal_torque_coeff(
                         opts.smbh_mass,
@@ -1661,7 +1646,6 @@ def main():
                         opts.flag_thermal_feedback,
                         opts.disk_radius_outer,
                         opts.disk_inner_stable_circ_orb,
-                        disk_dPressuredR_func
                     )
                     if opts.flag_thermal_feedback > 0:
                         total_jiminez_masset_torque_bh = jiminez_masset_torque_coeff_bh + jiminez_masset_thermal_torque_coeff_bh
@@ -1681,7 +1665,7 @@ def main():
 
                     if np.size(normalized_torque_bh) > 0:
                         if opts.torque_prescription == 'paardekooper':
-                            torque =  paardekooper_torque_coeff_bh*normalized_torque_bh
+                            torque = paardekooper_torque_coeff_bh*normalized_torque_bh
                             disk_trap_radius = opts.disk_radius_trap
                             disk_anti_trap_radius = opts.disk_radius_trap
                         if opts.torque_prescription == 'jiminez_masset':
@@ -1698,7 +1682,7 @@ def main():
                             if opts.smbh_mass < 1.e8 and opts.smbh_mass > 1.e6:
                                 disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(-1.225)
                                 disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(0.099)
-                            #Trap location changes again at low SMBH mass (Grishin+24)
+                            # Trap location changes again at low SMBH mass (Grishin+24)
                             if opts.smbh_mass < 1.e6:
                                 disk_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(-0.97)
                                 disk_anti_trap_radius = opts.disk_radius_trap * (opts.smbh_mass/1.e8)**(0.099)
@@ -1711,7 +1695,7 @@ def main():
                             opts.disk_bh_pro_orb_ecc_crit,
                             torque
                         )
-                        #Calculate new bh_orbs_a using torque
+                        # Calculate new bh_orbs_a using torque
                         blackholes_binary.bin_orb_a = migration.type1_migration_distance(
                             opts.smbh_mass,
                             blackholes_binary.bin_orb_a,
