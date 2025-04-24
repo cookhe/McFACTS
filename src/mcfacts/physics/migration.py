@@ -163,7 +163,7 @@ def normalized_torque(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, disk_su
     # find mass ratios
     mass_ratios = (masses[migration_indices]/smbh_mass)
     # Convert orb_a of migrating BH to meters. r_g =GM_smbh/c^2.
-    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
+    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     # Omega of migrating BH
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2
@@ -214,7 +214,7 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
-    orb_a_in_meters = si_from_r_g(smbh_mass_in_kg, new_orbs_a).to("m").value
+    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     #Omega of migrating BH in s^-1
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     #masses of BH in kg
