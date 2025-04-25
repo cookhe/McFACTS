@@ -229,9 +229,9 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     return torque_mig_timescale
 
 
-def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
-    """Return the Jiminez & Masset (2017) torque coefficient for Type 1 migration
-        Jiminez-Masset_torque = [0.46 + 0.96dSigmadR -1/8dTdR]/gamma
+def jimenezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_radius_outer, disk_inner_stable_circ_orb):
+    """Return the Jimenez & Masset (2017) torque coefficient for Type 1 migration
+        Jimenez-Masset_torque = [0.46 + 0.96dSigmadR -1/8dTdR]/gamma
                                 +[-2.34 -0.1dSigmadR +1.5dTdR]*factor
             where    factor = ((x/2)^{1/2} + (1/gamma))/((x/2)^{1/2} + 1)
             and      x=(16/3)*gamma*(gamma-1)*sigma_SB*T^4/kappa*rho^2*H^4*Omega^3
@@ -313,17 +313,17 @@ def jiminezmasset17_torque(smbh_mass, disc_surf_density, disk_opacity_func, disk
     sqrtfactor = np.sqrt(xfactor/2)
     factor = (sqrtfactor + 1.0/gamma)/(sqrtfactor + 1.0)
 
-    Torque_jiminezmasset_coeff = (0.46 + 0.96 * dSigmadR - 1.8 * dTempdR)/gamma + (-2.34 - 0.1*dSigmadR + 1.5 * dTempdR) * factor
+    Torque_jimenezmasset_coeff = (0.46 + 0.96 * dSigmadR - 1.8 * dTempdR)/gamma + (-2.34 - 0.1*dSigmadR + 1.5 * dTempdR) * factor
 
-    assert np.isfinite(Torque_jiminezmasset_coeff).all(), \
-        "Finite check failure: Torque_jiminezmasset_coeff"
+    assert np.isfinite(Torque_jimenezmasset_coeff).all(), \
+        "Finite check failure: Torque_jimenezmasset_coeff"
 
-    return Torque_jiminezmasset_coeff
+    return Torque_jimenezmasset_coeff
 
 
-def jiminezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, sound_speed_func, density_func, disk_bh_eddington_ratio, orbs_a, orbs_ecc, orb_ecc_crit, bh_masses, flag_thermal_feedback, disk_radius_outer, disk_inner_stable_circ_orb):
-    """Return the Jiminez & Masset (2017) thermal torque coefficient for Type 1 migration
-        Jiminez-Masset_thermal_torque_coeff = Torque_hot*(4mu_thermal/(1+4.*mu_thermal))+ Torque_cold*(2mu_thermal/(1+2.*mu_thermal))
+def jimenezmasset17_thermal_torque_coeff(smbh_mass, disc_surf_density, disk_opacity_func, disk_aspect_ratio_func, temp_func, sound_speed_func, density_func, disk_bh_eddington_ratio, orbs_a, orbs_ecc, orb_ecc_crit, bh_masses, flag_thermal_feedback, disk_radius_outer, disk_inner_stable_circ_orb):
+    """Return the Jimenez & Masset (2017) thermal torque coefficient for Type 1 migration
+        Jimenez-Masset_thermal_torque_coeff = Torque_hot*(4mu_thermal/(1+4.*mu_thermal))+ Torque_cold*(2mu_thermal/(1+2.*mu_thermal))
             Given   Torque_hot=thermal_factor*(L/L_c)
                     Torque_cold =-thermal_factor
                 with  L= 4piGm_bh*c/kappa_e_scattering (assuming f_Edd=1, the Eddington fraction of the luminosity)
@@ -522,7 +522,7 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     bh_min_mass : float
         Minimum mass of BH IMF. Phenom. turbulence is largest for this value. Decreases with bh_mass^2 since normalized torque propto m_bh^2.
     torque_prescription : str
-        Torque prescription 'paardekooper' or 'jiminez_masset' ('old' is deprecated)
+        Torque prescription 'paardekooper' or 'jimenez_masset' ('old' is deprecated)
     Returns
     -------
     orbs_a : float array
@@ -562,12 +562,12 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
     if flag_phenom_turb == 1:
         # Only need to perturb migrators for now
         # size_of_turbulent_array = np.size(migration_indices)
-        # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
+        # Assume migration is always inwards (true for 'old' and for 'jimenez_masset' for M_smbh>10^8Msun)
         # Calc migration distance as modified by turbulence.
         migration_distance = migration_distance*(1.0 + rng.normal(phenom_turb_centroid, phenom_turb_std_dev, size=migration_indices.size))/normalized_mig_masses_sq
 
     if torque_prescription == 'old' or torque_prescription == 'paardekooper':
-        # Assume migration is always inwards (true for 'old' and for 'jiminez_masset' for M_smbh>10^8Msun)
+        # Assume migration is always inwards (true for 'old' and for 'jimenez_masset' for M_smbh>10^8Msun)
         # Disk feedback ratio
         disk_feedback_ratio = disk_feedback_ratio_func[migration_indices]
 
@@ -614,7 +614,7 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         epsilon = disk_radius_outer * ((masses[migration_indices][new_orbs_a > disk_radius_outer] / (3 * (masses[migration_indices][new_orbs_a > disk_radius_outer] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=np.sum(new_orbs_a > disk_radius_outer))
         new_orbs_a[new_orbs_a > disk_radius_outer] = disk_radius_outer - epsilon
 
-    if torque_prescription == 'jiminez_masset':
+    if torque_prescription == 'jimenez_masset':
         # If smbh_mass >10^8Msun --assume migration is always inwards
         if smbh_mass > 1.e8:
             new_orbs_a = new_orbs_a - migration_distance
