@@ -1317,6 +1317,86 @@ def main():
                         if (opts.verbose):
                             print("No mergers yet")
 
+                    # Soften/ionize binaries due to encounters with eccentric single stars
+                    blackholes_binary, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch = dynamics.circular_binaries_encounters_circ_prograde_star(
+                        opts.smbh_mass,
+                        stars_pro.orb_a,
+                        stars_pro.mass,
+                        stars_pro.orb_ecc,
+                        stars_pro.id_num,
+                        1.0,
+                        opts.timestep_duration_yr,
+                        opts.disk_bh_pro_orb_ecc_crit,
+                        opts.delta_energy_strong,
+                        blackholes_binary,
+                        opts.disk_radius_outer
+                    )
+
+                    if (bbh_star_id_nums_touch.size > 0):
+                        # BBH and star encounter
+                        bbh_star_id_nums_touch = bbh_star_id_nums_touch.flatten()
+                        star_id_nums = bbh_star_id_nums_touch[np.nonzero(filing_cabinet.at_id_num(bbh_star_id_nums_touch, "category") == 1)]
+                        bbh_id_nums = bbh_star_id_nums_touch[np.nonzero(filing_cabinet.at_id_num(bbh_star_id_nums_touch, "category") == 2)]
+                        # Need to test if binary mass > star mass or vice versa
+                        fakequasi_mask = stars_pro.at_id_num(star_id_nums, "mass") > (blackholes_binary.at_id_num(bbh_id_nums, "mass_1") + blackholes_binary.at_id_num(bbh_id_nums, "mass_2"))
+                        star_id_nums_fakequasi = star_id_nums[fakequasi_mask]
+                        bbh_id_nums_fakequasi = bbh_id_nums[fakequasi_mask]
+                        star_id_nums_normal = star_id_nums[~fakequasi_mask]
+                        bbh_id_nums_normal = bbh_id_nums[~fakequasi_mask]
+
+                        if (star_id_nums_fakequasi.size > 0):
+                            # if star mass > binary mass the BBH hardens so bin_sep = Rsun and star blows up
+                            a, b = np.where(blackholes_binary.id_num == bbh_id_nums_fakequasi[:, None])
+                            bbh_fakequasi_id_mask = b[np.argsort(a)]
+                            blackholes_binary.bin_sep[bbh_fakequasi_id_mask] = point_masses.r_g_from_units(opts.smbh_mass, 1.*u.Rsun).value
+                            stars_explode.add_stars(new_id_num_star=star_id_nums_fakequasi,
+                                                    new_id_num_bh=bbh_id_nums_fakequasi,
+                                                    new_mass_star=stars_pro.at_id_num(star_id_nums_fakequasi, "mass"),
+                                                    new_mass_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "mass"),
+                                                    new_orb_a_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_a"),
+                                                    new_orb_a_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_a"),
+                                                    new_star_log_radius=stars_pro.at_id_num(star_id_nums_fakequasi, "log_radius"),
+                                                    new_orb_inc_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_inc"),
+                                                    new_orb_inc_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_inc"),
+                                                    new_orb_ecc_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_ecc"),
+                                                    new_orb_ecc_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_ecc"),
+                                                    new_gen_star=stars_pro.at_id_num(star_id_nums_fakequasi, "gen"),
+                                                    new_gen_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "gen"),
+                                                    new_galaxy=stars_pro.at_id_num(star_id_nums_fakequasi, "galaxy"),
+                                                    new_time_sn=np.full(star_id_nums_fakequasi.size, time_passed),
+                                                    )
+                            # Add exploded star mass to mass gained by disk
+                            disk_mass_gained.append(stars_pro.at_id_num(star_id_nums_fakequasi, "mass").sum())
+                            # Delete exploded stars from regular array and filing cabinet
+                            stars_pro.remove_id_num(star_id_nums_fakequasi)
+                            filing_cabinet.remove_id_num(star_id_nums_fakequasi)
+
+                        if (star_id_nums_normal.size > 0):
+                            # if star mass < binary mass the BBH accretes and spins up and star blows up
+                            a, b = np.where(blackholes_binary.id_num == bbh_id_nums_normal[:, None])
+                            bbh_normal_id_mask = b[np.argsort(a)]
+                            stars_explode.add_stars(new_id_num_star=star_id_nums_normal,
+                                                    new_id_num_bh=bbh_id_nums_normal,
+                                                    new_mass_star=stars_pro.at_id_num(star_id_nums_normal, "mass"),
+                                                    new_mass_bh=blackholes_pro.at_id_num(star_id_nums_normal, "mass"),
+                                                    new_orb_a_star=stars_pro.at_id_num(star_id_nums_normal, "orb_a"),
+                                                    new_orb_a_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_a"),
+                                                    new_star_log_radius=stars_pro.at_id_num(star_id_nums_normal, "log_radius"),
+                                                    new_orb_inc_star=stars_pro.at_id_num(star_id_nums_normal, "orb_inc"),
+                                                    new_orb_inc_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_inc"),
+                                                    new_orb_ecc_star=stars_pro.at_id_num(star_id_nums_normal, "orb_ecc"),
+                                                    new_orb_ecc_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_ecc"),
+                                                    new_gen_star=stars_pro.at_id_num(star_id_nums_normal, "gen"),
+                                                    new_gen_bh=blackholes_pro.at_id_num(star_id_nums_normal, "gen"),
+                                                    new_galaxy=stars_pro.at_id_num(star_id_nums_normal, "galaxy"),
+                                                    new_time_sn=np.full(star_id_nums_normal.size, time_passed),
+                                                    )
+                            # Add exploded star mass to mass gained by disk
+                            disk_mass_gained.append(stars_pro.at_id_num(star_id_nums_normal, "mass").sum())
+                            # Delete exploded stars from regular array and filing cabinet
+                            stars_pro.remove_id_num(star_id_nums_normal)
+                            filing_cabinet.remove_id_num(star_id_nums_normal)
+
                     # Soften/ ionize binaries due to encounters with eccentric singletons
                     # Return 3 things: perturbed biary_bh_array, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
                     blackholes_binary, blackholes_pro.orb_a, blackholes_pro.orb_ecc = dynamics.circular_binaries_encounters_ecc_prograde(
