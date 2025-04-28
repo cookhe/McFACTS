@@ -5,6 +5,7 @@ import os
 import sys
 from os.path import expanduser, join, isfile, isdir, basename
 from astropy import units
+from astropy import constants as const
 from basil_core.astro.relations import Neumayer_early_NSC_mass, Neumayer_late_NSC_mass
 from basil_core.astro.relations import SchrammSilvermanSMBH_mass_of_GSM as SMBH_mass_of_GSM
 from mcfacts.physics.point_masses import time_of_orbital_shrinkage
@@ -60,6 +61,113 @@ def arg():
     # Check nbins
     opts.nbins = np.size(opts.mbins)
     return opts
+
+######## Kaila's function ########
+def stellar_mass_captured_nsc(
+        disk_lifetime,
+        smbh_mass,
+        nsc_density_index_inner,
+        nsc_mass,
+        nsc_ratio_bh_num_star_num,
+        nsc_ratio_bh_mass_star_mass,
+        disk_surface_density_func,
+        disk_star_mass_min_init,
+        disk_star_mass_max_init,
+        nsc_imf_star_powerlaw_index,
+    ):
+    """Calculate total stellar mass captured from the NSC over the lifetime of the disk
+
+    Note from WZL2024: We assume the surface density scales with r^-3/2,
+    which is true for self-gravitating disk models with constant accretion rate
+
+    Parameters
+    ----------
+    disk_lifetime : float
+        Lifetime of the disk [yr]
+    smbh_mass : float
+        Mass [Msun] of the SMBH
+    nsc_density_index_inner : float
+        Powerlaw index for the NSC density
+    nsc_mass : float
+        Mass of the NSC
+    nsc_ratio_bh_num_star_num : float
+        Ratio of number of BH to number of stars in the NSC
+    nsc_ratio_bh_mass_star_mass : float
+        Ratio of mass of typical BH to typical star in the NSC
+    disk_surface_density_func : lambda function
+        Disk density
+    disk_star_mass_min_init : float
+        Star mass [Msun] lower bound for IMF
+    disk_star_mass_max_init : float
+        Star mass [Msun] upper bound for IMF
+    nsc_imf_star_powerlaw_index : float
+        Powerlaw index for IMF
+
+    Returns
+    -------
+    captured_mass : float
+        Amount of stellar mass captured by the NSC in the disk lifetime
+    """
+
+    # Convert to SI units
+    disk_lifetime_si = disk_lifetime * u.year
+    smbh_mass_si = smbh_mass * u.Msun
+    nsc_mass_si = nsc_mass * u.Msun
+
+    # Total mass of BH in NSC
+    total_mass_bh_in_nsc = nsc_mass_si * nsc_ratio_bh_num_star_num * nsc_ratio_bh_mass_star_mass
+    # Total mass of star in NSC (we assume nsc_mass = mass_bh_total + mass_star_total)
+    total_mass_star_in_nsc = nsc_mass_si - total_mass_bh_in_nsc
+
+    # Mass fraction of stars in NSC
+    f_star = total_mass_star_in_nsc / nsc_mass_si
+
+    disk_velocity_dispersion = (2.3 * u.km / u.second) * ((smbh_mass_si / u.Msun) ** (1. / 4.38))
+
+    # Gravitational influence radius for disk
+    disk_radius_of_gravitational_influence_si = ((const.G * smbh_mass_si) / (disk_velocity_dispersion ** 2)).to("pc")
+    disk_radius_of_gravitational_influence_rg = r_g_from_units(smbh_mass_si, disk_radius_of_gravitational_influence_si)
+
+    # Surface density at the gravitational influence radius
+    disk_surface_density_at_rm_rg = disk_surface_density_func(disk_radius_of_gravitational_influence_rg) * u.kg / u.m**2
+
+    # Disk orbital period at gravitational influence radius
+    disk_orbital_period = (2 * np.pi * np.sqrt((disk_radius_of_gravitational_influence_si ** 3) / (const.G * smbh_mass_si))).to("second")
+
+    star_mass_average = (setupdiskstars.setup_disk_stars_mass_avg(disk_star_mass_min_init, disk_star_mass_max_init, nsc_imf_star_powerlaw_index)) * u.Msun
+
+    star_surface_density = ((1.39e11) * (u.gram/u.cm**2) * ((star_mass_average / u.Msun) ** -0.5))
+
+    captured_mass = (2. * smbh_mass_si * f_star * ((disk_surface_density_at_rm_rg / star_surface_density) * (disk_lifetime_si / disk_orbital_period)) ** (1. - (nsc_density_index_inner / 3.))).to("Msun")
+
+    return (captured_mass.value)
+
+
+
+######## Physics ########
+def capture_time(
+        mass_smbh,
+        disk_surf_dens_func,
+        m_bh = 10 * units.solMass,
+    ):
+    # velocity dispersion of nsc
+    sig_nsc = (2.3*(units.km/units.s)) * \
+        (mass_smbh / (1 * units.solMass))**(1./4.38)
+    # Calculate radius of influence
+    r_infl = const.G * mass_smbh / sig_nsc
+    # Calculate orbital time at radius of influence
+    p_orb_r_infl = 2 * np.pi * np.sqrt(r_infl**3 / (const.G * mass_smbh))
+    # Calculate the surface density at the radius of influence
+    Sigma_m = disk_surf_dens_func(r_g_from_units(
+        mass_smbh, r_infl)) * u.kg / u.m**2
+    # Total mass of BH in NSC
+    total_mass_bh_in_nsc = nsc_mass_si * nsc_ratio_bh_num_star_num * nsc_ratio_bh_mass_star_mass
+    # Total mass of star in NSC (we assume nsc_mass = mass_bh_total + mass_star_total)
+    total_mass_star_in_nsc = nsc_mass_si - total_mass_bh_in_nsc
+
+    # Mass fraction of stars in NSC
+    f_star = total_mass_star_in_nsc / nsc_mass_si
+
 
 ######## Batch ########
 def make_batch(opts, wkdir, smbh_mass, nsc_mass):
@@ -229,6 +337,7 @@ def make_batch(opts, wkdir, smbh_mass, nsc_mass):
     print(cmd)
     if not opts.print_only:
         os.system(cmd)
+    raise Exception
 
     # Open script
     mcfacts_script = fname_ini_local.rstrip("ini") + "sh"
