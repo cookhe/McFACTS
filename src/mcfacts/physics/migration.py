@@ -17,7 +17,7 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
 
 
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
-    disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
+    disk_radius_arr = np.linspace(2*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
     # Prevent accidental zeros or Nans!
     log_disk_radius_arr = np.log10(disk_radius_arr)
 
@@ -63,7 +63,10 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
             # They are not migrating if they have already been captured
             Torque_paardekooper_coeff[nan_mask] = 0.
         else:
-            print(orbs_a[migration_indices][nan_mask])
+            print(f"log_disk_radius_arr: {log_disk_radius_arr}")
+            print(f"dSigmadR[nan_mask]: {dSigmadR[nan_mask]}")
+            print(f"dTempdR[nan_mask]: {dTempdR[nan_mask]}")
+            print(f"orbs_a[nan_mask]: {orbs_a[migration_indices][nan_mask]}")
             raise ValueError("nans in Torque_paardekooper_coeff")
 
     assert np.all(~np.isnan(Torque_paardekooper_coeff))
