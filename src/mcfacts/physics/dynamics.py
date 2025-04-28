@@ -5,6 +5,7 @@ dynamical mechanism. Of varying fidelity to reality. Also contains
 GW orbital evolution for BH in the inner disk, which should probably
 move elsewhere.
 """
+import time
 import numpy as np
 import scipy
 
@@ -1423,16 +1424,17 @@ def bin_spheroid_encounter(
 
     # Based on estimated encounter rate, calculate if binary actually has a spheroid encounter
     chances_of_encounter = rng.uniform(size=disk_bins_bhbh.num)
-    num_encounters = np.sum(chances_of_encounter < enc_rate)
+    encounter_index = np.where(chances_of_encounter < enc_rate)[0]
+    num_encounters = np.size(encounter_index)
 
     if (num_encounters > 0):
 
         # Set up arrays for changed blackholes_binary parameters
-        bin_orb_a = disk_bins_bhbh.bin_orb_a[chances_of_encounter < enc_rate].copy()
-        bin_sep = disk_bins_bhbh.bin_sep[chances_of_encounter < enc_rate].copy()
-        bin_ecc = disk_bins_bhbh.bin_ecc[chances_of_encounter < enc_rate].copy()
-        bin_orb_ecc = disk_bins_bhbh.bin_orb_ecc[chances_of_encounter < enc_rate].copy()
-        bin_orb_inc = disk_bins_bhbh.bin_orb_inc[chances_of_encounter < enc_rate].copy()
+        bin_orb_a = disk_bins_bhbh.bin_orb_a[encounter_index].copy()
+        bin_sep = disk_bins_bhbh.bin_sep[encounter_index].copy()
+        bin_ecc = disk_bins_bhbh.bin_ecc[encounter_index].copy()
+        bin_orb_ecc = disk_bins_bhbh.bin_orb_ecc[encounter_index].copy()
+        bin_orb_inc = disk_bins_bhbh.bin_orb_inc[encounter_index].copy()
 
         # Have already generated spheroid interaction, so a_3 is not far off a_bbh (unless super high ecc). 
         # Assume a_3 is similar to a_bbh (within a factor of O(3), so allowing for modest relative eccentricity)    
@@ -1446,12 +1448,12 @@ def bin_spheroid_encounter(
         # K.E_3 in Joules
         # Keplerian velocity of ecc prograde orbiter around SMBH (=c/sqrt(a/r_g))
         velocity_3 = const.c.value / np.sqrt(radius_3)
-        relative_velocities = np.abs(bin_velocities[chances_of_encounter < enc_rate] - velocity_3)
+        relative_velocities = np.abs(bin_velocities[encounter_index] - velocity_3)
         ke_3 = 0.5 * mass_3 * solar_mass * (relative_velocities ** 2.0)
 
         # Compare orbital angular momentum for interloper and binary
         # Ratio of L3/Lbin =(m3/M_bin)*sqrt(R3/R_com)
-        L_ratio = (mass_3 / bin_mass[chances_of_encounter < enc_rate]) * np.sqrt(radius_3 / bin_orb_a)
+        L_ratio = (mass_3 / bin_mass[encounter_index]) * np.sqrt(radius_3 / bin_orb_a)
 
         excluded_angles = np.full(num_encounters, -100.5)
 
@@ -1479,12 +1481,19 @@ def bin_spheroid_encounter(
         # i3 in units of degrees
         # where 0 deg = disk mid-plane prograde, 180 deg= disk mid-plane retrograde,
         # 90deg = aligned with L_disk, 270 deg = anti-aligned with disk)
+        #
+        # Vera: somebody set excluded_angles = 360 to indicate that all
+        #   angles should be excluded. However, this causes the whole
+        #   pipeline to crash. This is a temporary fix.
+        include_mask = excluded_angles < 360
+        include_index = encounter_index[include_mask]
+        excluded_angles[~include_mask] = 0.
         i3 = rng.randint(low=excluded_angles, high=360-excluded_angles)
         # Convert i3 to radians
         i3_rad = np.radians(i3)
 
         # Ionize/soften/harden binary if appropriate
-        hard = bin_binding_energy[chances_of_encounter < enc_rate] - ke_3
+        hard = bin_binding_energy[encounter_index] - ke_3
         # Create mask for hard and soft
         mask_hard = hard > 0
         mask_soft = hard < 0
@@ -1510,10 +1519,10 @@ def bin_spheroid_encounter(
         bin_orb_inc[(L_ratio < 1)] = bin_orb_inc[(L_ratio < 1)] + L_ratio[L_ratio < 1] * (i3_rad[L_ratio < 1]/2.0)
         bin_orb_inc[(L_ratio > 1)] = bin_orb_inc[(L_ratio > 1)] + (1./L_ratio[L_ratio > 1]) * (i3_rad[L_ratio > 1]/2.0)
 
-        disk_bins_bhbh.bin_sep[chances_of_encounter < enc_rate] = bin_sep
-        disk_bins_bhbh.bin_ecc[chances_of_encounter < enc_rate] = bin_ecc
-        disk_bins_bhbh.bin_orb_ecc[chances_of_encounter < enc_rate] = bin_orb_ecc
-        disk_bins_bhbh.bin_orb_inc[chances_of_encounter < enc_rate] = bin_orb_inc
+        disk_bins_bhbh.bin_sep[include_index] = bin_sep[include_mask]
+        disk_bins_bhbh.bin_ecc[include_index] = bin_ecc[include_mask]
+        disk_bins_bhbh.bin_orb_ecc[include_index] = bin_orb_ecc[include_mask]
+        disk_bins_bhbh.bin_orb_inc[include_index] = bin_orb_inc[include_mask]
 
     # Test new values
     assert np.isfinite(disk_bins_bhbh.bin_sep).all(), \

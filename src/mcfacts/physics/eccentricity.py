@@ -122,19 +122,27 @@ def orbital_ecc_damping(smbh_mass, disk_bh_pro_orbs_a, disk_bh_pro_orbs_masses, 
 
     # Check if nan's exist
     index_nan = np.argwhere(np.isnan(t_damp))
-    if index_nan:
-        print("Nan found at:")
-        print("t_damp:", np.argwhere(np.isnan(t_damp)))
-        print("t_ecc:", np.argwhere(np.isnan(t_ecc)))
-        print("e_h_ratio:", e_h_ratio[index_nan])
-        print("orb_a:", disk_bh_pro_orbs_a[index_nan])
-        print("h/r:", disk_aspect_ratio[index_nan])
-        print("locns",normalized_bh_locations)
-        print("mass ratio",normalized_mass_ratio)
-        print("ecc",prograde_disk_bh_pro_orbs_ecc)
-        print("aspect_ratio",disk_aspect_ratio)
-        print("at that value", normalized_bh_locations[index_nan],normalized_disk_surf_density_func[index_nan],normalized_mass_ratio[index_nan],normalized_aspect_ratio[index_nan],prograde_disk_bh_pro_orbs_ecc[index_nan])
-        raise TypeError("Encountered a nan in `t_damp`")
+    # Check for any other nans
+    if any(index_nan):
+        # Check for things inside 12 R_g causing nans
+        if all(disk_bh_pro_orbs_a[index_nan] < 12.1):
+            # This is an interpolation error caused by pAGN not searching
+            # within 12 R_g.
+            # TODO check for EMRIs before now.
+            pass
+        else:
+            print("Nan found at:")
+            print("t_damp:", np.argwhere(np.isnan(t_damp)))
+            print("t_ecc:", np.argwhere(np.isnan(t_ecc)))
+            print("e_h_ratio:", e_h_ratio[index_nan])
+            print("orb_a:", disk_bh_pro_orbs_a[index_nan])
+            print("h/r:", disk_aspect_ratio[index_nan])
+            print("locns",normalized_bh_locations)
+            print("mass ratio",normalized_mass_ratio)
+            print("ecc",prograde_disk_bh_pro_orbs_ecc)
+            print("aspect_ratio",disk_aspect_ratio)
+            print("at that value", normalized_bh_locations[index_nan],normalized_disk_surf_density_func[index_nan],normalized_mass_ratio[index_nan],normalized_aspect_ratio[index_nan],prograde_disk_bh_pro_orbs_ecc[index_nan])
+            raise TypeError("Encountered a nan in `t_damp`")
 
 
     # print("timescale_ratio",timescale_ratio)
