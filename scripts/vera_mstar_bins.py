@@ -146,27 +146,37 @@ def stellar_mass_captured_nsc(
 
 ######## Physics ########
 def capture_time(
-        mass_smbh,
+        smbh_mass,
+        nsc_mass,
+        nsc_ratio_bh_num_star_num,
+        nsc_ratio_bh_mass_star_mass,
         disk_surf_dens_func,
+        agn_lifetime,
         m_bh = 10 * units.solMass,
     ):
     # velocity dispersion of nsc
     sig_nsc = (2.3*(units.km/units.s)) * \
-        (mass_smbh / (1 * units.solMass))**(1./4.38)
+        (smbh_mass / (1 * units.solMass))**(1./4.38)
     # Calculate radius of influence
-    r_infl = const.G * mass_smbh / sig_nsc
+    r_infl = const.G * smbh_mass / sig_nsc
     # Calculate orbital time at radius of influence
-    p_orb_r_infl = 2 * np.pi * np.sqrt(r_infl**3 / (const.G * mass_smbh))
+    p_orb_r_infl = 2 * np.pi * np.sqrt(r_infl**3 / (const.G * smbh_mass))
     # Calculate the surface density at the radius of influence
     Sigma_m = disk_surf_dens_func(r_g_from_units(
-        mass_smbh, r_infl)) * u.kg / u.m**2
+        smbh_mass, r_infl)) * u.kg / u.m**2
     # Total mass of BH in NSC
-    total_mass_bh_in_nsc = nsc_mass_si * nsc_ratio_bh_num_star_num * nsc_ratio_bh_mass_star_mass
+    total_mass_bh_in_nsc = nsc_mass * nsc_ratio_bh_num_star_num * nsc_ratio_bh_mass_star_mass
     # Total mass of star in NSC (we assume nsc_mass = mass_bh_total + mass_star_total)
     total_mass_star_in_nsc = nsc_mass_si - total_mass_bh_in_nsc
-
-    # Mass fraction of stars in NSC
-    f_star = total_mass_star_in_nsc / nsc_mass_si
+    # Mass fraction of BH in NSC
+    f_bh = total_mass_star_in_nsc / nsc_mass_si
+    # Capture mass
+    captured_mass = (2. * smbh_mass * f_bh * \
+        (
+            (Sigma_m / star_surface_density) * \
+            (agn_lifetime / disk_orbital_period)
+        ) ** (1. - (nsc_density_index_inner / 3.))
+    ).to("Msun")
 
 
 ######## Batch ########
