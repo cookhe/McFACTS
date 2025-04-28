@@ -5,6 +5,7 @@ Module for calculating the timescale of migrations.
 import numpy as np
 import astropy.constants as const
 import astropy.units as u
+import scipy.interpolate
 from mcfacts.mcfacts_random_state import rng
 from mcfacts.physics.point_masses import si_from_r_g
 import scipy
@@ -14,7 +15,6 @@ def paardekooper10_torque(orbs_a, orbs_ecc, orb_ecc_crit, disk_dlog10surfdens_dl
     """Return the Paardekooper (2010) torque coefficient for Type 1 migration
         Paardekooper_Coeff = [-0.85+0.9dTdR +dSigmadR]
     """
-
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
     # Get indices of objects with orb_ecc <= ecc_crit so we can only update orb_a for those.
@@ -151,7 +151,6 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
 
 
     """
-    smbh_mass_in_kg = smbh_mass * u.Msun.to("kg")
     # Migration only occurs for sufficiently damped orbital ecc. If orb_ecc <= ecc_crit, then migrate.
     # Otherwise no change in semi-major axis (orb_a).
     # Get indices of objects with orb_ecc <= ecc_crit so we can only update orb_a for those.
@@ -161,20 +160,21 @@ def torque_mig_timescale(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, migr
     if migration_indices.shape == (0,):
         return np.array([])
 
+    smbh_mass_si = smbh_mass * u.Msun
     # If things will migrate then copy over the orb_a of objects that will migrate
     new_orbs_a = orbs_a[migration_indices].copy()
 
-    orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
+    orb_a_si = si_from_r_g(smbh_mass, new_orbs_a).to("m")
+    migration_torque_si = migration_torque * u.newton * u.meter
     # Omega of migrating BH in s^-1
-    Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
-    bh_masses = u.Msun.to("kg")*masses[migration_indices]
+    Omega_bh = np.sqrt(const.G * smbh_mass_si/((orb_a_si)**(3.0)))
+    bh_masses = u.Msun*masses[migration_indices]
     # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2 (in units of seconds)
-    torque_mig_timescale = bh_masses*Omega_bh*((orb_a_in_meters)**(2.0))/(2.0*migration_torque)
+    torque_mig_timescale = (bh_masses*Omega_bh*((orb_a_si)**(2.0))/(2.0*migration_torque_si)).to("s")
 
     assert np.isfinite(torque_mig_timescale).all(), \
         "Finite check failure: torque_mig_timescale"
-
-    return torque_mig_timescale
+    return torque_mig_timescale.value
 
 
 def jimenezmasset17_torque(smbh_mass, disk_surf_density_func, disk_opacity_func, disk_aspect_ratio_func, disk_temp_func, orbs_a, orbs_ecc, orb_ecc_crit, disk_dlog10surfdens_dlog10R_func, disk_dlog10temp_dlog10R_func):
@@ -220,7 +220,6 @@ def jimenezmasset17_torque(smbh_mass, disk_surf_density_func, disk_opacity_func,
     orb_a_in_meters = si_from_r_g(smbh_mass, new_orbs_a).to("m").value
     # Omega of migrating BH in s^-1
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
-
     log_new_orbs_a = np.log10(new_orbs_a)
 
     # Evaluate disk surf density at only migrating BH
@@ -594,6 +593,8 @@ def type1_migration_distance(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, 
         "Finite check failure: orbs_a"
     assert np.all(new_orbs_a < disk_radius_outer), \
         "new_orbs_a contains values greater than disk_radius_outer"
+    assert np.all(new_orbs_a > 0), \
+        "new_orbs_a contains values <= 0"
 
     return (orbs_a)
 
