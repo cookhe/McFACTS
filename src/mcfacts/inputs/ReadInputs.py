@@ -8,6 +8,8 @@ Inifile
         Use pAGN to generate disk model?
     "flag_add_stars"                : int
         Add stars to the disk
+    "flag_coalesce_initial_stars"   : int
+        Keep stars as is (0) or coalesce before time loop starts (1)
     "flag_initial_stars_BH_immortal": int
         If stars over disk_star_initial_mass_cutoff turn into BH (0) or hold at cutoff (1, immortal)
     "smbh_mass"                     : float
@@ -123,12 +125,14 @@ Inifile
         Innermost Stable Circular Orbit around SMBH
     "mass_pile_up"                  : float
         Pile-up of masses caused by cutoff (M_sun)
-    "save_snapshots"
+    "save_snapshots"                : int
         Save snapshots of the disk and NSC at each timestep
-    "mean_harden_energy_delta"
+    "mean_harden_energy_delta"      : float
         The Gaussian mean value for the energy change during a strong interaction
-    "var_harden_energy_delta"
+    "var_harden_energy_delta"       : float
         The Gaussian variance value for the energy change during a strong interaction
+    "flag_use_surrogate"            : int
+        Switch (0) uses analytical kick prescription from Akiba et al. (2024). Switch (1) sets 200 km/s for each merger's kick velocity.
 """
 # Things everyone needs
 import configparser as ConfigParser
@@ -149,6 +153,7 @@ INPUT_TYPES = {
     "disk_model_name"               : str,
     "flag_use_pagn"                 : int,
     "flag_add_stars"                : int,
+    "flag_coalesce_initial_stars"   : int,
     "flag_initial_stars_BH_immortal": int,
     "smbh_mass"                     : float,
     "disk_radius_trap"              : float,
