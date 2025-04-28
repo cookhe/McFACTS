@@ -16,7 +16,7 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     """
 
     # generate a new sorted range of default 100 pts across [disk_inner_radius,disk_outer_radius]
-    disk_radius_arr = np.linspace(3*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
+    disk_radius_arr = np.linspace(2*disk_inner_stable_circ_orb, disk_radius_outer, num=100)
     # Prevent accidental zeros or Nans!
     log_disk_radius_arr = np.log10(disk_radius_arr)
 
@@ -55,6 +55,18 @@ def paardekooper10_torque(disc_surf_density, temp_func, orbs_a, orbs_ecc, orb_ec
     dTempdR = dTempdR_spline(log_new_orbs_a)
 
     Torque_paardekooper_coeff = -0.85 + dSigmadR + (0.9 * dTempdR)
+    # Check for nans
+    nan_mask = np.isnan(Torque_paardekooper_coeff)
+    if any(nan_mask):
+        if all(orbs_a[migration_indices][nan_mask] < 12.1):
+            # They are not migrating if they have already been captured
+            Torque_paardekooper_coeff[nan_mask] = 0.
+        else:
+            print(f"log_disk_radius_arr: {log_disk_radius_arr}")
+            print(f"dSigmadR[nan_mask]: {dSigmadR[nan_mask]}")
+            print(f"dTempdR[nan_mask]: {dTempdR[nan_mask]}")
+            print(f"orbs_a[nan_mask]: {orbs_a[migration_indices][nan_mask]}")
+            raise ValueError("nans in Torque_paardekooper_coeff")
 
     assert np.isfinite(Torque_paardekooper_coeff).all(), \
         "Finite check failure: Torque_paardekooper_coeff"
@@ -168,6 +180,15 @@ def normalized_torque(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit, disk_su
     Omega_bh = np.sqrt(scipy.constants.G * smbh_mass_in_kg/((orb_a_in_meters)**(3.0)))
     # Normalized torque = (q/h)^2 * Sigma * a^4 * Omega^2
     normalized_torque = ((mass_ratios/disk_aspect_ratio)**(2.0))*disk_surface_density*((orb_a_in_meters)**(4.0))*(Omega_bh**(2.0))
+    # Check for nans
+    nan_mask = np.isnan(normalized_torque)
+    if any(nan_mask):
+        if all(orbs_a[migration_indices][nan_mask] < 12.1):
+            # They are not migrating if they have already been captured
+            normalized_torque[nan_mask] = 0.
+        else:
+            print(orbs_a[migration_indices][nan_mask])
+            raise ValueError("nans in normalized_torque")
 
     assert np.isfinite(normalized_torque).all(), \
         "Finite check failure: normalized_torque"
