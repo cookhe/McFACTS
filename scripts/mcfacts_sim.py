@@ -199,7 +199,7 @@ def main():
     # Disk sound speed [m/s] is a function of radius, where radius is in r_g
     # Disk density [kg/m^3] is a function of radius, where radius is in r_g
     # Return disk log of disk surface density as a function of log (R)
-    disk_surface_density, disk_aspect_ratio, disk_opacity, disk_sound_speed, disk_density, disk_pressure_grad, disk_omega, disk_surface_density_log, temp_func = \
+    disk_surface_density, disk_aspect_ratio, disk_opacity, disk_sound_speed, disk_density, disk_pressure_grad, disk_omega, disk_surface_density_log, temp_func, disk_dlog10surfdens_dlog10R_func, disk_dlog10temp_dlog10R_func, disk_dlog10pressure_dlog10R_func = \
         ReadInputs.construct_disk_interp(opts.smbh_mass,
                                          opts.disk_radius_outer,
                                          opts.disk_model_name,
@@ -209,8 +209,6 @@ def main():
                                          flag_use_pagn=opts.flag_use_pagn,
                                          verbose=opts.verbose
                                          )
-
-    dlogSigmadlogR_spline, dlogTempdlogR_spline, dlogPressuredlogR_spline = migration.disk_derivative_functions(disk_surface_density, temp_func, disk_sound_speed, disk_density, opts.disk_inner_stable_circ_orb, opts.disk_radius_outer)
 
     blackholes_merged_pop = AGNMergedBlackHole()
     emris_pop = AGNBlackHole()
@@ -638,16 +636,16 @@ def main():
                     blackholes_pro.orb_a,
                     blackholes_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    dlogSigmadlogR_spline,
-                    dlogTempdlogR_spline
+                    disk_dlog10surfdens_dlog10R_func,
+                    disk_dlog10temp_dlog10R_func
                 )
 
                 paardekooper_torque_coeff_star = migration.paardekooper10_torque(
                     stars_pro.orb_a,
                     stars_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    dlogSigmadlogR_spline,
-                    dlogTempdlogR_spline
+                    disk_dlog10surfdens_dlog10R_func,
+                    disk_dlog10temp_dlog10R_func
                 )
 
             # Jimenez-Masset torque coeff (from Grishin+24)
@@ -661,8 +659,8 @@ def main():
                     blackholes_pro.orb_a,
                     blackholes_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    dlogSigmadlogR_spline,
-                    dlogTempdlogR_spline
+                    disk_dlog10surfdens_dlog10R_func,
+                    disk_dlog10temp_dlog10R_func
                 )
 
                 jimenez_masset_torque_coeff_star = migration.jimenezmasset17_torque(
@@ -674,8 +672,8 @@ def main():
                     stars_pro.orb_a,
                     stars_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    dlogSigmadlogR_spline,
-                    dlogTempdlogR_spline
+                    disk_dlog10surfdens_dlog10R_func,
+                    disk_dlog10temp_dlog10R_func
                 )
 
                 # Thermal torque from JM17 (if flag_thermal_feedback off, this component is 0.)
@@ -691,7 +689,7 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     blackholes_pro.mass,
                     opts.flag_thermal_feedback,
-                    dlogPressuredlogR_spline
+                    disk_dlog10pressure_dlog10R_func
                 )
 
                 jimenez_masset_thermal_torque_coeff_star = migration.jimenezmasset17_thermal_torque_coeff(
@@ -706,7 +704,7 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     blackholes_pro.mass,
                     opts.flag_thermal_feedback,
-                    dlogPressuredlogR_spline
+                    disk_dlog10pressure_dlog10R_func
                 )
 
                 if opts.flag_thermal_feedback == 1:
@@ -1598,8 +1596,8 @@ def main():
                         blackholes_binary.bin_orb_a,
                         blackholes_binary.bin_orb_ecc,
                         opts.disk_bh_pro_orb_ecc_crit,
-                        dlogSigmadlogR_spline,
-                        dlogTempdlogR_spline
+                        disk_dlog10surfdens_dlog10R_func,
+                        disk_dlog10temp_dlog10R_func
                     )
 
                 # Jimenez-Masset torque coeff (from Grishin+24)
@@ -1613,8 +1611,8 @@ def main():
                         blackholes_binary.bin_orb_a,
                         blackholes_binary.bin_orb_ecc,
                         opts.disk_bh_pro_orb_ecc_crit,
-                        dlogSigmadlogR_spline,
-                        dlogTempdlogR_spline
+                        disk_dlog10surfdens_dlog10R_func,
+                        disk_dlog10temp_dlog10R_func
                     )
                     jimenez_masset_thermal_torque_coeff_bh = migration.jimenezmasset17_thermal_torque_coeff(
                         opts.smbh_mass,
@@ -1628,7 +1626,7 @@ def main():
                         opts.disk_bh_pro_orb_ecc_crit,
                         blackholes_binary.mass_1 + blackholes_binary.mass_2,
                         opts.flag_thermal_feedback,
-                        dlogPressuredlogR_spline
+                        disk_dlog10pressure_dlog10R_func
                     )
                     if opts.flag_thermal_feedback > 0:
                         total_jimenez_masset_torque_bh = jimenez_masset_torque_coeff_bh + jimenez_masset_thermal_torque_coeff_bh
