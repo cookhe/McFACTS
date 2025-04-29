@@ -215,6 +215,7 @@ def main():
     blackholes_binary_gw_pop = AGNBinaryBlackHole()
     stars_pop = AGNStar()
     tdes_pop = AGNStar()
+    stars_plunge_pop = AGNStar()
     stars_explode_pop = AGNExplodedStar()
     stars_merge_pop = AGNMergedStar()
 
@@ -412,6 +413,9 @@ def main():
 
         # Create empty TDEs object
         stars_tdes = AGNStar()
+
+        # Create empty plunging stars object
+        stars_plunge = AGNStar()
 
         # Create empty exploded stars object
         stars_explode = AGNExplodedStar()
@@ -623,7 +627,7 @@ def main():
                     opts.disk_bh_pro_orb_ecc_crit,
                     disk_surface_density,
                     disk_aspect_ratio,
-                    ratio_heat_mig_torques,
+                    ratio_heat_mig_stars_torques,
                     opts.disk_radius_trap,
                     opts.disk_radius_outer,
                     opts.timestep_duration_yr
@@ -702,7 +706,7 @@ def main():
                     stars_pro.orb_a,
                     stars_pro.orb_ecc,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    blackholes_pro.mass,
+                    stars_pro.mass,
                     opts.flag_thermal_feedback,
                     disk_dlog10pressure_dlog10R_func
                 )
@@ -827,10 +831,10 @@ def main():
             #blackholes_pro. = blackholes_pro.orb_ecc[~plunging_indices]
 
             blackholes_pro.orb_a = np.where(blackholes_pro.orb_a > opts.disk_inner_stable_circ_orb, blackholes_pro.orb_a, 3*opts.disk_inner_stable_circ_orb)
-            stars_pro.orb_a = np.where(stars_pro.orb_a > opts.disk_inner_stable_circ_orb, stars_pro.orb_a, 3*opts.disk_inner_stable_circ_orb)
             if new_orb_a_bh is not None:
                 blackholes_pro.orb_a = new_orb_a_bh
 
+            stars_pro.orb_a = np.where(stars_pro.orb_a > opts.disk_inner_stable_circ_orb, stars_pro.orb_a, 3*opts.disk_inner_stable_circ_orb)
             if new_orb_a_star is not None:
                 stars_pro.orb_a = new_orb_a_star
 
@@ -1734,7 +1738,7 @@ def main():
                             opts.disk_bh_pro_orb_ecc_crit,
                             torque
                         )
-                        #Calculate new bh_orbs_a using torque
+                        # Calculate new bh_orbs_a using torque
                         blackholes_binary.bin_orb_a = migration.type1_migration_distance(
                             opts.smbh_mass,
                             blackholes_binary.bin_orb_a,
@@ -2389,6 +2393,29 @@ def main():
                 # Remove merged EMRIs from filing_cabinet
                 filing_cabinet.remove_id_num(emri_merger_id_num)
 
+            # If stars plunge into SMBH record them and then remove from disk
+            if np.size(star_rlof_smbh_id_num) > 0:
+                stars_plunge.add_stars(
+                    new_mass=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "mass"),
+                    new_log_radius=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "log_radius"),
+                    new_log_luminosity=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "log_luminosity"),
+                    new_log_teff=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "log_teff"),
+                    new_X=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "star_X"),
+                    new_Y=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "star_Y"),
+                    new_Z=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "star_Z"),
+                    new_orb_a=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "orb_a"),
+                    new_orb_inc=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "orb_inc"),
+                    new_orb_ang_mom=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "orb_ang_mom"),
+                    new_orb_ecc=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "orb_ecc"),
+                    new_orb_arg_periapse=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "orb_arg_periapse"),
+                    new_galaxy=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "galaxy"),
+                    new_time_passed=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "time_passed"),
+                    new_gen=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "gen"),
+                    new_id_num=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "id_num")
+                    )
+                stars_inner_disk.remove_id_num(star_rlof_smbh_id_num)
+                filing_cabinet.remove_id_num(star_rlof_smbh_id_num)
+
             # Here is where we need to move retro to prograde if they've flipped in this timestep
             # If they're IN the disk prograde, OR if they've circularized:
             # stop treating them with crude retro evolution--it will be sad
@@ -2620,6 +2647,23 @@ def main():
                            new_gen=stars_tdes.gen,
                            new_time_passed=stars_tdes.time_passed)
         
+        stars_plunge_pop.add_stars(new_id_num=stars_plunge.id_num,
+                                   new_mass=stars_plunge.mass,
+                                   new_log_radius=stars_plunge.log_radius,
+                                   new_log_teff=stars_plunge.log_teff,
+                                   new_log_luminosity=stars_plunge.log_luminosity,
+                                   new_X=stars_plunge.star_X,
+                                   new_Y=stars_plunge.star_Y,
+                                   new_Z=stars_plunge.star_Z,
+                                   new_orb_a=stars_plunge.orb_a,
+                                   new_orb_inc=stars_plunge.orb_inc,
+                                   new_orb_ang_mom=stars_plunge.orb_ang_mom,
+                                   new_orb_ecc=stars_plunge.orb_ecc,
+                                   new_orb_arg_periapse=stars_plunge.orb_arg_periapse,
+                                   new_galaxy=stars_plunge.galaxy,
+                                   new_gen=stars_plunge.gen,
+                                   new_time_passed=stars_plunge.time_passed)
+        
         stars_pop.add_stars(new_id_num=stars_pro.id_num,
                             new_mass=stars_pro.mass,
                             new_log_radius=stars_pro.log_radius,
@@ -2682,6 +2726,7 @@ def main():
     stars_save_name = f"{basename}_stars_population{extension}"
     stars_explode_save_name = f"{basename}_stars_exploded{extension}"
     stars_merge_save_name = f"{basename}_stars_merged{extension}"
+    stars_plunge_save_name = f"{basename}_stars_plunge{extension}"
     basename_disk, extension_disk = os.path.splitext(opts.fname_output)
     disk_mass_cycled_save_name = f"{basename_disk}_diskmasscycled{extension_disk}"
 
@@ -2718,6 +2763,8 @@ def main():
         stars_pop.to_txt(os.path.join(opts.work_directory, stars_save_name),
                                     cols=stars_cols, extra_header=f"Initial seed: {opts.seed}\n")
         tdes_pop.to_txt(os.path.join(opts.work_directory, tdes_save_name),
+                     cols=tde_cols)
+        stars_plunge_pop.to_txt(os.path.join(opts.work_directory, stars_plunge_save_name),
                      cols=tde_cols)
         stars_explode_pop.to_txt(os.path.join(opts.work_directory, stars_explode_save_name),
                      cols=stars_explode_cols)
