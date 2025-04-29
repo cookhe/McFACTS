@@ -815,7 +815,7 @@ def type1_migration_single(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
     return (new_orbs_a)
 
 
-def type1_migration_binary(smbh_mass, blackholes_binary, orb_ecc_crit,
+def type1_migration_binary(smbh_mass, bin_mass_1, bin_mass_2, bin_orb_a, bin_orb_ecc, orb_ecc_crit,
                            disk_surf_density_func, disk_aspect_ratio_func, disk_feedback_ratio_func,
                            disk_radius_trap, disk_radius_outer, timestep_duration_yr):
     """Wrapper function for type1_migration for binaries in the disk.
@@ -855,12 +855,8 @@ def type1_migration_binary(smbh_mass, blackholes_binary, orb_ecc_crit,
         Semi-major axes [r_{g,SMBH}] of objects at end of timestep
     """
 
-    orbs_a = blackholes_binary.bin_orb_a
-    masses = blackholes_binary.mass_1 + blackholes_binary.mass_2
-    orbs_ecc = blackholes_binary.bin_orb_ecc
+    new_bin_orb_a = type1_migration(smbh_mass, bin_orb_a, bin_mass_1 + bin_mass_2, bin_orb_ecc, orb_ecc_crit,
+                                    disk_surf_density_func, disk_aspect_ratio_func, disk_feedback_ratio_func,
+                                    disk_radius_trap, disk_radius_outer, timestep_duration_yr)
 
-    blackholes_binary.bin_orb_a = type1_migration(smbh_mass, orbs_a, masses, orbs_ecc, orb_ecc_crit,
-                                                  disk_surf_density_func, disk_aspect_ratio_func, disk_feedback_ratio_func,
-                                                  disk_radius_trap, disk_radius_outer, timestep_duration_yr)
-
-    return (blackholes_binary)
+    return (new_bin_orb_a)
