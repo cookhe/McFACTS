@@ -1269,7 +1269,7 @@ def main():
 
                     # Check for mergers
                     # Check closeness of binary. Are black holes at merger condition separation
-                    blackholes_binary = evolve.bin_contact_check(blackholes_binary, opts.smbh_mass)
+                    blackholes_binary.bin_sep, blackholes_binary.flag_merging = evolve.bin_contact_check(blackholes_binary.mass_1, blackholes_binary.mass_2, blackholes_binary.bin_sep, blackholes_binary.flag_merging, opts.smbh_mass)
                     bh_binary_id_num_merger = blackholes_binary.id_num[blackholes_binary.flag_merging < 0]
 
                     if opts.verbose:
@@ -1278,7 +1278,12 @@ def main():
 
                     if (bh_binary_id_num_merger.size > 0):
 
-                        bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary)
+                        bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary.mass_1,
+                                                                               blackholes_binary.mass_2,
+                                                                               blackholes_binary.orb_a_1,
+                                                                               blackholes_binary.orb_a_2,
+                                                                               blackholes_binary.bin_ecc,
+                                                                               blackholes_binary.id_num)
                         if bh_binary_id_num_unphysical.size > 0:
                             blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                             filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
@@ -1356,7 +1361,12 @@ def main():
 
                     if (bh_binary_id_num_merger.size > 0):
 
-                        bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary)
+                        bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary.mass_1,
+                                                                               blackholes_binary.mass_2,
+                                                                               blackholes_binary.orb_a_1,
+                                                                               blackholes_binary.orb_a_2,
+                                                                               blackholes_binary.bin_ecc,
+                                                                               blackholes_binary.id_num)
                         if bh_binary_id_num_unphysical.size > 0:
                             blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                             filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
@@ -1403,8 +1413,14 @@ def main():
 
                 # Harden binaries via gas
                 # Choose between Baruteau et al. 2011 gas hardening, or gas hardening from LANL simulations. To do: include dynamical hardening/softening from encounters
-                blackholes_binary = evolve.bin_harden_baruteau(
-                    blackholes_binary,
+                blackholes_binary.bin_sep, blackholes_binary.flag_merging, blackholes_binary.time_merged, blackholes_binary.time_to_merger_gw = evolve.bin_harden_baruteau(
+                    blackholes_binary.mass_1,
+                    blackholes_binary.mass_2,
+                    blackholes_binary.bin_sep,
+                    blackholes_binary.bin_ecc,
+                    blackholes_binary.time_to_merger_gw,
+                    blackholes_binary.flag_merging,
+                    blackholes_binary.time_merged,
                     opts.smbh_mass,
                     opts.timestep_duration_yr,
                     time_gw_normalization,
@@ -1426,7 +1442,12 @@ def main():
                     print(bh_binary_id_num_merger)
 
                 if (bh_binary_id_num_merger.size > 0):
-                    bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary)
+                    bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary.mass_1,
+                                                                               blackholes_binary.mass_2,
+                                                                               blackholes_binary.orb_a_1,
+                                                                               blackholes_binary.orb_a_2,
+                                                                               blackholes_binary.bin_ecc,
+                                                                               blackholes_binary.id_num)
                     if bh_binary_id_num_unphysical.size > 0:
                         blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                         filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
@@ -1466,8 +1487,10 @@ def main():
                         print("No mergers yet")
 
                 # Accrete gas onto binary components
-                blackholes_binary = evolve.change_bin_mass(
-                    blackholes_binary,
+                blackholes_binary.mass_1, blackholes_binary.mass_2 = evolve.change_bin_mass(
+                    blackholes_binary.mass_1,
+                    blackholes_binary.mass_2,
+                    blackholes_binary.flag_merging,
                     opts.disk_bh_eddington_ratio,
                     disk_bh_eddington_mass_growth_rate,
                     opts.timestep_duration_yr,
@@ -1479,16 +1502,20 @@ def main():
                                       new_info=blackholes_binary.mass_1 + blackholes_binary.mass_2)
 
                 # Spin up binary components
-                blackholes_binary = evolve.change_bin_spin_magnitudes(
-                    blackholes_binary,
+                blackholes_binary.spin_1, blackholes_binary.spin_2 = evolve.change_bin_spin_magnitudes(
+                    blackholes_binary.spin_1,
+                    blackholes_binary.spin_2,
+                    blackholes_binary.flag_merging,
                     opts.disk_bh_eddington_ratio,
                     opts.disk_bh_torque_condition,
                     opts.timestep_duration_yr,
                 )
 
                 # Torque angle of binary spin components
-                blackholes_binary = evolve.change_bin_spin_angles(
-                    blackholes_binary,
+                blackholes_binary.spin_angle_1, blackholes_binary.spin_angle_2 = evolve.change_bin_spin_angles(
+                    blackholes_binary.spin_angle_1,
+                    blackholes_binary.spin_angle_2,
+                    blackholes_binary.flag_merging,
                     opts.disk_bh_eddington_ratio,
                     opts.disk_bh_torque_condition,
                     disk_bh_spin_resolution_min,
@@ -1528,7 +1555,12 @@ def main():
 
                     if (bh_binary_id_num_merger.size > 0):
 
-                        bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary)
+                        bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary.mass_1,
+                                                                               blackholes_binary.mass_2,
+                                                                               blackholes_binary.orb_a_1,
+                                                                               blackholes_binary.orb_a_2,
+                                                                               blackholes_binary.bin_ecc,
+                                                                               blackholes_binary.id_num)
                         if bh_binary_id_num_unphysical.size > 0:
                             blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                             filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
@@ -1774,7 +1806,7 @@ def main():
                 )
 
                 # Check and see if any binaries are ionized.
-                bh_binary_id_num_ionization = evolve.bin_ionization_check(blackholes_binary, opts.smbh_mass)
+                bh_binary_id_num_ionization = evolve.bin_ionization_check(blackholes_binary.mass_1, blackholes_binary.mass_2, blackholes_binary.bin_orb_a, blackholes_binary.bin_sep, blackholes_binary.id_num, opts.smbh_mass)
                 if bh_binary_id_num_ionization.size > 0:
                     # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
                     # For now add 2 new orb ecc term of 0.01. inclination is 0.0 as well. TO DO: calculate v_kick and resulting perturbation to orb ecc.
@@ -1835,7 +1867,12 @@ def main():
 
                 if (bh_binary_id_num_merger.size > 0):
 
-                    bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary)
+                    bh_binary_id_num_unphysical = evolve.bin_reality_check(blackholes_binary.mass_1,
+                                                                               blackholes_binary.mass_2,
+                                                                               blackholes_binary.orb_a_1,
+                                                                               blackholes_binary.orb_a_2,
+                                                                               blackholes_binary.bin_ecc,
+                                                                               blackholes_binary.id_num)
                     if bh_binary_id_num_unphysical.size > 0:
                         blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                         filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
