@@ -727,10 +727,15 @@ def circular_binaries_encounters_ecc_prograde(
         disk_bh_pro_orbs_a,
         disk_bh_pro_masses,
         disk_bh_pro_orbs_ecc,
+        bin_mass_1,
+        bin_mass_2,
+        bin_orb_a,
+        bin_sep,
+        bin_ecc,
+        bin_orb_ecc,
         timestep_duration_yr,
         disk_bh_pro_orb_ecc_crit,
         delta_energy_strong,
-        disk_bins_bhbh,
         disk_radius_outer
         ):
     """"Adjust orb eccentricities due to encounters between BBH and eccentric single BHs
@@ -863,10 +868,10 @@ def circular_binaries_encounters_ecc_prograde(
     epsilon = 1e-8
 
     # Set up other values we need
-    bin_masses = disk_bins_bhbh.mass_1 + disk_bins_bhbh.mass_2
-    bin_velocities = const.c.value / np.sqrt(disk_bins_bhbh.bin_orb_a)
-    bin_binding_energy = const.G.value * (solar_mass ** 2) * disk_bins_bhbh.mass_1 * disk_bins_bhbh.mass_2 / (si_from_r_g(smbh_mass, disk_bins_bhbh.bin_sep).to("meter")).value
-    bin_orbital_times = 3.15 * (smbh_mass / 1.e8) * ((disk_bins_bhbh.bin_orb_a / 1.e3) ** 1.5)
+    bin_masses = bin_mass_1 + bin_mass_2
+    bin_velocities = const.c.value / np.sqrt(bin_orb_a)
+    bin_binding_energy = const.G.value * (solar_mass ** 2) * bin_mass_1 * bin_mass_2 / (si_from_r_g(smbh_mass, bin_sep).to("meter")).value
+    bin_orbital_times = 3.15 * (smbh_mass / 1.e8) * ((bin_orb_a / 1.e3) ** 1.5)
     bin_orbits_per_timestep = timestep_duration_yr/bin_orbital_times
 
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
@@ -884,19 +889,19 @@ def circular_binaries_encounters_ecc_prograde(
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
     epsilon_orb_a = disk_radius_outer * ((ecc_prograde_population_masses / (3 * (ecc_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(ecc_prograde_population_masses))
 
-    if disk_bins_bhbh.num == 0:
-        return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
+    if np.size(bin_mass_1) == 0:
+        return (bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
     # Create array of random numbers for the chances of encounters
-    chances = rng.uniform(size=(disk_bins_bhbh.num, ecc_prograde_population_indices.size))
+    chances = rng.uniform(size=(np.size(bin_mass_1), ecc_prograde_population_indices.size))
 
     # For each binary in blackholes_binary
-    for i in range(0, disk_bins_bhbh.num):
+    for i in range(0, np.size(bin_mass_1)):
         # We compare each single BH to that binary
         for j in range(0, len(ecc_prograde_population_indices)):
             # If binary com orbit lies inside eccentric orbit [min,max] radius
             # i.e. if R_m3_minimum lie inside R_bin_maximum and does R_m3_max lie outside R_bin_minimum
-            if (1.0 - disk_bins_bhbh.bin_orb_ecc[i]) * disk_bins_bhbh.bin_orb_a[i] < ecc_orb_max[j] and (1.0 + disk_bins_bhbh.bin_orb_ecc[i]) * disk_bins_bhbh.bin_orb_a[i] > ecc_orb_min[j]:
+            if (1.0 - bin_orb_ecc[i]) * bin_orb_a[i] < ecc_orb_max[j] and (1.0 + bin_orb_ecc[i]) * bin_orb_a[i] > ecc_orb_min[j]:
 
                 # Make a temporary Hill sphere treating binary + ecc interloper as a 'binary' = M_1+M_2+M_3
                 # r_h = a_circ1(temp_bin_mass/3mass_smbh)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
@@ -922,9 +927,9 @@ def circular_binaries_encounters_ecc_prograde(
                     if hard > 0:
                         # Binary is hard w.r.t interloper
                         # Change binary parameters; decr separation, incr ecc around bin_orb_a and orb_ecc
-                        disk_bins_bhbh.bin_sep[i] = disk_bins_bhbh.bin_sep[i] * (1 - delta_energy_strong)
-                        disk_bins_bhbh.bin_ecc[i] = disk_bins_bhbh.bin_ecc[i] * (1 + delta_energy_strong)
-                        disk_bins_bhbh.bin_orb_ecc[i] = disk_bins_bhbh.bin_orb_ecc[i] * (1 + delta_energy_strong)
+                        bin_sep[i] = bin_sep[i] * (1 - delta_energy_strong)
+                        bin_ecc[i] = bin_ecc[i] * (1 + delta_energy_strong)
+                        bin_orb_ecc[i] = bin_orb_ecc[i] * (1 + delta_energy_strong)
                         # Change interloper parameters; increase a_ecc, increase e_ecc
                         ecc_prograde_population_locations[j] = ecc_prograde_population_locations[j] * (1 + delta_energy_strong)
                         # Catch for if location > disk_radius_outer #
@@ -936,18 +941,18 @@ def circular_binaries_encounters_ecc_prograde(
                         # Binary is soft w.r.t. interloper
                         # Check to see if binary is ionized
                         # Change binary parameters; incr bin separation, decr ecc around com, incr orb_ecc
-                        disk_bins_bhbh.bin_sep[i] = disk_bins_bhbh.bin_sep[i] * (1 + delta_energy_strong)
-                        disk_bins_bhbh.bin_ecc[i] = disk_bins_bhbh.bin_ecc[i] * (1 - delta_energy_strong)
-                        disk_bins_bhbh.bin_orb_ecc[i] = disk_bins_bhbh.bin_orb_ecc[i] * (1 + delta_energy_strong)
+                        bin_sep[i] = bin_sep[i] * (1 + delta_energy_strong)
+                        bin_ecc[i] = bin_ecc[i] * (1 - delta_energy_strong)
+                        bin_orb_ecc[i] = bin_orb_ecc[i] * (1 + delta_energy_strong)
                         # Change interloper parameters; decrease a_ecc, decrease e_ecc
                         ecc_prograde_population_locations[j] = ecc_prograde_population_locations[j] * (1 - delta_energy_strong)
                         ecc_prograde_population_eccentricities[j] = ecc_prograde_population_eccentricities[j] * (1 - delta_energy_strong)
 
                     # Catch if bin_ecc or bin_orb_ecc >= 1
-                    if disk_bins_bhbh.bin_ecc[i] >= 1:
-                        disk_bins_bhbh.bin_ecc[i] = 1.0 - epsilon
-                    if disk_bins_bhbh.bin_orb_ecc[i] >= 1:
-                        disk_bins_bhbh.bin_orb_ecc[i] = 1.0 - epsilon
+                    if bin_ecc[i] >= 1:
+                        bin_ecc[i] = 1.0 - epsilon
+                    if bin_orb_ecc[i] >= 1:
+                        bin_orb_ecc[i] = 1.0 - epsilon
                     # Catch if single BHs have ecc >= 1
                     if ecc_prograde_population_eccentricities[j] >= 1:
                         ecc_prograde_population_eccentricities[j] = 1.0 - epsilon
@@ -957,20 +962,20 @@ def circular_binaries_encounters_ecc_prograde(
     disk_bh_pro_orbs_ecc[ecc_prograde_population_indices] = ecc_prograde_population_eccentricities
 
     # Check finite
-    assert np.isfinite(disk_bins_bhbh.bin_sep).all(), \
+    assert np.isfinite(bin_sep).all(), \
         "Finite check failure: bin_separations"
-    assert np.isfinite(disk_bins_bhbh.bin_orb_ecc).all(), \
+    assert np.isfinite(bin_orb_ecc).all(), \
         "Finite check failure: bin_orbital_eccentricities"
-    assert np.isfinite(disk_bins_bhbh.bin_ecc).all(), \
+    assert np.isfinite(bin_ecc).all(), \
         "Finite check failure: bin_eccentricities"
     assert np.all(ecc_prograde_population_locations < disk_radius_outer), \
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
     assert np.all(ecc_prograde_population_locations > 0), \
         "ecc_prograde_population_locations contains values <= 0"
-    assert np.all(disk_bins_bhbh.bin_sep > 0), \
-        "disk_bins_bhbh.bin_sep contains values <= 0"
+    assert np.all(bin_sep > 0), \
+        "bin_sep contains values <= 0"
 
-    return disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
+    return bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
 
 
 def circular_binaries_encounters_circ_prograde(
@@ -978,10 +983,15 @@ def circular_binaries_encounters_circ_prograde(
         disk_bh_pro_orbs_a,
         disk_bh_pro_masses,
         disk_bh_pro_orbs_ecc,
+        bin_mass_1,
+        bin_mass_2,
+        bin_orb_a,
+        bin_sep,
+        bin_ecc,
+        bin_orb_ecc,
         timestep_duration_yr,
         disk_bh_pro_orb_ecc_crit,
         delta_energy_strong,
-        disk_bins_bhbh,
         disk_radius_outer,
         mean_harden_energy_delta,
         var_harden_energy_delta
@@ -1130,11 +1140,11 @@ def circular_binaries_encounters_circ_prograde(
     epsilon = 1e-8
 
     # Set up arrays for later
-    bin_masses = disk_bins_bhbh.mass_1 + disk_bins_bhbh.mass_2
-    bin_velocities = const.c.value/np.sqrt(disk_bins_bhbh.bin_orb_a)
-    bin_orbital_times = 3.15 * (smbh_mass / 1.e8) * ((disk_bins_bhbh.bin_orb_a / 1.e3) ** 1.5)
+    bin_masses = bin_mass_1 + bin_mass_2
+    bin_velocities = const.c.value/np.sqrt(bin_orb_a)
+    bin_orbital_times = 3.15 * (smbh_mass / 1.e8) * ((bin_orb_a / 1.e3) ** 1.5)
     bin_orbits_per_timestep = timestep_duration_yr / bin_orbital_times
-    bin_binding_energy = const.G.value * (solar_mass ** 2.0) * disk_bins_bhbh.mass_1 * disk_bins_bhbh.mass_2 / (si_from_r_g(smbh_mass, disk_bins_bhbh.bin_sep).to("meter")).value
+    bin_binding_energy = const.G.value * (solar_mass ** 2.0) * bin_mass_1 * bin_mass_2 / (si_from_r_g(smbh_mass, bin_sep).to("meter")).value
 
     # Find the e< crit_ecc population. These are the interlopers w. low encounter vel that can harden the circularized population
     circ_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
@@ -1151,17 +1161,17 @@ def circular_binaries_encounters_circ_prograde(
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
     epsilon_orb_a = disk_radius_outer * ((circ_prograde_population_masses / (3 * (circ_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(circ_prograde_population_masses))
 
-    if (disk_bins_bhbh.num == 0):
-        return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
+    if np.size(bin_mass_1) == 0:
+        return (bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
     # Set up random numbers
-    chances = rng.uniform(size=(disk_bins_bhbh.num, len(circ_prograde_population_locations)))
+    chances = rng.uniform(size=(np.size(bin_mass_1), len(circ_prograde_population_locations)))
 
-    for i in range(0, disk_bins_bhbh.num):
+    for i in range(0, np.size(bin_mass_1)):
         for j in range(0, len(circ_prograde_population_locations)):
             # If binary com orbit lies inside circ orbit [min,max] radius
             # i.e. does R_m3_minimum lie inside R_bin_maximum and does R_m3_max lie outside R_bin_minimum
-            if (1.0 - disk_bins_bhbh.bin_orb_ecc[i]) * disk_bins_bhbh.bin_orb_a[i] < ecc_orb_max[j] and (1.0 + disk_bins_bhbh.bin_orb_ecc[i]) * disk_bins_bhbh.bin_orb_a[i] > ecc_orb_min[j]:
+            if (1.0 - bin_orb_ecc[i]) * bin_orb_a[i] < ecc_orb_max[j] and (1.0 + bin_orb_ecc[i]) * bin_orb_a[i] > ecc_orb_min[j]:
                 # Make a temporary Hill sphere treating binary + ecc interloper as a 'binary' = M_1+M_2+M_3
                 # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
                 temp_bin_mass = bin_masses[i] + circ_prograde_population_masses[j]
@@ -1187,9 +1197,9 @@ def circular_binaries_encounters_circ_prograde(
                         # de_strong here refers to the perturbation of the binary around its center of mass
                         # The energy in the exchange is assumed to come from the binary binding energy around its c.o.m.
                         # delta_energy_strong refers to the perturbation of the orbit of the binary c.o.m. around the SMBH, which is not as strongly perturbed (we take an 'average' perturbation) 
-                        disk_bins_bhbh.bin_sep[i] = disk_bins_bhbh.bin_sep[i] * (1 - de_strong)
-                        disk_bins_bhbh.bin_ecc[i] = disk_bins_bhbh.bin_ecc[i] * (1 + de_strong)
-                        disk_bins_bhbh.bin_orb_ecc[i] = disk_bins_bhbh.bin_orb_ecc[i] * (1 + delta_energy_strong)
+                        bin_sep[i] = bin_sep[i] * (1 - de_strong)
+                        bin_ecc[i] = bin_ecc[i] * (1 + de_strong)
+                        bin_orb_ecc[i] = bin_orb_ecc[i] * (1 + delta_energy_strong)
                         # Change interloper parameters; increase a_ecc, increase e_ecc
                         circ_prograde_population_locations[j] = circ_prograde_population_locations[j] * (1 + delta_energy_strong)
                         if (circ_prograde_population_locations[j] > disk_radius_outer):
@@ -1200,9 +1210,9 @@ def circular_binaries_encounters_circ_prograde(
                         # Binary is soft w.r.t. interloper
                         # Check to see if binary is ionized
                         # Change binary parameters; incr bin separation, decr ecc around com, incr orb_ecc
-                        disk_bins_bhbh.bin_sep[i] = disk_bins_bhbh.bin_sep[i] * (1 + delta_energy_strong)
-                        disk_bins_bhbh.bin_ecc[i] = disk_bins_bhbh.bin_ecc[i] * (1 - delta_energy_strong)
-                        disk_bins_bhbh.bin_orb_ecc[i] = disk_bins_bhbh.bin_orb_ecc[i] * (1 + delta_energy_strong)
+                        bin_sep[i] = bin_sep[i] * (1 + delta_energy_strong)
+                        bin_ecc[i] = bin_ecc[i] * (1 - delta_energy_strong)
+                        bin_orb_ecc[i] = bin_orb_ecc[i] * (1 + delta_energy_strong)
                         # Change interloper parameters; decrease a_ecc, decrease e_ecc
                         circ_prograde_population_locations[j] = circ_prograde_population_locations[j] * (1 - delta_energy_strong)
                         if (circ_prograde_population_locations[j] > disk_radius_outer):
@@ -1210,10 +1220,10 @@ def circular_binaries_encounters_circ_prograde(
                         circ_prograde_population_eccentricities[j] = circ_prograde_population_eccentricities[j] * (1 - delta_energy_strong)
 
                     # Catch where bin_orb_ecc and bin_ecc >= 1
-                    if (disk_bins_bhbh.bin_ecc[i] >= 1):
-                        disk_bins_bhbh.bin_ecc[i] = 1.0 - epsilon
-                    if (disk_bins_bhbh.bin_orb_ecc[i] >= 1):
-                        disk_bins_bhbh.bin_orb_ecc[i] = 1.0 - epsilon
+                    if (bin_ecc[i] >= 1):
+                        bin_ecc[i] = 1.0 - epsilon
+                    if (bin_orb_ecc[i] >= 1):
+                        bin_orb_ecc[i] = 1.0 - epsilon
                     # Catch where single BHs have ecc >= 1
                     if circ_prograde_population_eccentricities[j] >= 1:
                         circ_prograde_population_eccentricities[j] = 1.0 - epsilon
@@ -1222,26 +1232,32 @@ def circular_binaries_encounters_circ_prograde(
     disk_bh_pro_orbs_ecc[circ_prograde_population_indices] = circ_prograde_population_eccentricities
 
     # Check finite
-    assert np.isfinite(disk_bins_bhbh.bin_sep).all(), \
+    assert np.isfinite(bin_sep).all(), \
         "Finite check failure: bin_separations"
-    assert np.isfinite(disk_bins_bhbh.bin_orb_ecc).all(), \
+    assert np.isfinite(bin_orb_ecc).all(), \
         "Finite check failure: bin_orbital_eccentricities"
-    assert np.isfinite(disk_bins_bhbh.bin_ecc).all(), \
+    assert np.isfinite(bin_ecc).all(), \
         "Finite check failure: bin_eccentricities"
     assert np.all(circ_prograde_population_locations < disk_radius_outer), \
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
     assert np.all(circ_prograde_population_locations > 0), \
         "circ_prograde_population_locations contains values <= 0"
-    assert np.all(disk_bins_bhbh.bin_sep > 0), \
-        "disk_bins_bhbh.bin_sep contains values <= 0"
+    assert np.all(bin_sep > 0), \
+        "bin_sep contains values <= 0"
 
-    return (disk_bins_bhbh, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
+    return (bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
 
 def bin_spheroid_encounter(
         smbh_mass,
         timestep_duration_yr,
-        disk_bins_bhbh,
+        bin_mass_1_all,
+        bin_mass_2_all,
+        bin_orb_a_all,
+        bin_sep_all,
+        bin_ecc_all,
+        bin_orb_ecc_all,
+        bin_orb_inc_all,
         time_passed,
         nsc_bh_imf_powerlaw_index,
         delta_energy_strong,
@@ -1413,45 +1429,45 @@ def bin_spheroid_encounter(
     # Spheroid normalization to allow for non-ideal NSC (cored/previous AGN episodes/disky population concentration/whatever)
 
     # Set up binary properties we need for later
-    bin_mass = disk_bins_bhbh.mass_1 + disk_bins_bhbh.mass_2
-    bin_velocities = const.c.value / np.sqrt(disk_bins_bhbh.bin_orb_a)
-    bin_binding_energy = const.G.value * (solar_mass ** 2) * disk_bins_bhbh.mass_1 * disk_bins_bhbh.mass_2 / (si_from_r_g(smbh_mass, disk_bins_bhbh.bin_sep).to("meter")).value
+    bin_mass = bin_mass_1_all + bin_mass_2_all
+    bin_velocities = const.c.value / np.sqrt(bin_orb_a_all)
+    bin_binding_energy = const.G.value * (solar_mass ** 2) * bin_mass_1_all * bin_mass_2_all / (si_from_r_g(smbh_mass, bin_sep_all).to("meter")).value
 
     # Calculate encounter rate for each binary based on bin_orb_a, binary size, and time_passed
     # Set up array of encounter rates filled with -1
-    enc_rate = np.full(disk_bins_bhbh.num, -1.5)
+    enc_rate = np.full(np.size(bin_mass_1_all), -1.5)
 
     # Set encounter rate if bin_orb_a < crit_radius
-    enc_rate[(disk_bins_bhbh.bin_orb_a < crit_radius) & (time_passed <= crit_time)] = 0.02 * (nsc_spheroid_normalization / 0.1) * (1.0 - (time_passed / 1.e6)) * ((disk_bins_bhbh.bin_sep[(disk_bins_bhbh.bin_orb_a < crit_radius) & (time_passed <= crit_time)] / dist_in_rg_m8) ** 2.0) / ((timestep_duration_yr / 1.e4) * (disk_bins_bhbh.bin_orb_a[(disk_bins_bhbh.bin_orb_a < crit_radius) & (time_passed <= crit_time)] / 1.e3))
-    enc_rate[(disk_bins_bhbh.bin_orb_a < crit_radius) & (time_passed > crit_time)] = 0.0
+    enc_rate[(bin_orb_a_all < crit_radius) & (time_passed <= crit_time)] = 0.02 * (nsc_spheroid_normalization / 0.1) * (1.0 - (time_passed / 1.e6)) * ((bin_sep_all[(bin_orb_a_all < crit_radius) & (time_passed <= crit_time)] / dist_in_rg_m8) ** 2.0) / ((timestep_duration_yr / 1.e4) * (bin_orb_a_all[(bin_orb_a_all < crit_radius) & (time_passed <= crit_time)] / 1.e3))
+    enc_rate[(bin_orb_a_all < crit_radius) & (time_passed > crit_time)] = 0.0
 
     # Set encounter rate if bin_orb_a > crit_radius
-    enc_rate[(disk_bins_bhbh.bin_orb_a > crit_radius)] = 0.002 * (nsc_spheroid_normalization / 0.1) * ((disk_bins_bhbh.bin_sep[(disk_bins_bhbh.bin_orb_a > crit_radius)] / dist_in_rg_m8) ** 2.0) / ((timestep_duration_yr / 1.e4) * (disk_bins_bhbh.bin_orb_a[(disk_bins_bhbh.bin_orb_a > crit_radius)] / 1.e4) * np.sqrt(time_passed / 1.e4))
+    enc_rate[(bin_orb_a_all > crit_radius)] = 0.002 * (nsc_spheroid_normalization / 0.1) * ((bin_sep_all[(bin_orb_a_all > crit_radius)] / dist_in_rg_m8) ** 2.0) / ((timestep_duration_yr / 1.e4) * (bin_orb_a_all[(bin_orb_a_all > crit_radius)] / 1.e4) * np.sqrt(time_passed / 1.e4))
     # If enc_rate still has negative values throw error
     if (np.sum(enc_rate < 0) > 0):
         print("enc_rate",enc_rate)
         raise RuntimeError("enc_rate not being set in bin_spheroid_encounter")
 
     # If bin_orb_a == crit_radius throw error
-    if (np.sum(disk_bins_bhbh.bin_orb_a == crit_radius) > 0):
+    if (np.sum(bin_orb_a_all == crit_radius) > 0):
         print("SMBH mass:", smbh_mass)
-        print("bin_orb_a:", disk_bins_bhbh.bin_orb_a[disk_bins_bhbh.bin_orb_a == crit_radius])
+        print("bin_orb_a:", bin_orb_a_all[bin_orb_a_all == crit_radius])
         print("crit_radius:", crit_radius)
         raise RuntimeError("Unrecognized bin_orb_a")
 
     # Based on estimated encounter rate, calculate if binary actually has a spheroid encounter
-    chances_of_encounter = rng.uniform(size=disk_bins_bhbh.num)
+    chances_of_encounter = rng.uniform(size=np.size(bin_mass_1_all))
     encounter_index = np.where(chances_of_encounter < enc_rate)[0]
     num_encounters = np.size(encounter_index)
 
     if (num_encounters > 0):
 
         # Set up arrays for changed blackholes_binary parameters
-        bin_orb_a = disk_bins_bhbh.bin_orb_a[encounter_index].copy()
-        bin_sep = disk_bins_bhbh.bin_sep[encounter_index].copy()
-        bin_ecc = disk_bins_bhbh.bin_ecc[encounter_index].copy()
-        bin_orb_ecc = disk_bins_bhbh.bin_orb_ecc[encounter_index].copy()
-        bin_orb_inc = disk_bins_bhbh.bin_orb_inc[encounter_index].copy()
+        bin_orb_a = bin_orb_a_all[encounter_index].copy()
+        bin_sep = bin_sep_all[encounter_index].copy()
+        bin_ecc = bin_ecc_all[encounter_index].copy()
+        bin_orb_ecc = bin_orb_ecc_all[encounter_index].copy()
+        bin_orb_inc = bin_orb_inc_all[encounter_index].copy()
 
         # Have already generated spheroid interaction, so a_3 is not far off a_bbh (unless super high ecc). 
         # Assume a_3 is similar to a_bbh (within a factor of O(3), so allowing for modest relative eccentricity)    
@@ -1536,18 +1552,24 @@ def bin_spheroid_encounter(
         bin_orb_inc[(L_ratio < 1)] = bin_orb_inc[(L_ratio < 1)] + L_ratio[L_ratio < 1] * (i3_rad[L_ratio < 1]/2.0)
         bin_orb_inc[(L_ratio > 1)] = bin_orb_inc[(L_ratio > 1)] + (1./L_ratio[L_ratio > 1]) * (i3_rad[L_ratio > 1]/2.0)
 
-        disk_bins_bhbh.bin_sep[include_index] = bin_sep[include_mask]
-        disk_bins_bhbh.bin_ecc[include_index] = bin_ecc[include_mask]
-        disk_bins_bhbh.bin_orb_ecc[include_index] = bin_orb_ecc[include_mask]
-        disk_bins_bhbh.bin_orb_inc[include_index] = bin_orb_inc[include_mask]
+        bin_sep_all[include_index] = bin_sep[include_mask]
+        bin_ecc_all[include_index] = bin_ecc[include_mask]
+        bin_orb_ecc_all[include_index] = bin_orb_ecc[include_mask]
+        bin_orb_inc_all[include_index] = bin_orb_inc[include_mask]
 
-    assert np.all(disk_bins_bhbh.bin_sep > 0), \
-        "disk_bins_bhbh.bin_sep contains values <= 0"
+    # Test new values
+    assert np.isfinite(bin_sep_all).all(), \
+        "Finite check failure: bin_sep_all"
+    assert np.isfinite(bin_orb_inc_all).all(), \
+        "Finite check failure: bin_orb_inc_all"
+    assert np.all(bin_sep_all > 0), \
+        "bin_sep_all contains values <= 0"
 
-    return (disk_bins_bhbh)
+
+    return (bin_sep_all, bin_ecc_all, bin_orb_ecc_all, bin_orb_inc_all)
 
 
-def bin_recapture(blackholes_binary, timestep_duration_yr):
+def bin_recapture(bin_mass_1_all, bin_mass_2_all, bin_orb_a_all, bin_orb_inc_all, timestep_duration_yr):
     """Recapture BBH that has orbital inclination >0 post spheroid encounter
 
     Parameters
@@ -1573,14 +1595,14 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
     crit_inc1 = 0.09
     crit_inc2 = 0.27
 
-    idx_gtr_0 = blackholes_binary.bin_orb_inc > 0
+    idx_gtr_0 = bin_orb_inc_all > 0
 
     if (idx_gtr_0.shape[0] == 0):
-        return (blackholes_binary)
+        return (bin_orb_inc_all)
 
-    bin_orb_inc = blackholes_binary.bin_orb_inc[idx_gtr_0]
-    bin_mass = blackholes_binary.mass_1[idx_gtr_0] + blackholes_binary.mass_2[idx_gtr_0]
-    bin_orb_a = blackholes_binary.bin_orb_a[idx_gtr_0]
+    bin_orb_inc = bin_orb_inc_all[idx_gtr_0]
+    bin_mass = bin_mass_1_all[idx_gtr_0] + bin_mass_2_all[idx_gtr_0]
+    bin_orb_a = bin_orb_a_all[idx_gtr_0]
 
     less_crit_inc1_mask = bin_orb_inc < crit_inc1
     bwtwn_crit_inc1_inc2_mask = (bin_orb_inc > crit_inc1) & (bin_orb_inc < crit_inc2)
@@ -1589,12 +1611,12 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
     bin_orb_inc[less_crit_inc1_mask] = bin_orb_inc[less_crit_inc1_mask] * (1. - ((timestep_duration_yr/1e6) * (bin_mass[less_crit_inc1_mask] / 10.) * (bin_orb_a[less_crit_inc1_mask] / 1.e4)))
     bin_orb_inc[bwtwn_crit_inc1_inc2_mask] = bin_orb_inc[bwtwn_crit_inc1_inc2_mask] * (1. - ((timestep_duration_yr/5.e7) * (bin_mass[bwtwn_crit_inc1_inc2_mask] / 10.) * (bin_orb_a[bwtwn_crit_inc1_inc2_mask] / 1.e4)))
 
-    blackholes_binary.bin_orb_inc[idx_gtr_0] = bin_orb_inc
+    bin_orb_inc_all[idx_gtr_0] = bin_orb_inc
 
-    assert np.isfinite(blackholes_binary.bin_orb_inc).all(), \
-        "Finite check failure: blackholes_binary.bin_orb_inc"
+    assert np.isfinite(bin_orb_inc_all).all(), \
+        "Finite check failure: bin_orb_inc_all"
 
-    return (blackholes_binary)
+    return (bin_orb_inc_all)
 
 
 def bh_near_smbh(
