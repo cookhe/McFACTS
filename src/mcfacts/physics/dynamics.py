@@ -972,8 +972,8 @@ def circular_binaries_encounters_ecc_prograde(
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
     assert np.all(ecc_prograde_population_locations > 0), \
         "ecc_prograde_population_locations contains values <= 0"
-    assert np.all(disk_bins_bhbh.bin_sep > 0), \
-        "disk_bins_bhbh.bin_sep contains values <= 0"
+    assert np.all(bin_sep > 0), \
+        "bin_sep contains values <= 0"
 
     return bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
 
@@ -1242,8 +1242,8 @@ def circular_binaries_encounters_circ_prograde(
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
     assert np.all(circ_prograde_population_locations > 0), \
         "circ_prograde_population_locations contains values <= 0"
-    assert np.all(disk_bins_bhbh.bin_sep > 0), \
-        "disk_bins_bhbh.bin_sep contains values <= 0"
+    assert np.all(bin_sep > 0), \
+        "bin_sep contains values <= 0"
 
     return (bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
@@ -1569,7 +1569,7 @@ def bin_spheroid_encounter(
     return (bin_sep_all, bin_ecc_all, bin_orb_ecc_all, bin_orb_inc_all)
 
 
-def bin_recapture(blackholes_binary, timestep_duration_yr):
+def bin_recapture(bin_mass_1_all, bin_mass_2_all, bin_orb_a_all, bin_orb_inc_all, timestep_duration_yr):
     """Recapture BBH that has orbital inclination >0 post spheroid encounter
 
     Parameters
@@ -1595,14 +1595,14 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
     crit_inc1 = 0.09
     crit_inc2 = 0.27
 
-    idx_gtr_0 = blackholes_binary.bin_orb_inc > 0
+    idx_gtr_0 = bin_orb_inc_all > 0
 
     if (idx_gtr_0.shape[0] == 0):
-        return (blackholes_binary)
+        return (bin_orb_inc_all)
 
-    bin_orb_inc = blackholes_binary.bin_orb_inc[idx_gtr_0]
-    bin_mass = blackholes_binary.mass_1[idx_gtr_0] + blackholes_binary.mass_2[idx_gtr_0]
-    bin_orb_a = blackholes_binary.bin_orb_a[idx_gtr_0]
+    bin_orb_inc = bin_orb_inc_all[idx_gtr_0]
+    bin_mass = bin_mass_1_all[idx_gtr_0] + bin_mass_2_all[idx_gtr_0]
+    bin_orb_a = bin_orb_a_all[idx_gtr_0]
 
     less_crit_inc1_mask = bin_orb_inc < crit_inc1
     bwtwn_crit_inc1_inc2_mask = (bin_orb_inc > crit_inc1) & (bin_orb_inc < crit_inc2)
@@ -1611,12 +1611,12 @@ def bin_recapture(blackholes_binary, timestep_duration_yr):
     bin_orb_inc[less_crit_inc1_mask] = bin_orb_inc[less_crit_inc1_mask] * (1. - ((timestep_duration_yr/1e6) * (bin_mass[less_crit_inc1_mask] / 10.) * (bin_orb_a[less_crit_inc1_mask] / 1.e4)))
     bin_orb_inc[bwtwn_crit_inc1_inc2_mask] = bin_orb_inc[bwtwn_crit_inc1_inc2_mask] * (1. - ((timestep_duration_yr/5.e7) * (bin_mass[bwtwn_crit_inc1_inc2_mask] / 10.) * (bin_orb_a[bwtwn_crit_inc1_inc2_mask] / 1.e4)))
 
-    blackholes_binary.bin_orb_inc[idx_gtr_0] = bin_orb_inc
+    bin_orb_inc_all[idx_gtr_0] = bin_orb_inc
 
-    assert np.isfinite(blackholes_binary.bin_orb_inc).all(), \
-        "Finite check failure: blackholes_binary.bin_orb_inc"
+    assert np.isfinite(bin_orb_inc_all).all(), \
+        "Finite check failure: bin_orb_inc_all"
 
-    return (blackholes_binary)
+    return (bin_orb_inc_all)
 
 
 def bh_near_smbh(

@@ -1621,8 +1621,11 @@ def main():
                 if (opts.flag_dynamic_enc > 0):
                     # Recapture bins out of disk plane.
                     # FIX THIS: Replace this with orb_inc_damping but for binary bhbh OBJECTS (KN)
-                    blackholes_binary = dynamics.bin_recapture(
-                        blackholes_binary,
+                    blackholes_binary.bin_orb_inc = dynamics.bin_recapture(
+                        blackholes_binary.mass_1,
+                        blackholes_binary.mass_2,
+                        blackholes_binary.bin_orb_a,
+                        blackholes_binary.bin_orb_inc,
                         opts.timestep_duration_yr
                     )
 
