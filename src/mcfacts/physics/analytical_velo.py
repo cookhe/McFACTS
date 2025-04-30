@@ -84,5 +84,11 @@ def analytical_kick_velocity(
     v_kick = np.sqrt((v_m + v_perp * np.cos(xi))**2 +
                      (v_perp * np.sin(xi))**2 +
                      v_par**2)
+    v_kick = np.array(v_kick)
+    assert np.all(v_kick > 0), \
+        "v_kick has values <= 0"
+    assert np.isfinite(v_kick).all(), \
+        "Finite check failure: v_kick"
+
 
     return v_kick

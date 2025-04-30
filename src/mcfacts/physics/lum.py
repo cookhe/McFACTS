@@ -9,6 +9,7 @@ from astropy import constants as const
 
 from mcfacts.physics.point_masses import si_from_r_g
 
+
 def shock_luminosity(smbh_mass,
         mass_final,
         bin_orb_a,
@@ -76,9 +77,12 @@ def shock_luminosity(smbh_mass,
     E = 10**46 * (r_hill_mass / 1) * (vk / v_kick_scale)**2  # Energy of the shock
     time = 31556952.0 * ((r_hill_rg / 3) / (vk / v_kick_scale))  # Timescale for energy dissipation
     Lshock = E / time  # Shock luminosity
-    
-    # i need to start commenting on disk height
+
+    assert np.all(Lshock > 0), \
+        "Lshock has values <= 0"
+
     return Lshock
+
 
 def gas_capture_rate(
     bin_orb_a,
@@ -160,4 +164,8 @@ def jet_luminosity(mass_final,
 
     #LBHL = 1e42 * (mcap / 3e-4) * (eta / 0.5) * (0.1 / 0.1)
     LBHL = 2.5e45 * (eta / 0.1) * (mass_final / 100)**2 * (vk / v_kick_scale)**-3 * (disk_density_cgs / 10e-10)  # Jet luminosity
+
+    assert np.all(LBHL > 0), \
+        "LBHL has values <= 0"
+
     return LBHL
