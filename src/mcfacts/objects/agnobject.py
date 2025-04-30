@@ -40,7 +40,8 @@ attr_merged_bh = ["id_num", "galaxy", "bin_orb_a", "mass_final",
                   "spin_1", "spin_2",
                   "spin_angle_1", "spin_angle_2",
                   "gen_1", "gen_2",
-                  "chi_eff", "chi_p", "time_merged"]
+                  "chi_eff", "chi_p", "v_kick",
+                   "lum_shock", "lum_jet", "time_merged"]
 
 attr_filing_cabinet = ["id_num", "category", "orb_a", "mass", "orb_ecc", "size",
                        "direction", "disk_inner_outer"]
@@ -1360,9 +1361,9 @@ class AGNMergedBlackHole(AGNObject):
         v_kick : numpy array
             kick velocity [km/s] of the remnant BH
         lum_shock: numpy array
-            estimated shock luminosity in erg/s.
+            estimated shock luminosity generated post-merger in erg/s
         lum_jet: : numy array
-            estimated jet (Bondi-Hoyle) luminosity in erg/s.
+            estimated jet (Bondi-Hoyle) luminosity post-merger in erg/s
         time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1439,10 +1440,12 @@ class AGNMergedBlackHole(AGNObject):
             effective spin prior to merger
         new_chi_p : numpy array
             precessing spin component of the binary prior to merger
-        new_lum_shock
-        new_lum_jet
-        new_lum_agn
-        # emily add
+        new_v_kick : numpy array
+            kick velocity [km/s] of the remnant BH
+        lum_shock: numpy array
+            estimated shock luminosity generated post-merger in erg/s
+        new_lum_jet : numpy array
+            estimated jet (Bondi-Hoyle) luminosity generated post-merger in erg/s
         new_time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1468,8 +1471,6 @@ class AGNMergedBlackHole(AGNObject):
         self.v_kick = np.concatenate([self.v_kick, new_v_kick])
         self.lum_shock = np.concatenate([self.lum_shock, new_lum_shock])
         self.lum_jet = np.concatenate([self.lum_jet, new_lum_jet])
-        #self.bh_spot_phot = np.concatenate([self.bh_spot_phot, new_bh_spot_phot])
-        #self.bh_flux_ratio = np.concatenate([self.bh_flux_ratio, new_bh_flux_ratio])
         self.time_merged = np.concatenate([self.time_merged, new_time_merged])
 
         if (num_obj_merge == 0):
