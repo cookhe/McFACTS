@@ -69,8 +69,8 @@ def shock_luminosity(smbh_mass,
     # for scaling:
     rg = ct.G.cgs * smbh_mass * ct.M_sun.cgs / ct.c.cgs
 
+    v_kick = v_kick  * (u.km / u.s)
     v_kick_scale = 200. * (u.km / u.s)
-    v_kick_scale = v_kick_scale
     E = 10**46 * (r_hill_mass / 1 * rg) * (v_kick / v_kick_scale)**2  # Energy of the shock
     time = 31556952.0 * ((r_hill_rg /  3 * rg) / (v_kick / v_kick_scale))  # Timescale for energy dissipation
     Lshock = E / time  # Shock luminosity
@@ -107,12 +107,12 @@ def jet_luminosity(mass_final,
     """
 
     disk_density_si = disk_density(bin_orb_a) * (u.kg / u.m**3)
-    disk_density_cgs = disk_density_si.to(u.g / u.cm**3)
+    disk_density_cgs = disk_density_si.cgs
 
+    v_kick = v_kick * (u.km / u.s)
     v_kick_scale = 200. * (u.km / u.s)
-    v_kick_scale = v_kick_scale
 
     eta = spin_final**2
 
-    Ljet = 2.5e45 * (eta / 0.1) * (mass_final / 100)**2 * (v_kick / v_kick_scale)**-3 * (disk_density_cgs / 10e-10)  # Jet luminosity
+    Ljet = 2.5e45 * (eta / 0.1) * (mass_final / 100 * u.M_sun)**2 * (v_kick / v_kick_scale)**-3 * (disk_density_cgs / 10e-10 * (u.g / u.cm *3))  # Jet luminosity
     return Ljet.value
