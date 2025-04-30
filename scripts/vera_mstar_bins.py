@@ -13,7 +13,7 @@ from mcfacts.physics.point_masses import time_of_orbital_shrinkage
 from mcfacts.physics.point_masses import orbital_separation_evolve_reverse
 from mcfacts.physics.point_masses import si_from_r_g, r_g_from_units
 from mcfacts.inputs.ReadInputs import ReadInputs_ini
-from mcfacts.inputs.ReadInputs import construct_disk_pAGN
+from mcfacts.inputs.ReadInputs import construct_disk_pAGN, construct_disk_direct
 
 ######## Constants ########
 smbh_mass_fiducial = 1e8 * u.solMass
