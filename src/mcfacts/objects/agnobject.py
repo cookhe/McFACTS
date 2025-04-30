@@ -1319,9 +1319,8 @@ class AGNMergedBlackHole(AGNObject):
                  chi_eff=empty_arr,
                  chi_p=empty_arr,
                  v_kick=empty_arr,
-                 lum_shock=empty_arr, # emily add
-                 lum_jet=empty_arr, # emily add
-                 #lum_agn=empty_arr,
+                 lum_shock=empty_arr,
+                 lum_jet=empty_arr,
                  time_merged=empty_arr,
                  num_obj_merge=0):
         """Creates an instance of AGNMergedBlackHole.
@@ -1358,10 +1357,12 @@ class AGNMergedBlackHole(AGNObject):
             effective spin prior to merger
         chi_p : numpy array
             precessing spin component of the binary prior to merger
-        lum_shock: 
-
-        lum_jet: 
-        # emily add
+        v_kick : numpy array
+            kick velocity [km/s] of the remnant BH
+        lum_shock: numpy array
+            estimated shock luminosity in erg/s.
+        lum_jet: : numy array
+            estimated jet (Bondi-Hoyle) luminosity in erg/s.
         time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1390,7 +1391,6 @@ class AGNMergedBlackHole(AGNObject):
         self.v_kick = v_kick
         self.lum_shock = lum_shock
         self.lum_jet = lum_jet
-        #self.lum_agn = lum_agn
         self.time_merged = time_merged
 
         self.num = num_obj_merge
@@ -1468,7 +1468,8 @@ class AGNMergedBlackHole(AGNObject):
         self.v_kick = np.concatenate([self.v_kick, new_v_kick])
         self.lum_shock = np.concatenate([self.lum_shock, new_lum_shock])
         self.lum_jet = np.concatenate([self.lum_jet, new_lum_jet])
-        #self.lum_agn = np.concatenate([self.lum_agn, new_lum_agn])
+        #self.bh_spot_phot = np.concatenate([self.bh_spot_phot, new_bh_spot_phot])
+        #self.bh_flux_ratio = np.concatenate([self.bh_flux_ratio, new_bh_flux_ratio])
         self.time_merged = np.concatenate([self.time_merged, new_time_merged])
 
         if (num_obj_merge == 0):
@@ -1753,7 +1754,6 @@ class AGNExplodedStar(AGNObject):
         self.num += num_obj_explode
 
         self.check_consistency()
-
 
 obj_types = {0: "single black hole",
              1: "single star",
