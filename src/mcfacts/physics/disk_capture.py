@@ -335,7 +335,7 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     disk_bh_retro_orbs_ecc_new[cos_pm1_mask & barely_prograde_mask] = disk_bh_retro_orbs_ecc[cos_pm1_mask & barely_prograde_mask] * (
         1.0 - step3_delta_ecc / disk_bh_retro_orbs_ecc[cos_pm1_mask & barely_prograde_mask] * (timestep_duration_yr / ecc_scale_factor[cos_pm1_mask & barely_prograde_mask]))
     disk_bh_retro_orbs_ecc_new[cos_0_mask] = disk_bh_retro_orbs_ecc[cos_0_mask] * (
-        1.0 - stepw0_delta_ecc / disk_bh_retro_orbs_ecc[cos_0_mask] * (timestep_duration_yr / stepw0_time))
+        1.0 - stepw0_delta_ecc / disk_bh_retro_orbs_ecc[cos_0_mask] * (timestep_duration_yr / ecc_scale_factor[cos_0_mask]))
 
     # Calculate new orb_a values
     disk_bh_retro_orbs_a_new[cos_pm1_mask & no_max_ecc_retro_mask] = disk_bh_retro_orbs_a[cos_pm1_mask & no_max_ecc_retro_mask] * (
@@ -345,7 +345,7 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     disk_bh_retro_orbs_a_new[cos_pm1_mask & barely_prograde_mask] = disk_bh_retro_orbs_a[cos_pm1_mask & barely_prograde_mask] * (
         1.0 - step3_delta_semimaj / disk_bh_retro_orbs_a[cos_pm1_mask & barely_prograde_mask] * (timestep_duration_yr / semimaj_scale_factor[cos_pm1_mask & barely_prograde_mask]))
     disk_bh_retro_orbs_a_new[cos_0_mask] = disk_bh_retro_orbs_a[cos_0_mask] * (
-        1.0 - stepw0_delta_semimaj / disk_bh_retro_orbs_a[cos_0_mask] * (timestep_duration_yr / stepw0_time))
+        1.0 - stepw0_delta_semimaj / disk_bh_retro_orbs_a[cos_0_mask] * (timestep_duration_yr / semimaj_scale_factor[cos_0_mask]))
 
     # Calculate new orb_inc values
     disk_bh_retro_orbs_inc_new[cos_pm1_mask & no_max_ecc_retro_mask] = disk_bh_retro_orbs_inc[cos_pm1_mask & no_max_ecc_retro_mask] * (
@@ -355,7 +355,7 @@ def retro_bh_orb_disk_evolve(smbh_mass, disk_bh_retro_masses, disk_bh_retro_orbs
     disk_bh_retro_orbs_inc_new[cos_pm1_mask & barely_prograde_mask] = disk_bh_retro_orbs_inc[cos_pm1_mask & barely_prograde_mask] * (
         1.0 - step3_delta_inc / disk_bh_retro_orbs_inc[cos_pm1_mask & barely_prograde_mask] * (timestep_duration_yr / inc_scale_factor[cos_pm1_mask & barely_prograde_mask]))
     disk_bh_retro_orbs_inc_new[cos_0_mask] = disk_bh_retro_orbs_inc[cos_0_mask] * (
-        1.0 - stepw0_delta_inc / disk_bh_retro_orbs_inc[cos_0_mask] * (timestep_duration_yr / stepw0_time))
+        1.0 - stepw0_delta_inc / disk_bh_retro_orbs_inc[cos_0_mask] * (timestep_duration_yr / inc_scale_factor[cos_0_mask]))
 
     # Catch overshooting ecc = 0
     disk_bh_retro_orbs_ecc_new[disk_bh_retro_orbs_ecc_new < 0.0] = 0.0
