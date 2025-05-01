@@ -27,7 +27,7 @@ MSTAR_PLOT_EXE = ${HERE}/src/mcfacts/outputs/plot_mcfacts_handler_quantities.py
 STARS_PLOTS = ${HERE}/scripts/stars_plots.py
 DISK_MASS_PLOTS = ${HERE}/scripts/disk_mass_plots.py
 ORBA_MASS_FRAMES = ${HERE}/scripts/star_bh_movie_frames.py
-EMILY_PLOTS = ${HERE}/scripts/emily_plots.py
+EM_PLOTS = ${HERE}/scripts/em_plots.py
 
 #### Setup ####
 SEED=3456789108 # put an 8 here
@@ -174,11 +174,13 @@ disk_mass_plots:
 	--fname-disk ${wd}/output_diskmasscycled.dat \
 	--plots-directory ${wd}		
 		
-emily_plots: 
+em_plots: 
 	cd runs; \
-	python ../${EMILY_PLOTS} \
+	python ../${EM_PLOTS} \
 	--runs-directory ${wd} \
+	--fname-emris ${wd}/output_mergers_emris.dat \
 	--fname-mergers ${wd}/output_mergers_population.dat \
+	--fname-lvk ${wd}/output_mergers_lvk.dat \
 	--plots-directory ${wd}
 
 #### Vera's mstar_runs ####
