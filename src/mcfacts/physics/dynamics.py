@@ -158,6 +158,9 @@ def circular_singles_encounters_prograde(
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
     ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
 
+    if (len(circ_prograde_population_indices) == 0) or (len(ecc_prograde_population_indices) == 0):
+        return disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
+
     # Get locations for circ population
     circ_prograde_population_locations = disk_bh_pro_orbs_a[circ_prograde_population_indices]
 
@@ -172,36 +175,35 @@ def circular_singles_encounters_prograde(
     ecc_orb_max = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_bh_pro_orbs_ecc[ecc_prograde_population_indices])
     num_poss_ints = 0
     num_encounters = 0
-    if len(circ_prograde_population_indices) > 0:
-        for i, circ_idx in enumerate(circ_prograde_population_indices):
-            for j, ecc_idx in enumerate(ecc_prograde_population_indices):
-                if (circ_prograde_population_locations[i] < ecc_orb_max[j] and circ_prograde_population_locations[i] > ecc_orb_min[j]):
-                    # prob_encounter/orbit =hill sphere size/circumference of circ orbit =2RH/2pi a_circ1
-                    # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
-                    temp_bin_mass = disk_bh_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]
-                    bh_smbh_mass_ratio = temp_bin_mass/(3.0*smbh_mass)
-                    mass_ratio_factor = (bh_smbh_mass_ratio)**(1./3.)
-                    prob_orbit_overlap = (1./np.pi)*mass_ratio_factor
-                    prob_enc_per_timestep = prob_orbit_overlap * N_circ_orbs_per_timestep[i]
-                    if prob_enc_per_timestep > 1:
-                        prob_enc_per_timestep = 1
-                    random_uniform_number = rng.uniform(size=1)
-                    if random_uniform_number < prob_enc_per_timestep:
-                        num_encounters = num_encounters + 1
-                        # if close encounter, pump ecc of circ orbiter to e=0.1 from near circular, and incr a_circ1 by 10%
-                        # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
-                        # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
-                        if disk_bh_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                            disk_bh_pro_orbs_ecc[circ_idx] = delta_energy_strong
-                            disk_bh_pro_orbs_a[circ_idx] = disk_bh_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
-                            # Catch for if orb_a > disk_radius_outer
-                            if (disk_bh_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
-                            disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
-                            disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
-                    num_poss_ints = num_poss_ints + 1
-            num_poss_ints = 0
-            num_encounters = 0
+    for i, circ_idx in enumerate(circ_prograde_population_indices):
+        for j, ecc_idx in enumerate(ecc_prograde_population_indices):
+            if (circ_prograde_population_locations[i] < ecc_orb_max[j] and circ_prograde_population_locations[i] > ecc_orb_min[j]):
+                # prob_encounter/orbit =hill sphere size/circumference of circ orbit =2RH/2pi a_circ1
+                # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
+                temp_bin_mass = disk_bh_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]
+                bh_smbh_mass_ratio = temp_bin_mass/(3.0*smbh_mass)
+                mass_ratio_factor = (bh_smbh_mass_ratio)**(1./3.)
+                prob_orbit_overlap = (1./np.pi)*mass_ratio_factor
+                prob_enc_per_timestep = prob_orbit_overlap * N_circ_orbs_per_timestep[i]
+                if prob_enc_per_timestep > 1:
+                    prob_enc_per_timestep = 1
+                random_uniform_number = rng.uniform(size=1)
+                if random_uniform_number < prob_enc_per_timestep:
+                    num_encounters = num_encounters + 1
+                    # if close encounter, pump ecc of circ orbiter to e=0.1 from near circular, and incr a_circ1 by 10%
+                    # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
+                    # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
+                    if disk_bh_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
+                        disk_bh_pro_orbs_ecc[circ_idx] = delta_energy_strong
+                        disk_bh_pro_orbs_a[circ_idx] = disk_bh_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
+                        # Catch for if orb_a > disk_radius_outer
+                        if (disk_bh_pro_orbs_a[circ_idx] > disk_radius_outer):
+                            disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
+                        disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
+                        disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
+                num_poss_ints = num_poss_ints + 1
+        num_poss_ints = 0
+        num_encounters = 0
 
     # Check finite
     assert np.isfinite(disk_bh_pro_orbs_a).all(), \
@@ -365,6 +367,9 @@ def circular_singles_encounters_prograde_stars(
     circ_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
     ecc_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
+
+    if (len(circ_prograde_population_indices) == 0) or (len(ecc_prograde_population_indices) == 0):
+        return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([])
 
     # Get locations for circ population
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
@@ -619,6 +624,9 @@ def circular_singles_encounters_prograde_star_bh(
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
     ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
 
+    if (len(circ_prograde_population_indices) == 0) or (len(ecc_prograde_population_indices) == 0):
+        return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, np.array([])
+
     # Get locations for circ population
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
 
@@ -862,6 +870,12 @@ def circular_binaries_encounters_ecc_prograde(
       Take energy put into destroying binary from orb. eccentricity of m3.
     """
 
+    # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
+    ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc >= disk_bh_pro_orb_ecc_crit).nonzero()[0]
+
+    if (len(ecc_prograde_population_indices) == 0) or (len(bin_mass_1) == 0):
+        return bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
+
     # Set up constants
     solar_mass = u.solMass.to("kg")
     # eccentricity correction--do not let ecc>=1, catch and reset to 1-epsilon
@@ -874,8 +888,6 @@ def circular_binaries_encounters_ecc_prograde(
     bin_orbital_times = 3.15 * (smbh_mass / 1.e8) * ((bin_orb_a / 1.e3) ** 1.5)
     bin_orbits_per_timestep = timestep_duration_yr/bin_orbital_times
 
-    # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
-    ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc >= disk_bh_pro_orb_ecc_crit).nonzero()[0]
     # Find their locations and masses
     ecc_prograde_population_locations = disk_bh_pro_orbs_a[ecc_prograde_population_indices]
     ecc_prograde_population_masses = disk_bh_pro_masses[ecc_prograde_population_indices]
@@ -972,8 +984,8 @@ def circular_binaries_encounters_ecc_prograde(
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
     assert np.all(ecc_prograde_population_locations > 0), \
         "ecc_prograde_population_locations contains values <= 0"
-    assert np.all(bin_sep > 0), \
-        "bin_sep contains values <= 0"
+    assert np.all(bin_sep >= 0), \
+        "bin_sep contains values < 0"
 
     return bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
 
@@ -1125,6 +1137,12 @@ def circular_binaries_encounters_circ_prograde(
       Take energy put into destroying binary from orb. eccentricity of m3.
     """
 
+    # Find the e< crit_ecc population. These are the interlopers w. low encounter vel that can harden the circularized population
+    circ_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
+
+    if (len(circ_prograde_population_indices) == 0) or (len(bin_mass_1) == 0):
+        return bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
+
     # Housekeeping
     solar_mass = u.solMass.to("kg")
 
@@ -1166,7 +1184,6 @@ def circular_binaries_encounters_circ_prograde(
 
     # Set up random numbers
     chances = rng.uniform(size=(np.size(bin_mass_1), len(circ_prograde_population_locations)))
-
     for i in range(0, np.size(bin_mass_1)):
         for j in range(0, len(circ_prograde_population_locations)):
             # If binary com orbit lies inside circ orbit [min,max] radius
@@ -1242,8 +1259,8 @@ def circular_binaries_encounters_circ_prograde(
         "ecc_prograde_population_locations has values greater than disk_radius_outer"
     assert np.all(circ_prograde_population_locations > 0), \
         "circ_prograde_population_locations contains values <= 0"
-    assert np.all(bin_sep > 0), \
-        "bin_sep contains values <= 0"
+    assert np.all(bin_sep >= 0), \
+        "bin_sep contains values < 0"
 
     return (bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
