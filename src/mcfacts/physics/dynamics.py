@@ -1582,7 +1582,6 @@ def bin_spheroid_encounter(
     assert np.all(bin_sep_all > 0), \
         "bin_sep_all contains values <= 0"
 
-
     return (bin_sep_all, bin_ecc_all, bin_orb_ecc_all, bin_orb_inc_all)
 
 
