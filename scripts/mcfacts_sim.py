@@ -212,7 +212,7 @@ def main():
                                          opts.disk_radius_outer,
                                          opts.disk_model_name,
                                          opts.disk_alpha_viscosity,
-                                         opts.disk_bh_eddington_ratio,
+                                         opts.disk_bh_eddington_ratio, 
                                          disk_radius_max_pc=opts.disk_radius_max_pc,
                                          flag_use_pagn=opts.flag_use_pagn,
                                          verbose=opts.verbose
@@ -2592,7 +2592,6 @@ def main():
                                              new_v_kick=blackholes_merged.v_kick,
                                              new_lum_shock=blackholes_merged.lum_shock,
                                              new_lum_jet=blackholes_merged.lum_jet,
-                                             #new_lum_agn = blackholes_merged.lum_agn,
                                              new_time_merged=blackholes_merged.time_merged)
 
         # Add list of all binaries formed to the population level object
@@ -2747,8 +2746,8 @@ def main():
     bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
     population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet"]#, "lum_agn"] # add "v_kick", to incorp
-    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
+                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet", "id_num"]
+    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2", "id_num"]
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
     stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
                                                "orb_a_bh",   "mass_bh",   "orb_ecc_bh",   "gen_bh", "id_num_bh", "orb_inc_bh"]
