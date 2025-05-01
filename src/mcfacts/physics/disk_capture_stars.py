@@ -177,7 +177,7 @@ def setup_captured_stars_orbs_a(num_stars_captured, disk_lifetime, smbh_mass, di
     x_vals = rng.uniform(low=0, high=1, size=num_stars_captured)
     captured_star_orb_a = (x_vals ** (4/3)) * (star_orb_a_max_rg - radius_tde_rg) + radius_tde_rg
 
-    return (captured_star_orb_a)
+    return (captured_star_orb_a.value)
 
 
 def distribute_captured_stars(captured_stars_masses, captured_stars_orb_a, timestep_num, timestep_duration_yr):
