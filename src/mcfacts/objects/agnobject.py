@@ -40,7 +40,8 @@ attr_merged_bh = ["id_num", "galaxy", "bin_orb_a", "mass_final",
                   "spin_1", "spin_2",
                   "spin_angle_1", "spin_angle_2",
                   "gen_1", "gen_2",
-                  "chi_eff", "chi_p", "time_merged"]
+                  "chi_eff", "chi_p", "v_kick",
+                   "lum_shock", "lum_jet", "time_merged"]
 
 attr_filing_cabinet = ["id_num", "category", "orb_a", "mass", "orb_ecc", "size",
                        "direction", "disk_inner_outer"]
@@ -121,14 +122,13 @@ def obj_to_binary_bh_array(obj):
 class AGNObject(object):
     """
     A superclass that holds parameters that apply to all objects in McFacts.
-    It is formatted as an object full of arrays.
+    It is formatted as an object full of arrays. Dimensions of arrays must
+    match the number of objects in the class.
     No instances of the AGNObject class should be created, it is a superclass
     to the AGNStar, AGNBlackHole, etc. classes.
     All orbital attributes to this class are with respect to the central SMBH.
     if the subclass is a Binary object, then attributes are for the total
     quantities (total mass, etc.), not the binary components.
-    No instances of the AGNObject class should be created, it is a superclass
-    to the AGNStar, AGNBlackHole, etc. classes.
     """
 
     def __init__(self,
@@ -1319,9 +1319,9 @@ class AGNMergedBlackHole(AGNObject):
                  gen_2=empty_arr,
                  chi_eff=empty_arr,
                  chi_p=empty_arr,
-                 #v_kick=empty_arr,
-                 lum_shock=empty_arr, # emily add
-                 lum_jet=empty_arr, # emily add
+                 v_kick=empty_arr,
+                 lum_shock=empty_arr,
+                 lum_jet=empty_arr,
                  time_merged=empty_arr,
                  num_obj_merge=0):
         """Creates an instance of AGNMergedBlackHole.
@@ -1358,10 +1358,12 @@ class AGNMergedBlackHole(AGNObject):
             effective spin prior to merger
         chi_p : numpy array
             precessing spin component of the binary prior to merger
-        lum_shock: 
-
-        lum_jet: 
-        # emily add
+        v_kick : numpy array
+            kick velocity [km/s] of the remnant BH
+        lum_shock: numpy array
+            estimated shock luminosity generated post-merger in erg/s
+        lum_jet: : numy array
+            estimated jet (Bondi-Hoyle) luminosity post-merger in erg/s
         time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1387,7 +1389,7 @@ class AGNMergedBlackHole(AGNObject):
         self.gen_2 = gen_2
         self.chi_eff = chi_eff
         self.chi_p = chi_p
-        #self.v_kick = v_kick
+        self.v_kick = v_kick
         self.lum_shock = lum_shock
         self.lum_jet = lum_jet
         self.time_merged = time_merged
@@ -1400,8 +1402,9 @@ class AGNMergedBlackHole(AGNObject):
                        new_mass_final=empty_arr, new_spin_final=empty_arr, new_spin_angle_final=empty_arr,
                        new_mass_1=empty_arr, new_mass_2=empty_arr, new_spin_1=empty_arr, new_spin_2=empty_arr,
                        new_spin_angle_1=empty_arr, new_spin_angle_2=empty_arr, new_gen_1=empty_arr, new_gen_2=empty_arr,
-                       new_chi_eff=empty_arr, new_chi_p=empty_arr, new_lum_shock=empty_arr, new_lum_jet=empty_arr,
-                       new_time_merged=empty_arr, num_obj_merge=0): # add new_v_kick=empty_arr to incoorporate
+                       new_chi_eff=empty_arr, new_chi_p=empty_arr, new_v_kick=empty_arr, new_lum_shock=empty_arr, 
+                       new_lum_jet=empty_arr,
+                       new_time_merged=empty_arr, num_obj_merge=0): # add new_v_kick=empty_arr  new_lum_agn = empty_arr, to incoorporate
         """
         Add blackholes to the AGNMergedBlackHoles object
 
@@ -1437,9 +1440,12 @@ class AGNMergedBlackHole(AGNObject):
             effective spin prior to merger
         new_chi_p : numpy array
             precessing spin component of the binary prior to merger
-        new_lum_shock
-        new_lum_jet
-        # emily add
+        new_v_kick : numpy array
+            kick velocity [km/s] of the remnant BH
+        lum_shock: numpy array
+            estimated shock luminosity generated post-merger in erg/s
+        new_lum_jet : numpy array
+            estimated jet (Bondi-Hoyle) luminosity generated post-merger in erg/s
         new_time_merged : numpy array
             the timestep of merger
         num_obj_merge : int
@@ -1462,7 +1468,7 @@ class AGNMergedBlackHole(AGNObject):
         self.gen_2 = np.concatenate([self.gen_2, new_gen_2])
         self.chi_eff = np.concatenate([self.chi_eff, new_chi_eff])
         self.chi_p = np.concatenate([self.chi_p, new_chi_p])
-        #self.v_kick = np.concatenate([self.v_kick, new_v_kick])
+        self.v_kick = np.concatenate([self.v_kick, new_v_kick])
         self.lum_shock = np.concatenate([self.lum_shock, new_lum_shock])
         self.lum_jet = np.concatenate([self.lum_jet, new_lum_jet])
         self.time_merged = np.concatenate([self.time_merged, new_time_merged])
@@ -1749,7 +1755,6 @@ class AGNExplodedStar(AGNObject):
         self.num += num_obj_explode
 
         self.check_consistency()
-
 
 obj_types = {0: "single black hole",
              1: "single star",
