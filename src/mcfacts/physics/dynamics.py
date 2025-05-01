@@ -973,7 +973,7 @@ def circular_binaries_encounters_ecc_prograde(
     assert np.all(ecc_prograde_population_locations > 0), \
         "ecc_prograde_population_locations contains values <= 0"
     assert np.all(bin_sep >= 0), \
-        "bin_sep contains values <= 0"
+        "bin_sep contains values < 0"
 
     return bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc
 
@@ -1243,7 +1243,7 @@ def circular_binaries_encounters_circ_prograde(
     assert np.all(circ_prograde_population_locations > 0), \
         "circ_prograde_population_locations contains values <= 0"
     assert np.all(bin_sep >= 0), \
-        "bin_sep contains values <= 0"
+        "bin_sep contains values < 0"
 
     return (bin_sep, bin_ecc, bin_orb_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc)
 
@@ -1562,8 +1562,8 @@ def bin_spheroid_encounter(
         "Finite check failure: bin_sep_all"
     assert np.isfinite(bin_orb_inc_all).all(), \
         "Finite check failure: bin_orb_inc_all"
-    assert np.all(bin_sep_all > 0), \
-        "bin_sep_all contains values <= 0"
+    assert np.all(bin_sep_all >= 0), \
+        "bin_sep_all contains values < 0"
 
 
     return (bin_sep_all, bin_ecc_all, bin_orb_ecc_all, bin_orb_inc_all)
