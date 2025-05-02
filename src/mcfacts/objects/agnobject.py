@@ -197,6 +197,7 @@ class AGNObject(object):
         self.num = obj_num
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def add_objects(self,
                     new_mass=empty_arr,
@@ -267,6 +268,7 @@ class AGNObject(object):
         self.num += obj_num
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def remove_index(self, idx_remove=None):
         """
@@ -290,6 +292,7 @@ class AGNObject(object):
         self.num -= np.sum(idx_change)
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def remove_id_num(self, id_num_remove=None):
         """
@@ -326,6 +329,7 @@ class AGNObject(object):
         self.num -= len(remove_idx)
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def keep_index(self, idx_keep):
         """
@@ -349,6 +353,7 @@ class AGNObject(object):
         self.num -= np.sum(idx_change)
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def keep_id_num(self, id_num_keep):
         """
@@ -382,6 +387,7 @@ class AGNObject(object):
         self.num = len(keep_idx)
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def at_id_num(self, id_num, attr):
         """Returns the attribute at the specified ID numbers
@@ -519,6 +525,7 @@ class AGNObject(object):
         assert fname is not None, "Need to pass filename"
 
         self.check_consistency()
+        self.unique_id_nums()
 
         import pandas
         samples_out = self.return_record_array()
@@ -550,6 +557,7 @@ class AGNObject(object):
         assert fname is not None, "Need to pass filename"
 
         self.check_consistency()
+        self.unique_id_nums()
 
         if cols is not None:
             attributes = cols
@@ -1168,6 +1176,7 @@ class AGNBinaryBlackHole(AGNObject):
         self.num = bin_bh_num
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def __repr__(self):
         return ('AGNBinaryBlackHole(): {} black hole binaries'.format(self.num))
@@ -1284,6 +1293,7 @@ class AGNBinaryBlackHole(AGNObject):
         #self.mass_total = np.concatenate([self.mass_total, new_mass_1 + new_mass_2])
 
         self.check_consistency()
+        self.unique_id_nums()
 
     @property
     def mass_total(self):
@@ -1397,6 +1407,7 @@ class AGNMergedBlackHole(AGNObject):
         self.num = num_obj_merge
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def add_blackholes(self, new_id_num=empty_arr, new_galaxy=empty_arr, new_bin_orb_a=empty_arr,
                        new_mass_final=empty_arr, new_spin_final=empty_arr, new_spin_angle_final=empty_arr,
@@ -1479,6 +1490,7 @@ class AGNMergedBlackHole(AGNObject):
         self.num += num_obj_merge
 
         self.check_consistency()
+        self.unique_id_nums()
 
 
 class AGNMergedStar(AGNObject):
@@ -1548,6 +1560,7 @@ class AGNMergedStar(AGNObject):
         self.num = num_obj_merge
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def add_stars(self, new_id_num=empty_arr, new_galaxy=empty_arr, new_orb_a_final=empty_arr, new_gen_final=empty_arr,
                   new_mass_final=empty_arr,
@@ -1605,6 +1618,7 @@ class AGNMergedStar(AGNObject):
         self.num += num_obj_merge
 
         self.check_consistency()
+        self.unique_id_nums()
 
 
 class AGNExplodedStar(AGNObject):
@@ -1850,6 +1864,7 @@ class AGNFilingCabinet(AGNObject):
         self.num = fc_num
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def __repr__(self):
         """
@@ -1967,3 +1982,5 @@ class AGNFilingCabinet(AGNObject):
         self.num += fc_num
 
         self.check_consistency()
+        self.unique_id_nums()
+        self.id_max
