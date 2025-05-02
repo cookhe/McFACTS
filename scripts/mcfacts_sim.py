@@ -227,8 +227,6 @@ def main():
     stars_explode_pop = AGNExplodedStar()
     stars_merge_pop = AGNMergedStar()
 
-    id_num_start_val = 0
-
     # Setting up arrays to keep track of how much mass is cycled through stars
     disk_arr_galaxy = []
     disk_arr_timestep_pop = np.array([])
@@ -336,8 +334,7 @@ def main():
                                   orb_arg_periapse=bh_orb_arg_periapse_initial,
                                   bh_num=disk_bh_num,
                                   galaxy=np.full(disk_bh_num, galaxy),
-                                  time_passed=np.zeros(disk_bh_num),
-                                  id_start_val=id_num_start_val)
+                                  time_passed=np.zeros(disk_bh_num))
 
         # Initialize filing_cabinet
         filing_cabinet = AGNFilingCabinet(id_num=blackholes.id_num,
@@ -2722,8 +2719,6 @@ def main():
                                   new_log_radius_final=stars_merge.log_radius_final,
                                   new_orb_ecc=stars_merge.orb_ecc,
                                   new_time_merged=stars_merge.time_merged)
-        
-        id_num_start_val = filing_cabinet.id_max + 1
 
         # Add mass cycled info to population arrays
         disk_arr_timestep_pop = np.concatenate([disk_arr_timestep_pop, disk_arr_timestep])
