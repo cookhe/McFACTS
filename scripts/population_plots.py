@@ -43,10 +43,11 @@ def arg():
                         type=str, help="log file")
     opts = parser.parse_args()
     print(opts.fname_mergers)
-    assert os.path.isfile(opts.fname_mergers)
-    assert os.path.isfile(opts.fname_emris)
-    assert os.path.isfile(opts.fname_lvk)
+    assert os.path.isfile(opts.fname_mergers), "File not found: " + opts.fname_mergers
+    assert os.path.isfile(opts.fname_emris), "File not found: " + opts.fname_emris
+    assert os.path.isfile(opts.fname_lvk), "File not found: " + opts.fname_lvk
     return opts
+
 
 
 def linefunc(x, m):
