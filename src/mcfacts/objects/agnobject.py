@@ -1850,6 +1850,7 @@ class AGNFilingCabinet(AGNObject):
         self.num = fc_num
 
         self.check_consistency()
+        self.unique_id_nums()
 
     def __repr__(self):
         """
@@ -1967,3 +1968,5 @@ class AGNFilingCabinet(AGNObject):
         self.num += fc_num
 
         self.check_consistency()
+        self.unique_id_nums()
+        self.id_max

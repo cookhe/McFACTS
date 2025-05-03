@@ -1472,7 +1472,6 @@ def main():
                     if bh_binary_id_num_unphysical.size > 0:
                         blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                         filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
-
                     blackholes_merged, blackholes_pro = merge.merge_blackholes(blackholes_binary,
                                                                                blackholes_pro,
                                                                                blackholes_merged,
