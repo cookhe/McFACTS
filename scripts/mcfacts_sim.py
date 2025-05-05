@@ -2172,34 +2172,31 @@ def main():
                                                                                                              star_ZAMS_helium=opts.nsc_star_metallicity_y_init)
                     star_log_radius_captured, star_log_luminosity_captured, star_log_teff_captured = stellar_interpolation.interp_star_params(star_mass_captured)
                     # Append captured stars to stars_pro array. Assume prograde and 1st gen.
-                    print("CAPTURED STARS")
-                    print(f"WE JUST CAPTURED {num_star_captured} STARS FROM THE NSC WOO HOOOO")
-                    # stars_pro.add_stars(new_mass=star_mass_captured,
-                    #                     new_orb_a=star_orb_a_captured,
-                    #                     new_log_radius=star_log_radius_captured,
-                    #                     new_log_luminosity=star_log_luminosity_captured,
-                    #                     new_log_teff=star_log_teff_captured,
-                    #                     new_X=star_X_captured,
-                    #                     new_Y=star_Y_captured,
-                    #                     new_Z=star_Z_captured,
-                    #                     new_orb_inc=star_orb_inc_captured,
-                    #                     new_orb_ang_mom=star_orb_ang_mom_captured,
-                    #                     new_orb_ecc=star_orb_ecc_captured,
-                    #                     new_orb_arg_periapse=star_orb_arg_periapse_captured,
-                    #                     new_gen=np.full(num_star_captured, 1),
-                    #                     new_galaxy=np.full(num_star_captured, galaxy),
-                    #                     new_time_passed=np.full(num_star_captured, time_passed),
-                    #                     new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1)
-                    #                     )
-                    # # Update filing cabinet
-                    # filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1),
-                    #                            new_category=np.ones(num_star_captured),
-                    #                            new_orb_a=star_orb_a_captured,
-                    #                            new_mass=star_mass_captured,
-                    #                            new_orb_ecc=star_orb_ecc_captured,
-                    #                            new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** star_log_radius_captured) * u.Rsun).value,
-                    #                            new_direction=np.ones(num_star_captured),
-                    #                            new_disk_inner_outer=np.zeros(num_star_captured))
+                    stars_pro.add_stars(new_mass=star_mass_captured,
+                                        new_orb_a=star_orb_a_captured,
+                                        new_log_radius=star_log_radius_captured,
+                                        new_log_luminosity=star_log_luminosity_captured,
+                                        new_log_teff=star_log_teff_captured,
+                                        new_X=star_X_captured,
+                                        new_Y=star_Y_captured,
+                                        new_Z=star_Z_captured,
+                                        new_orb_inc=star_orb_inc_captured,
+                                        new_orb_ang_mom=star_orb_ang_mom_captured,
+                                        new_orb_ecc=star_orb_ecc_captured,
+                                        new_orb_arg_periapse=star_orb_arg_periapse_captured,
+                                        new_gen=np.full(num_star_captured, 1),
+                                        new_galaxy=np.full(num_star_captured, galaxy),
+                                        new_time_passed=np.full(num_star_captured, time_passed),
+                                        new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1))
+                    # Update filing cabinet
+                    filing_cabinet.add_objects(new_id_num=np.arange(filing_cabinet.id_max + 1, num_star_captured + filing_cabinet.id_max + 1, 1),
+                                               new_category=np.ones(num_star_captured),
+                                               new_orb_a=star_orb_a_captured,
+                                               new_mass=star_mass_captured,
+                                               new_orb_ecc=star_orb_ecc_captured,
+                                               new_size=point_masses.r_g_from_units(opts.smbh_mass, (10 ** star_log_radius_captured) * u.Rsun).value,
+                                               new_direction=np.ones(num_star_captured),
+                                               new_disk_inner_outer=np.zeros(num_star_captured))
 
             # Test if any BH or BBH are in the danger-zone (<mininum_safe_distance, default =50r_g) from SMBH.
             # Potential EMRI/BBH EMRIs.
