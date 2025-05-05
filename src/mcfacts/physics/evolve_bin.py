@@ -19,33 +19,26 @@ def surrogate(m1, m2, s1m, s2m, sa1, sa2, p12, bin_sep, bin_inc, bin_phase, bin_
     mass_final, spin_final, kick_final = [], [], []
     mass_1, mass_2, spin_1_mag, spin_2_mag, spin_angle_1, spin_angle_2, phi_12 = [], [], [], [], [], [], []
     
-    for value in m1:
-        mass_1.append(value)
-    for value in m2:
-        mass_2.append(value)
-    for value in s1m:
-        spin_1_mag.append(value)
-    for value in s2m:
-        spin_2_mag.append(value)
-    for value in sa1:
-        spin_angle_1.append(value)
-    for value in sa2:
-        spin_angle_2.append(value)
-    for value in p12:
-        phi_12.append(value)
-
-    for i in range(len(mass_1)):
+    '''m1 = list(m1)
+    m2 = list(m2)
+    s1m = list(s1m)
+    s2m = list(s2m)
+    sa1 = list(sa1)
+    sa2 = list(sa2)
+    p12 = list(p12)'''
+    
+    for i in range(len(m1)):
         #print(mass_1, mass_2, spin_1_mag, spin_2_mag, spin_angle_1, spin_angle_2, phi_12, bin_sep, bin_inc, bin_phase, bin_orb_a, mass_SMBH, spin_SMBH, surrogate)
-        
+
         start = time.time()
         M_f, spin_f, v_f = evolve_binary.evolve_binary(
-            mass_1[i],
-            mass_2[i],
-            spin_1_mag[i],
-            spin_2_mag[i],
-            spin_angle_1[i],
-            spin_angle_2[i],
-            phi_12[i],
+            m1[i],
+            m2[i],
+            s1m[i],
+            s2m[i],
+            sa1[i],
+            sa2[i],
+            p12[i],
             bin_sep,
             bin_inc,
             bin_phase,
@@ -55,7 +48,6 @@ def surrogate(m1, m2, s1m, s2m, sa1, sa2, p12, bin_sep, bin_inc, bin_phase, bin_
             surrogate,
             verbose=True,
         )
-        
         end = time.time()
         
         run_time = end - start
@@ -66,9 +58,10 @@ def surrogate(m1, m2, s1m, s2m, sa1, sa2, p12, bin_sep, bin_inc, bin_phase, bin_
         
         #print(M_f, spin_f_mag, v_f_mag)
         
-        mass_final.append(float(M_f))
-        spin_final.append(float(spin_f_mag))
-        kick_final.append(float(v_f_mag))
+        mass_final.append(M_f)
+        spin_final.append(spin_f_mag)
+        kick_final.append(v_f_mag)
+        
     
     #print(M_f, spin_f_mag, v_f_mag)
     
