@@ -1168,8 +1168,7 @@ def main():
                     filing_cabinet.remove_id_num(star_id_nums)
 
                     # BHs accrete mass and spin up
-                    a, b = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
-                    bh_id_mask = b[np.argsort(a)]
+                    _, bh_id_mask = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
                     blackholes_pro.mass[bh_id_mask] = accretion.change_bh_mass(
                         blackholes_pro.mass[bh_id_mask],
                         opts.disk_bh_eddington_ratio,
@@ -1480,7 +1479,6 @@ def main():
                     if bh_binary_id_num_unphysical.size > 0:
                         blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                         filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
-
                     blackholes_merged, blackholes_pro = merge.merge_blackholes(blackholes_binary,
                                                                                blackholes_pro,
                                                                                blackholes_merged,
@@ -2023,8 +2021,7 @@ def main():
                     filing_cabinet.remove_id_num(star_id_nums)
 
                     # BHs accrete mass and spin up
-                    a, b = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
-                    bh_id_mask = b[np.argsort(a)]
+                    _, bh_id_mask = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
                     blackholes_pro.mass[bh_id_mask] = accretion.change_bh_mass(
                         blackholes_pro.mass[bh_id_mask],
                         opts.disk_bh_eddington_ratio,
