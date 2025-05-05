@@ -86,6 +86,9 @@ def arg():
     parser.add_argument("--fname-log", default="mcfacts.log", type=str,
                         help="Specify a file in which to save the arguments and some runtime information. Default: mcfacts.log")
 
+    #### Begin Argparse Nonsense
+    #### Please do not modify between this line and the END Argparse Nonsense
+    ####  line unless you have a good reason.
     # Add inifile arguments
     # Read default inifile
     _variable_inputs = ReadInputs.ReadInputs_ini(DEFAULT_INI, False)
@@ -99,21 +102,21 @@ def arg():
         _default = _variable_inputs[name]
         _dtype = type(_variable_inputs[name])
         parser.add_argument(_opt,
-                            default=_default,
+                            default=None,
                             type=_dtype,
                             metavar=_metavar,
                             )
 
-    # Parse arguments
+
+    # Parse arguments, using the opts namespace
+    # This causes the default inifile values to be overwritten
+    # by CLI arguments
     opts = parser.parse_args()
     # Check that the inifile exists
     assert isfile(opts.fname_ini)
     # Convert to path objects
     opts.fname_ini = Path(opts.fname_ini)
     assert opts.fname_ini.is_file()
-    opts.fname_snapshots_bh = Path(opts.fname_snapshots_bh)
-    opts.fname_output_mergers = Path(opts.fname_output_mergers)
-    opts.fname_output = Path(opts.fname_output)
 
     # Parse inifile
     print("opts.fname_ini", opts.fname_ini)
@@ -130,7 +133,7 @@ def arg():
             setattr(opts, name, variable_inputs[name])
             continue
         # Check for args not in the default_ini file
-        if getattr(opts, name) != _variable_inputs[name]:
+        if getattr(opts, name) is not None:
             # This is the case where the user has set the value of an argument
             # from the command line. We don't want to argue with the user.
             pass
@@ -142,7 +145,12 @@ def arg():
     # Case 3: if an attribute is in the default infile,
     #   and not the specified inifile,
     #   it remains unaltered.
+    #### End Argparse Nonsense ####
 
+    # Update paths of arguments to Path type
+    opts.fname_snapshots_bh = Path(opts.fname_snapshots_bh)
+    opts.fname_output_mergers = Path(opts.fname_output_mergers)
+    opts.fname_output = Path(opts.fname_output)
     if opts.verbose:
         for item in opts.__dict__:
             print(item, getattr(opts, item))
@@ -207,7 +215,7 @@ def main():
                                          opts.disk_radius_outer,
                                          opts.disk_model_name,
                                          opts.disk_alpha_viscosity,
-                                         opts.disk_bh_eddington_ratio,
+                                         opts.disk_bh_eddington_ratio, 
                                          disk_radius_max_pc=opts.disk_radius_max_pc,
                                          flag_use_pagn=opts.flag_use_pagn,
                                          verbose=opts.verbose
@@ -1155,8 +1163,7 @@ def main():
                     filing_cabinet.remove_id_num(star_id_nums)
 
                     # BHs accrete mass and spin up
-                    a, b = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
-                    bh_id_mask = b[np.argsort(a)]
+                    _, bh_id_mask = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
                     blackholes_pro.mass[bh_id_mask] = accretion.change_bh_mass(
                         blackholes_pro.mass[bh_id_mask],
                         opts.disk_bh_eddington_ratio,
@@ -1467,7 +1474,6 @@ def main():
                     if bh_binary_id_num_unphysical.size > 0:
                         blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                         filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
-
                     blackholes_merged, blackholes_pro = merge.merge_blackholes(blackholes_binary,
                                                                                blackholes_pro,
                                                                                blackholes_merged,
@@ -1901,158 +1907,6 @@ def main():
                         blackholes_binary.remove_id_num(bh_binary_id_num_unphysical)
                         filing_cabinet.remove_id_num(bh_binary_id_num_unphysical)
 
-<<<<<<< HEAD
-                    if (bh_binary_id_num_merger.size > 0):
-                        
-                        bh_chi_eff_merged = merge.chi_effective(
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_ang_mom")
-                                )
-
-                        bh_chi_p_merged = merge.chi_p(
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_inc")
-                                )
-                        # TODO: calculate v_kick and resulting perturbation to orb ecc. For now set v_kick to 200 km/s
-                        if opts.flag_use_surrogate == 0:
-                            bh_v_kick = analytical_velo.analytical_kick_velocity(
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2")
-                                    )
-                            bh_mass_merged = merge.merged_mass(
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2")
-                                )
-                            #print("bh_mass_merged: ", bh_mass_merged)
-
-                            bh_spin_merged = merge.merged_spin(
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2")
-                                )
-                            #print("bh_spin_merged: ", bh_spin_merged)
-                        else:
-                            #bh_v_kick = 200 #evolve_binary.velocity()
-                            surrogate = fit_modeler.GPRFitters.read_from_file(f"../src/mcfacts/inputs/data/surrogate.joblib")
-                            bh_mass_merged, bh_spin_merged, bh_v_kick = evolve_bin.surrogate(
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
-                                    blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2") - blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                    1000, # binary seperation - in units of mass_1+mass_2 - shawn need to optimize seperation to speed up processing time 
-                                    [0, 0, 1], # binary inclination - cartesian coords
-                                    0, # binary phase angle - radians?
-                                    # the following three None values are any correction needed to the values
-                                    None, # bin_orb_a
-                                    None, # mass_smbh
-                                    None, # spin_smbh
-                                    surrogate
-                                )
-                            #print("bh_mass_merged_sur: ", bh_mass_merged)
-                            #print("bh_spin_merged_sur: ", bh_spin_merged) 
-                            #print("bh_kick_merged_sur: ", bh_v_kick)
-
-                        #v_kick = 200. # comment out when using analytical mod
-
-
-                        bh_lum_shock = lum.shock_luminosity(
-                                opts.smbh_mass,
-                                bh_mass_merged,
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                disk_aspect_ratio,
-                                disk_density,
-                                bh_v_kick) # add bh_v_kick to incorp
-                        #print("bh_lum_shock: ", bh_lum_shock)
-
-                        bh_lum_jet = lum.jet_luminosity(
-                                bh_mass_merged,
-                                blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                disk_density,
-                                bh_v_kick) # add bh_v_kick to incorp
-                        #print("bh_lum_jet: ", bh_lum_jet)
-
-                        # bin_a_agn_lum = lum.AGN_lum(temp_func,
-                        #                             opts.smbh_mass,
-                        #                             blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"))
-
-
-                        bh_orb_ecc_merged = merge.merged_orb_ecc(blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                                                 np.full(bh_binary_id_num_merger.size, bh_v_kick), # add bh_v_kick to incorp
-                                                                 opts.smbh_mass)
-
-                        # Append new merged BH to arrays of single BH locations, masses, spins, spin angles & gens
-                        blackholes_merged.add_blackholes(new_id_num=bh_binary_id_num_merger,
-                                                         new_galaxy=np.full(bh_binary_id_num_merger.size, galaxy),
-                                                         new_bin_orb_a=blackholes_binary.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                                         new_mass_final=bh_mass_merged,
-                                                         new_spin_final=bh_spin_merged,
-                                                         new_spin_angle_final=np.zeros(bh_binary_id_num_merger.size),
-                                                         new_mass_1=blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
-                                                         new_mass_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
-                                                         new_spin_1=blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
-                                                         new_spin_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_2"),
-                                                         new_spin_angle_1=blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_1"),
-                                                         new_spin_angle_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_angle_2"),
-                                                         new_gen_1=blackholes_binary.at_id_num(bh_binary_id_num_merger, "gen_1"),
-                                                         new_gen_2=blackholes_binary.at_id_num(bh_binary_id_num_merger, "gen_2"),
-                                                         new_chi_eff=bh_chi_eff_merged,
-                                                         new_chi_p=bh_chi_p_merged,
-                                                         new_v_kick=bh_v_kick,
-                                                         new_lum_shock=bh_lum_shock,
-                                                         new_lum_jet=bh_lum_jet,
-                                                         #new_lum_agn=bin_a_agn_lum,
-                                                         new_time_merged=np.full(bh_binary_id_num_merger.size, time_passed))
-
-                        # # New bh generation is max of generations involved in merger plus 1
-                        blackholes_pro.add_blackholes(new_mass=blackholes_merged.at_id_num(bh_binary_id_num_merger, "mass_final"),
-                                                      new_orb_a=blackholes_merged.at_id_num(bh_binary_id_num_merger, "bin_orb_a"),
-                                                      new_spin=blackholes_merged.at_id_num(bh_binary_id_num_merger, "spin_final"),
-                                                      new_spin_angle=np.zeros(bh_binary_id_num_merger.size),
-                                                      new_orb_inc=np.zeros(bh_binary_id_num_merger.size),
-                                                      new_orb_ang_mom=np.ones(bh_binary_id_num_merger.size),
-                                                      new_orb_ecc=bh_orb_ecc_merged,
-                                                      new_gen=np.maximum(blackholes_merged.at_id_num(bh_binary_id_num_merger, "gen_1"),
-                                                                         blackholes_merged.at_id_num(bh_binary_id_num_merger, "gen_2")) + 1.0,
-                                                      new_orb_arg_periapse=np.full(bh_binary_id_num_merger.size, -1.5),
-                                                      new_galaxy=np.full(bh_binary_id_num_merger.size, galaxy),
-                                                      new_time_passed=np.full(bh_binary_id_num_merger.size, time_passed),
-                                                      new_id_num=bh_binary_id_num_merger)
-
-                        # Update filing cabinet
-                        filing_cabinet.update(id_num=bh_binary_id_num_merger,
-                                              attr="category",
-                                              new_info=np.full(bh_binary_id_num_merger.size, 0))
-                        filing_cabinet.update(id_num=bh_binary_id_num_merger,
-                                              attr="mass",
-                                              new_info=bh_mass_merged)
-                        filing_cabinet.update(id_num=bh_binary_id_num_merger,
-                                              attr="orb_ecc",
-                                              new_info=bh_orb_ecc_merged)
-                        filing_cabinet.update(id_num=bh_binary_id_num_merger,
-                                              attr="size",
-                                              new_info=np.full(bh_binary_id_num_merger.size, -1.5))
-                        blackholes_binary.remove_id_num(bh_binary_id_num_merger)
-=======
                     blackholes_merged, blackholes_pro = merge.merge_blackholes(blackholes_binary,
                                                                                blackholes_pro,
                                                                                blackholes_merged,
@@ -2078,7 +1932,6 @@ def main():
                                           attr="size",
                                           new_info=np.full(bh_binary_id_num_merger.size, -1.5))
                     blackholes_binary.remove_id_num(bh_binary_id_num_merger)
->>>>>>> main-dev
 
                     if opts.verbose:
                         print("New BH locations", blackholes_pro.orb_a)
@@ -2163,8 +2016,7 @@ def main():
                     filing_cabinet.remove_id_num(star_id_nums)
 
                     # BHs accrete mass and spin up
-                    a, b = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
-                    bh_id_mask = b[np.argsort(a)]
+                    _, bh_id_mask = np.where(blackholes_pro.id_num == bh_id_nums[:, None])
                     blackholes_pro.mass[bh_id_mask] = accretion.change_bh_mass(
                         blackholes_pro.mass[bh_id_mask],
                         opts.disk_bh_eddington_ratio,
@@ -2740,7 +2592,6 @@ def main():
                                              new_v_kick=blackholes_merged.v_kick,
                                              new_lum_shock=blackholes_merged.lum_shock,
                                              new_lum_jet=blackholes_merged.lum_jet,
-                                             #new_lum_agn = blackholes_merged.lum_agn,
                                              new_time_merged=blackholes_merged.time_merged)
 
         # Add list of all binaries formed to the population level object
@@ -2895,8 +2746,8 @@ def main():
     bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
     population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
                        "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet"]#, "lum_agn"] # add "v_kick", to incorp
-    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2"]
+                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet", "id_num"]
+    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2", "id_num"]
     stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
     stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
                                                "orb_a_bh",   "mass_bh",   "orb_ecc_bh",   "gen_bh", "id_num_bh", "orb_inc_bh"]
