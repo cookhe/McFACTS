@@ -116,7 +116,7 @@ Inifile
         Critical eccentricity (limiting eccentricity, below which assumed circular orbit)
     "flag_dynamic_enc"              : int
         Switch (1) turns dynamical encounters between embedded BH on.
-    "delta_energy_strong"           : float
+    "delta_energy_strong_mu"           : float
         Average energy change per strong interaction.
         de can be 20% in cluster interactions. May be 10% on average (with gas)
     "inner_disk_outer_radius"       : float
@@ -199,7 +199,7 @@ INPUT_TYPES = {
     "disk_radius_capture_outer"     : float,
     "disk_bh_pro_orb_ecc_crit"      : float,
     "flag_dynamic_enc"              : int,
-    "delta_energy_strong"           : float,
+    "delta_energy_strong_mu"           : float,
     "inner_disk_outer_radius"       : float,
     "disk_inner_stable_circ_orb"    : float,
     "mass_pile_up"                  : float,

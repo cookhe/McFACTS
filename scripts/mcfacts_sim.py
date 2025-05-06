@@ -1033,7 +1033,7 @@ def main():
                     blackholes_pro.orb_ecc,
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    opts.delta_energy_strong,
+                    opts.delta_energy_strong_mu,
                     opts.disk_radius_outer
                 )
 
@@ -1049,7 +1049,7 @@ def main():
                     rstar_rhill_exponent,
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    opts.delta_energy_strong,
+                    opts.delta_energy_strong_mu,
                     opts.disk_radius_outer
                 )
 
@@ -1128,7 +1128,7 @@ def main():
                     blackholes_pro.id_num,
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
-                    opts.delta_energy_strong,
+                    opts.delta_energy_strong_mu,
                     opts.disk_radius_outer
                 )
 
@@ -1263,7 +1263,7 @@ def main():
                         blackholes_binary.bin_orb_ecc,
                         opts.timestep_duration_yr,
                         opts.disk_bh_pro_orb_ecc_crit,
-                        opts.delta_energy_strong,
+                        opts.delta_energy_strong_mu,
                         opts.disk_radius_outer,
                         opts.mean_harden_energy_delta,
                         opts.var_harden_energy_delta
@@ -1355,7 +1355,7 @@ def main():
                         1.0,
                         opts.timestep_duration_yr,
                         opts.disk_bh_pro_orb_ecc_crit,
-                        opts.delta_energy_strong,
+                        opts.delta_energy_strong_mu,
                         opts.disk_radius_outer,
                         opts.mean_harden_energy_delta,
                         opts.var_harden_energy_delta)
@@ -1536,7 +1536,7 @@ def main():
                         blackholes_binary.bin_orb_ecc,
                         opts.timestep_duration_yr,
                         opts.disk_bh_pro_orb_ecc_crit,
-                        opts.delta_energy_strong,
+                        opts.delta_energy_strong_mu,
                         opts.disk_radius_outer
                     )
 
@@ -1625,7 +1625,7 @@ def main():
                         1.0,
                         opts.timestep_duration_yr,
                         opts.disk_bh_pro_orb_ecc_crit,
-                        opts.delta_energy_strong,
+                        opts.delta_energy_strong_mu,
                         opts.disk_radius_outer)
 
                     if (bbh_star_id_nums_touch.size > 0):
@@ -1917,7 +1917,7 @@ def main():
                         blackholes_binary.bin_orb_inc,
                         time_passed,
                         opts.nsc_imf_bh_powerlaw_index,
-                        opts.delta_energy_strong,
+                        opts.delta_energy_strong_mu,
                         opts.nsc_spheroid_normalization,
                         opts.mean_harden_energy_delta,
                         opts.var_harden_energy_delta
