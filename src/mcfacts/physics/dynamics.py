@@ -17,6 +17,53 @@ from mcfacts.physics.point_masses import time_of_orbital_shrinkage
 from mcfacts.physics.point_masses import si_from_r_g, r_g_from_units
 
 
+def encounters_new_orb_a(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_take, id_num_take, delta_energy_strong):
+    """Calculates new orb_a values using conservation of energy due to encounters between two objects
+
+    Parameters
+    ----------
+    smbh_mass : float
+        Mass [M_sun] of supermassive black hole
+    orb_a_give : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of object giving energy (eccentric for ecc/circ, more massive for ecc/ecc)
+    orb_a_take : numpy.ndarray
+        Orbital semi-major axes [r_{g,SMBH}] of object taking energy (circular for ecc/circ, less massive for ecc/ecc)
+    mass_give : numpy.ndarray
+        Masses [M_sun] of object giving energy
+    mass_take : numpy.ndarray
+        Masses [M_sun] of object taking energy
+    delta_energy_strong : float
+        Average energy change [%] per strong encounter
+    """
+
+    # Put things in SI units
+    smbh_mass_si = smbh_mass * u.solMass
+    mass_give_si = mass_give * u.solMass
+    mass_take_si = mass_take * u.solMass
+    orb_a_give_si = si_from_r_g(smbh_mass_si, orb_a_give)
+    orb_a_take_si = si_from_r_g(smbh_mass_si, orb_a_take)
+
+    E_give_i = (- const.G * smbh_mass_si * mass_give_si / (2. * orb_a_give_si)).si
+    E_take_i = (- const.G * smbh_mass_si * mass_take_si / (2. * orb_a_take_si)).si
+    delta_E = ((delta_energy_strong / 2.) * const.G * smbh_mass_si * np.sqrt((mass_take_si * mass_give_si) / (orb_a_take_si * orb_a_give_si))).si
+
+    E_give_f = E_give_i - delta_E
+    E_take_f = E_take_i + delta_E
+
+    # if orbital energy > 0, then object is no longer bound to the disk
+    id_num_flung_out = None
+    if E_take_f > 0:
+        id_num_flung_out = id_num_take
+
+    orb_a_give_f_si = - const.G * smbh_mass_si * mass_give_si / (2. * E_give_f)
+    orb_a_take_f_si = - const.G * smbh_mass_si * mass_take_si / (2. * E_take_f)
+
+    orb_a_give_f_rg = r_g_from_units(smbh_mass_si, orb_a_give_f_si)
+    orb_a_take_f_rg = r_g_from_units(smbh_mass_si, orb_a_take_f_si)
+
+    return orb_a_give_f_rg.value, orb_a_take_f_rg.value, id_num_flung_out
+
+
 def circular_singles_encounters_prograde(
         smbh_mass,
         disk_bh_pro_orbs_a,
@@ -162,7 +209,9 @@ def circular_singles_encounters_prograde(
     circ_prograde_population_locations = disk_bh_pro_orbs_a[circ_prograde_population_indices]
 
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
-    epsilon = disk_radius_outer * ((disk_bh_pro_masses[circ_prograde_population_indices] / (3 * (disk_bh_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
+    epsilon = (disk_radius_outer * ((disk_bh_pro_masses[circ_prograde_population_indices] /
+               (3 * (disk_bh_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)))[:, None] * \
+              rng.uniform(size=(len(circ_prograde_population_indices), len(ecc_prograde_population_indices)))
 
     # T_orb = pi (R/r_g)^1.5 (GM_smbh/c^2) = pi (R/r_g)^1.5 (GM_smbh*2e30/c^2)
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
@@ -197,7 +246,7 @@ def circular_singles_encounters_prograde(
                             disk_bh_pro_orbs_a[circ_idx] = disk_bh_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong)
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_bh_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
+                                disk_bh_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i][j]
                             disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong)
                             disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong)
                     num_poss_ints = num_poss_ints + 1
@@ -227,7 +276,8 @@ def circular_singles_encounters_prograde_stars(
         rstar_rhill_exponent,
         timestep_duration_yr,
         disk_bh_pro_orb_ecc_crit,
-        delta_energy_strong,
+        delta_energy_strong_mu,
+        delta_energy_strong_sigma,
         disk_radius_outer
         ):
     """"Adjust orb ecc due to encounters between 2 single circ pro stars
@@ -252,8 +302,10 @@ def circular_singles_encounters_prograde_stars(
         Length of timestep [yr]
     disk_bh_pro_orb_ecc_crit : float
         Critical orbital eccentricity [unitless] below which orbit is close enough to circularize
-    delta_energy_strong : float
+    delta_energy_strong_mu : float
         Average energy change [units??] per strong encounter
+    delta_energy_strong_sigma : float
+        Standard deviation of average energy change per strong encounter
 
     Returns
     -------
@@ -371,7 +423,7 @@ def circular_singles_encounters_prograde_stars(
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
 
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
-    epsilon = disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
+    epsilon = (disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)))[:, None] * rng.uniform(size=(len(circ_prograde_population_indices), len(ecc_prograde_population_indices)))
 
     # T_orb = pi (R/r_g)^1.5 (GM_smbh/c^2) = pi (R/r_g)^1.5 (GM_smbh*2e30/c^2)
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
@@ -381,10 +433,12 @@ def circular_singles_encounters_prograde_stars(
     ecc_orb_max = disk_star_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_star_pro_orbs_ecc[ecc_prograde_population_indices])
     # Generate all possible needed random numbers ahead of time
     chance_of_enc = rng.uniform(size=(len(circ_prograde_population_indices), len(ecc_prograde_population_indices)))
+    delta_energy_strong = np.exp(rng.normal(loc=np.log(delta_energy_strong_mu), scale=np.log(1. + delta_energy_strong_sigma), size=(len(circ_prograde_population_indices), len(ecc_prograde_population_indices))))
     num_poss_ints = 0
     num_encounters = 0
     id_nums_poss_touch = []
     frac_rhill_sep = []
+    id_nums_flung_out = []
     if len(circ_prograde_population_indices) > 0:
         for i, circ_idx in enumerate(circ_prograde_population_indices):
             for j, ecc_idx in enumerate(ecc_prograde_population_indices):
@@ -404,13 +458,16 @@ def circular_singles_encounters_prograde_stars(
                         # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
                         # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
                         if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong * np.sqrt(disk_star_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx])
-                            disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong * np.sqrt(disk_star_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx]))
+                            new_orb_a_ecc, new_orb_a_circ, id_num_out = encounters_new_orb_a(smbh_mass, disk_star_pro_orbs_a[ecc_idx], disk_star_pro_orbs_a[circ_idx], disk_star_pro_masses[ecc_idx], disk_star_pro_masses[circ_idx], disk_star_pro_id_nums[circ_idx], delta_energy_strong[i][j])
+                            if id_num_out is not None:
+                                id_nums_flung_out.append(id_num_out)
+                            disk_star_pro_orbs_a[ecc_idx] = new_orb_a_ecc
+                            disk_star_pro_orbs_a[circ_idx] = new_orb_a_circ
+                            disk_star_pro_orbs_ecc[circ_idx] = delta_energy_strong[i][j]
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i]
-                            disk_star_pro_orbs_ecc[ecc_idx] = disk_star_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_star_pro_masses[ecc_idx]))
-                            disk_star_pro_orbs_a[ecc_idx] = disk_star_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_star_pro_masses[ecc_idx]))
+                                disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i][j]
+                            disk_star_pro_orbs_ecc[ecc_idx] = disk_star_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong[i][j])
                             # Look for stars that are inside each other's Hill spheres and if so return them as mergers
                             separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_star_pro_orbs_a[ecc_idx])
                             center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_star_pro_orbs_a[ecc_idx]],
@@ -439,6 +496,11 @@ def circular_singles_encounters_prograde_stars(
 
     id_nums_poss_touch = np.array(id_nums_poss_touch)
     frac_rhill_sep = np.array(frac_rhill_sep)
+    id_nums_flung_out = np.array(id_nums_flung_out)
+
+    # Test if there are any problems
+    if np.any(~np.isin(id_nums_flung_out, id_nums_poss_touch)):
+        print("OH NOOOOO")
 
     # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
     if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
@@ -463,7 +525,7 @@ def circular_singles_encounters_prograde_stars(
         id_nums_touch = id_nums_poss_touch
 
     id_nums_touch = id_nums_touch.T
-    return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch)
+    return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_flung_out)
 
 
 def circular_singles_encounters_prograde_star_bh(
@@ -629,7 +691,7 @@ def circular_singles_encounters_prograde_star_bh(
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
 
     # Calculate epsilon --amount to subtract from disk_radius_outer for objects with orb_a > disk_radius_outer
-    epsilon_star = disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)) * rng.uniform(size=circ_prograde_population_indices.size)
+    epsilon_star = (disk_radius_outer * ((disk_star_pro_masses[circ_prograde_population_indices] / (3 * (disk_star_pro_masses[circ_prograde_population_indices] + smbh_mass)))**(1. / 3.)))[:, None] * rng.uniform(size=(len(circ_prograde_population_indices), len(ecc_prograde_population_indices)))
 
     # T_orb = pi (R/r_g)^1.5 (GM_smbh/c^2) = pi (R/r_g)^1.5 (GM_smbh*2e30/c^2)
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
@@ -666,7 +728,7 @@ def circular_singles_encounters_prograde_star_bh(
                             disk_star_pro_orbs_a[circ_idx] = disk_star_pro_orbs_a[circ_idx]*(1.0 + delta_energy_strong * np.sqrt(disk_bh_pro_masses[ecc_idx]/disk_star_pro_masses[circ_idx]))
                             # Catch for if orb_a > disk_radius_outer
                             if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon_star[i]
+                                disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon_star[i][j]
                             disk_bh_pro_orbs_ecc[ecc_idx] = disk_bh_pro_orbs_ecc[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_bh_pro_masses[ecc_idx]))
                             disk_bh_pro_orbs_a[ecc_idx] = disk_bh_pro_orbs_a[ecc_idx]*(1 - delta_energy_strong * np.sqrt(disk_star_pro_masses[circ_idx]/disk_bh_pro_masses[ecc_idx]))
                             # Look for stars that are inside each other's Hill spheres and if so return them as mergers

@@ -208,7 +208,6 @@ def main():
     # Disk density [kg/m^3] is a function of radius, where radius is in r_g
     # Return disk log of disk surface density as a function of log (R)
     disk_surface_density, disk_aspect_ratio, disk_opacity, disk_sound_speed, disk_density, disk_pressure_grad, disk_omega, disk_surface_density_log, temp_func, disk_dlog10surfdens_dlog10R_func, disk_dlog10temp_dlog10R_func, disk_dlog10pressure_dlog10R_func = \
-    disk_surface_density, disk_aspect_ratio, disk_opacity, disk_sound_speed, disk_density, disk_pressure_grad, disk_omega, disk_surface_density_log, temp_func, disk_dlog10surfdens_dlog10R_func, disk_dlog10temp_dlog10R_func, disk_dlog10pressure_dlog10R_func = \
         ReadInputs.construct_disk_interp(opts.smbh_mass,
                                          opts.disk_radius_outer,
                                          opts.disk_model_name,
@@ -1039,7 +1038,7 @@ def main():
 
                 # Star-star encounters
                 rstar_rhill_exponent = 2.0
-                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums = dynamics.circular_singles_encounters_prograde_stars(
+                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums, stars_flung_out_id_nums = dynamics.circular_singles_encounters_prograde_stars(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
@@ -1050,6 +1049,7 @@ def main():
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.delta_energy_strong_mu,
+                    opts.delta_energy_strong_sigma,
                     opts.disk_radius_outer
                 )
 
@@ -1381,16 +1381,16 @@ def main():
                             stars_explode.add_stars(new_id_num_star=star_id_nums_fakequasi,
                                                     new_id_num_bh=bbh_id_nums_fakequasi,
                                                     new_mass_star=stars_pro.at_id_num(star_id_nums_fakequasi, "mass"),
-                                                    new_mass_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "mass"),
+                                                    new_mass_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "mass_1") + blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "mass_2"),
                                                     new_orb_a_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_a"),
-                                                    new_orb_a_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_a"),
+                                                    new_orb_a_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "bin_orb_a"),
                                                     new_star_log_radius=stars_pro.at_id_num(star_id_nums_fakequasi, "log_radius"),
                                                     new_orb_inc_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_inc"),
-                                                    new_orb_inc_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_inc"),
+                                                    new_orb_inc_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "bin_orb_inc"),
                                                     new_orb_ecc_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_ecc"),
-                                                    new_orb_ecc_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_ecc"),
+                                                    new_orb_ecc_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "bin_orb_ecc"),
                                                     new_gen_star=stars_pro.at_id_num(star_id_nums_fakequasi, "gen"),
-                                                    new_gen_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "gen"),
+                                                    new_gen_bh=max([blackholes_binary.gen_1[bbh_fakequasi_id_mask], blackholes_binary.gen_2[bbh_fakequasi_id_mask]]),
                                                     new_galaxy=stars_pro.at_id_num(star_id_nums_fakequasi, "galaxy"),
                                                     new_time_sn=np.full(star_id_nums_fakequasi.size, time_passed),
                                                     )
@@ -1407,16 +1407,16 @@ def main():
                             stars_explode.add_stars(new_id_num_star=star_id_nums_normal,
                                                     new_id_num_bh=bbh_id_nums_normal,
                                                     new_mass_star=stars_pro.at_id_num(star_id_nums_normal, "mass"),
-                                                    new_mass_bh=blackholes_pro.at_id_num(star_id_nums_normal, "mass"),
+                                                    new_mass_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "mass_1") + blackholes_binary.at_id_num(bbh_id_nums_normal, "mass_2"),
                                                     new_orb_a_star=stars_pro.at_id_num(star_id_nums_normal, "orb_a"),
-                                                    new_orb_a_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_a"),
+                                                    new_orb_a_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "bin_orb_a"),
                                                     new_star_log_radius=stars_pro.at_id_num(star_id_nums_normal, "log_radius"),
                                                     new_orb_inc_star=stars_pro.at_id_num(star_id_nums_normal, "orb_inc"),
-                                                    new_orb_inc_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_inc"),
+                                                    new_orb_inc_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "bin_orb_inc"),
                                                     new_orb_ecc_star=stars_pro.at_id_num(star_id_nums_normal, "orb_ecc"),
-                                                    new_orb_ecc_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_ecc"),
+                                                    new_orb_ecc_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "bin_orb_ecc"),
                                                     new_gen_star=stars_pro.at_id_num(star_id_nums_normal, "gen"),
-                                                    new_gen_bh=blackholes_pro.at_id_num(star_id_nums_normal, "gen"),
+                                                    new_gen_bh=max([blackholes_binary.gen_1[bbh_normal_id_mask], blackholes_binary.gen_2[bbh_normal_id_mask]]),
                                                     new_galaxy=stars_pro.at_id_num(star_id_nums_normal, "galaxy"),
                                                     new_time_sn=np.full(star_id_nums_normal.size, time_passed),
                                                     )
@@ -1648,16 +1648,16 @@ def main():
                             stars_explode.add_stars(new_id_num_star=star_id_nums_fakequasi,
                                                     new_id_num_bh=bbh_id_nums_fakequasi,
                                                     new_mass_star=stars_pro.at_id_num(star_id_nums_fakequasi, "mass"),
-                                                    new_mass_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "mass"),
+                                                    new_mass_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "mass_1") + blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "mass_2"),
                                                     new_orb_a_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_a"),
-                                                    new_orb_a_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_a"),
+                                                    new_orb_a_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "bin_orb_a"),
                                                     new_star_log_radius=stars_pro.at_id_num(star_id_nums_fakequasi, "log_radius"),
                                                     new_orb_inc_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_inc"),
-                                                    new_orb_inc_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_inc"),
+                                                    new_orb_inc_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "bin_orb_inc"),
                                                     new_orb_ecc_star=stars_pro.at_id_num(star_id_nums_fakequasi, "orb_ecc"),
-                                                    new_orb_ecc_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "orb_ecc"),
+                                                    new_orb_ecc_bh=blackholes_binary.at_id_num(bbh_id_nums_fakequasi, "bin_orb_ecc"),
                                                     new_gen_star=stars_pro.at_id_num(star_id_nums_fakequasi, "gen"),
-                                                    new_gen_bh=blackholes_pro.at_id_num(star_id_nums_fakequasi, "gen"),
+                                                    new_gen_bh=max([blackholes_binary.gen_1[bbh_fakequasi_id_mask], blackholes_binary.gen_2[bbh_fakequasi_id_mask]]),
                                                     new_galaxy=stars_pro.at_id_num(star_id_nums_fakequasi, "galaxy"),
                                                     new_time_sn=np.full(star_id_nums_fakequasi.size, time_passed))
                             # Add exploded star mass to mass gained by disk
@@ -1673,16 +1673,16 @@ def main():
                             stars_explode.add_stars(new_id_num_star=star_id_nums_normal,
                                                     new_id_num_bh=bbh_id_nums_normal,
                                                     new_mass_star=stars_pro.at_id_num(star_id_nums_normal, "mass"),
-                                                    new_mass_bh=blackholes_pro.at_id_num(star_id_nums_normal, "mass"),
+                                                    new_mass_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "mass_1") + blackholes_binary.at_id_num(bbh_id_nums_normal, "mass_2"),
                                                     new_orb_a_star=stars_pro.at_id_num(star_id_nums_normal, "orb_a"),
-                                                    new_orb_a_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_a"),
+                                                    new_orb_a_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "bin_orb_a"),
                                                     new_star_log_radius=stars_pro.at_id_num(star_id_nums_normal, "log_radius"),
                                                     new_orb_inc_star=stars_pro.at_id_num(star_id_nums_normal, "orb_inc"),
-                                                    new_orb_inc_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_inc"),
+                                                    new_orb_inc_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "bin_orb_inc"),
                                                     new_orb_ecc_star=stars_pro.at_id_num(star_id_nums_normal, "orb_ecc"),
-                                                    new_orb_ecc_bh=blackholes_pro.at_id_num(star_id_nums_normal, "orb_ecc"),
+                                                    new_orb_ecc_bh=blackholes_binary.at_id_num(bbh_id_nums_normal, "bin_orb_ecc"),
                                                     new_gen_star=stars_pro.at_id_num(star_id_nums_normal, "gen"),
-                                                    new_gen_bh=blackholes_pro.at_id_num(star_id_nums_normal, "gen"),
+                                                    new_gen_bh=max([blackholes_binary.gen_1[bbh_normal_id_mask], blackholes_binary.gen_2[bbh_normal_id_mask]]),
                                                     new_galaxy=stars_pro.at_id_num(star_id_nums_normal, "galaxy"),
                                                     new_time_sn=np.full(star_id_nums_normal.size, time_passed),
                                                     )
@@ -1805,8 +1805,7 @@ def main():
                     opts.smbh_mass,
                     opts.timestep_duration_yr,
                     time_gw_normalization,
-                    time_passed,
-                )
+                    time_passed)
 
                 # Update filing cabinet with new bin_sep
                 filing_cabinet.update(id_num=blackholes_binary.id_num,
