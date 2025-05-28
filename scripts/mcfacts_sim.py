@@ -1038,7 +1038,7 @@ def main():
 
                 # Star-star encounters
                 rstar_rhill_exponent = 2.0
-                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums, stars_flung_out_id_nums = dynamics.circular_singles_encounters_prograde_stars(
+                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums, stars_flung_out_id_nums, stars_flipped_id_nums = dynamics.circular_singles_encounters_prograde_stars(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
@@ -1052,6 +1052,33 @@ def main():
                     opts.delta_energy_strong_sigma,
                     opts.disk_radius_outer
                 )
+
+                if stars_flung_out_id_nums.size > 0:
+                    print(f"{stars_flung_out_id_nums.size} STARS FLUNG OUT")
+                    stars_pro.remove_id_num(stars_flung_out_id_nums)
+                    filing_cabinet.remove_id_num(stars_flung_out_id_nums)
+
+                if stars_flipped_id_nums.size > 0:
+                    print(f"{stars_flipped_id_nums.size} STARS FLIPPED")
+                    filing_cabinet.update(id_num=stars_flipped_id_nums,
+                                          attr="direction",
+                                          new_info=np.full(stars_flipped_id_nums.size, -1))
+                    stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
+                                          new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
+                                          new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
+                                          new_log_radius=stars_pro.at_id_num(stars_flipped_id_nums, "log_radius"),
+                                          new_log_teff=stars_pro.at_id_num(stars_flipped_id_nums, "log_teff"),
+                                          new_log_luminosity=stars_pro.at_id_num(stars_flipped_id_nums, "log_luminosity"),
+                                          new_X=stars_pro.at_id_num(stars_flipped_id_nums, "star_X"),  # no metallicity evolution
+                                          new_Y=stars_pro.at_id_num(stars_flipped_id_nums, "star_Y"),
+                                          new_Z=stars_pro.at_id_num(stars_flipped_id_nums, "star_Z"),
+                                          new_orb_ang_mom=np.full(stars_flipped_id_nums.shape[1], -1),  # orb_ang_mom is -1 because stars are now retrograde
+                                          new_orb_ecc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_ecc"),  # orb_ecc is initially very small
+                                          new_orb_inc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_inc"),  # orb_inc is zero
+                                          new_orb_arg_periapse=stars_pro.at_id_num(stars_flipped_id_nums, "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
+                                          new_gen=stars_pro.at_id_num(stars_flipped_id_nums, "gen"),
+                                          new_galaxy=stars_pro.at_id_num(stars_flipped_id_nums, "galaxy"),
+                                          new_time_passed=stars_pro.at_id_num(stars_flipped_id_nums, "time_passed"))
 
                 if (star_touch_id_nums.size > 0):
                     # Star and star touch each other: stellar merger
