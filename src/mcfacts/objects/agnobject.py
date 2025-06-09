@@ -1387,7 +1387,6 @@ class AGNMergedBlackHole(AGNObject):
         self.chi_eff = chi_eff
         self.chi_p = chi_p
         self.v_kick = v_kick
-        self.v_kick = v_kick
         self.lum_shock = lum_shock
         self.lum_jet = lum_jet
         self.time_merged = time_merged
