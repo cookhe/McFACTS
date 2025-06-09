@@ -6,6 +6,7 @@ import juliacall
 import numpy as np
 from mcfacts.external.evolve_binary import fit_modeler
 from mcfacts.external.evolve_binary import evolve_binary
+from mcfacts.physics import evolve_bin
 
 import pandas as pd
 import time, os
