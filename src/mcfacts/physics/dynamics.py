@@ -18,12 +18,290 @@ from mcfacts.physics.point_masses import time_of_orbital_shrinkage
 from mcfacts.physics.point_masses import si_from_r_g, r_g_from_units
 
 
-def epsilon_ell_curve(ell, epsilon_0, ell_0, omega_circ, smbh_mass):
-    eqn = epsilon_0.si.value + (ell - ell_0.si.value) * omega_circ.si.value + ((const.G.si.value * smbh_mass.si.value) ** 2) / (2. * (ell ** 2))
-    return eqn
+def components_from_EL(E, L, units='geometric', smbh_mass=1e8):
+    """Calculates new orb_a and eccentricity from specific energy and specific angular momentum
+
+    Parameters
+    ----------
+    E : float
+        specific energy (per unit mass)
+    L : float
+        specific angular momentum (per unit mass)
+    units : str, optional
+        whether to use geometric units, by default 'geometric'
+    smbh_mass : float, optional
+        Mass [Msun] of the SMBH, by default 1e8
+
+    Returns
+    -------
+    orb_a, ecc
+        new orb_a [r_{g,SMBH}] and ecc values
+    """
+    # takes in SPECIFIC E, L (should be lower case variables)
+    G_val = 1
+    if units != 'geometric':
+        G_val = const.G.si.value
+    # compute a, e from E,L
+    #
+    orb_a = - (G_val * smbh_mass)/(2*E)
+    one_minus_ecc2_sqrt = L/np.sqrt(G_val * smbh_mass * orb_a)
+    # Hack, deal with roundoff error!
+    if one_minus_ecc2_sqrt - 1 > 0 and one_minus_ecc2_sqrt-1 < 1e-7:
+        one_minus_ecc2_sqrt = 1-1e-7
+    if one_minus_ecc2_sqrt > 1:
+        raise Exception(" Impossible eccentricity value, based on  ", one_minus_ecc2_sqrt)
+    ecc = np.sqrt(1-one_minus_ecc2_sqrt**2)
+    return orb_a / (2 * smbh_mass), ecc
 
 
-def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_take, ecc_give, ecc_take, id_num_give, id_num_take, delta_energy_strong, epsilon_disk_radius, disk_outer_radius):
+def cubic_y_root(x0, y0, sanity=False):
+    """Calculate the root of cubic function f(y) = x0*y^3 + 1.5*y - y0
+
+    Parameters
+    ----------
+    x0 : float
+        dimensionless x0 variable
+    y0 : float
+        dimensionless y0 variable
+    sanity : bool, optional
+        Switch, turns on extra print statements, by default False
+
+    Returns
+    -------
+    roots : 
+        roots of the function
+    """
+    coefficients = np.array([x0, 0, +1.5, -y0])
+    poly = np.polynomial.Polynomial(coefficients[::-1])
+    roots = poly.roots()
+    if sanity:
+        print(" Root sanity check ", roots)
+        yval = roots[0]
+        val0 = x0 * yval ** 3 + 1.5 * yval - y0
+        print(yval, val0)
+    return roots
+
+
+def cubic_finite_step_root(x0, y0, OmegaS, sanity=False):
+    """Determine allowed finite step size
+
+    Parameters
+    ----------
+    x0 : float
+        dimensionless x0 value
+    y0 : float
+        dimensionless y0 value
+    OmegaS : float
+        Orbital frequency [???]
+    sanity : bool, optional
+        Switch, turns on extra print statements, by default False
+
+    Returns
+    -------
+    roots_x,roots_y : np.array
+        Found roots
+    """
+    coefficients = np.array([1, 0, 2 * (x0 - OmegaS * y0), 2 * OmegaS])
+    poly = np.polynomial.Polynomial(coefficients)
+    roots_y = poly.roots()
+
+    # now map to solutions for x!
+    roots_x = -1 / (2 * roots_y ** 2)
+    indx_ok = np.logical_and(roots_y > 0, np.abs(roots_x) < 1e10)
+    indx_ok = np.logical_and(indx_ok, roots_x < 0)  # only pick roots that are bound
+    roots_x = roots_x[indx_ok]
+    roots_y = roots_y[indx_ok]
+    if sanity:
+        print(" Finite stepsize sanity check, both should be zero; second is trivial ")
+        print(roots_y - y0 - (roots_x - x0) / OmegaS, roots_x + 1. / (2 * roots_y ** 2))
+    return np.c_[roots_x, roots_y]
+
+
+def transition_physical_as_EL(E1, L1, E2, L2, DeltaE, m1, m2, units='geometric', smbh_mass=1e8, sanity=True):
+    """Calculates final energy and angular momentum states
+
+    Parameters
+    ----------
+    E1 : float
+        energy of object 1
+    L1 : float
+        angular momentum of object 1
+    E2 : float
+        energy of object 2
+    L2 : float
+        angular momentum of object 2
+    DeltaE : float
+        change in energy
+    m1 : float
+        mass of object 1
+    m2 : float
+        mass of object 2
+    units : str, optional
+        Switch to control type of units, by default 'geometric'
+    smbh_mass : float, optional
+        SMBH mass, by default 1e8
+    sanity : bool, optional
+        Switch to turn on extra print statements, by default True
+    """
+    G_val = 1
+    if units != 'geometric':
+        G_val = const.G.si.value
+
+    # Assume consistent units SI only
+    eps1 = E1 / m1
+    eps2 = E2 / m2
+    eps1_f = (E1 + DeltaE) / m1
+    eps2_f = (E2 - DeltaE) / m2
+    ell1 = L1/m1
+    ell2 = L2/m2
+
+    # Find Omega0 scale, which is based on the 'acceptor' (2) non-eccentric object. This means ell0 = ell2
+    ell0 = ell2
+    Omega0 = (G_val * smbh_mass) ** 2 / ell0 ** 3
+    eps0 = ell0 * Omega0
+
+    # In case we need them, compute the frequencies of the other two objects
+    Omega1 = np.sqrt(-2 * eps1) ** 3 / (G_val * smbh_mass)
+    Omega2 = np.sqrt(-2 * eps2) ** 3 / (G_val * smbh_mass)
+    # final frequencies of the objects
+    Omega1_f = np.sqrt(-2 * eps1_f) ** 3 / (G_val * smbh_mass)
+    Omega2_f = np.sqrt(-2 * eps2_f) ** 3 / (G_val * smbh_mass)
+
+    if sanity:
+        print(" Dimensionless frequencies; second should be nearly unity if circular", Omega1 / Omega0, Omega2 / Omega0)
+        print(" Dimensionless final frequencies;", Omega1_f / Omega0, Omega2_f / Omega0)
+
+    # Dimensionless variables
+    x0 = eps2 / eps0  # close to -1/2
+    y0 = ell2 / ell0   # 1, by construction
+    x0_alt = eps1 / eps0
+    y0_alt = ell1 / ell0
+
+    # depending on sign of Delta E, pick which choice of Omega0 we use.
+    Omega_star = np.inf
+    if DeltaE * (E2 - E1) < 0:
+        print(" Contraction ")
+        # Contraction scenario: the two objects move closer together in energy
+        #  - case 1: object 2 is in a more bound orbit (E2-E1 <0) and Delta E>0
+        #  - case 2: object 2 is in a less bound orbit (E2-E1>0) but DeltaE <0
+        # In this case, we can have one or both objects intersect the forbidden region
+
+        # Determine the finite step size allowed.
+        # NON-GENERAL ASSUMPTION FOR SIMPLICITY: Assume we are contracting on object 2! So not quite generic. Pick the other if it is object 1
+        # But the stepsize constraint is set by object 1 (x0_alt), intersecting the boundary
+        #   -  Object 1 is moving to tighter orbits (lower energy magnitude), so root of x is increasing in magnitude!
+        Omega_trial = Omega2  # np.min([Omega2, Omega2_f, Omega1, Omega1_f])
+        my_stepsize_roots = cubic_finite_step_root(x0_alt, y0_alt, Omega_trial / Omega0)
+        print(" Pick root n between : x", my_stepsize_roots[:, 0], "between ", (x0, x0_alt), ", y ", my_stepsize_roots[:, 1],  " between ", (y0, y0_alt))
+        my_stepsize_roots = my_stepsize_roots[my_stepsize_roots[:, 0] < x0]  # pick in between the two initial points
+        print("Stepsizing root confirmation: x", my_stepsize_roots[:, 0], (x0_alt, x0), " y :",  my_stepsize_roots[:, 1], (y0_alt, y0))
+        # pick the root in between the two
+        Omega_star = Omega_trial
+        if len(my_stepsize_roots) != 0:
+            DeltaE_max = m1 * (my_stepsize_roots[0, 0] - x0_alt) * eps0  # largest possible stepsize, note this is a *specific* energy, and applied to object 1
+            print(" Energy step compared to stepsize limit ", DeltaE, DeltaE_max)
+            if np.abs(DeltaE) > np.abs(DeltaE_max):
+                print(" Stepsize limit applied !")
+                DeltaE = DeltaE_max
+            else:
+                print(" Don't reach the boundary - fine ! ")
+    else:
+        print(" Expansion ")
+        if sanity:
+            print("Dimensionless root finder: coordinates (should be close to -1/2, 1)", x0, y0)
+        # Slope calculation, based on object 2 ('accepting' object/circular case)
+        my_roots = cubic_y_root(x0, y0)
+        # restore physical units, these are y values; ell = y*ell0; and \Omega = (GM)^2/ell^3
+        my_roots_ell = ell0 * my_roots
+        my_roots_omega = (G_val * smbh_mass) ** 2 / my_roots_ell ** 3  # note order reversal!
+        my_roots_omega.sort()
+        if sanity:
+            print(" Raw dimensionless roots",  my_roots_omega/Omega0)
+            print(" Eliminate roots with large imaginary part")
+        indx_ok = np.abs(np.imag(my_roots_omega/Omega0)) < 1e-3
+        my_roots_omega = my_roots_omega[indx_ok]
+        indx_ok = np.real(my_roots_omega) > 0  # don't change direction - one has another sign
+        my_roots_omega = my_roots_omega[indx_ok]
+        if sanity:
+            print("Remaining dimensionless roots", my_roots_omega/Omega0)
+
+        if sanity:
+            print(" Dimensionless root finder part 2: coordinates for eccentric system ", x0_alt, y0_alt)
+        my_roots_alt = cubic_y_root(x0_alt, y0_alt)
+        my_roots_omega_alt = (G_val * smbh_mass) ** 2/(ell0 * my_roots_alt) ** 3
+        my_roots_omega_alt = np.real(my_roots_omega_alt[np.real(my_roots_omega_alt) > 0])
+        my_roots_omega_alt.sort()
+        print(" Omega values for both tangents ", my_roots_omega/Omega0, my_roots_omega_alt/Omega0)
+
+        # Non-contracting scenario, the two objects move away. We can use any omega smaller than the largest root above
+        Omega_star = np.min(np.real(np.concatenate((my_roots_omega, my_roots_omega_alt))))
+
+    # Transition
+    DeltaL = DeltaE / Omega_star
+#    DeltaL = DeltaE/Omega0  # use circular case
+    return E1+DeltaE, E2-DeltaE, L1+DeltaL, L2-DeltaL
+
+
+def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_take, ecc_give, ecc_take, id_num_give, id_num_take, delta_energy_strong):
+    # using units of 2M, concert to geometric units (G=1) using *solar mass units* for distance
+    smbh_mass_geometric = 1
+    mass_scale = smbh_mass / 1
+    orb_a_give_geometric = orb_a_give * 2 * smbh_mass_geometric
+    orb_a_take_geometric = orb_a_take * 2 * smbh_mass_geometric
+    mass_give_geometric = mass_give / mass_scale
+    mass_take_geometric = mass_take / mass_scale
+
+    print("RICHARD STUFF")
+    print("orb_a_give",orb_a_give)
+    print("orb_a_take",orb_a_take)
+    print("mass_give",mass_give)
+    print("mass_take",mass_take)
+    print("ecc_give",ecc_give)
+    print("ecc_take",ecc_take)
+
+    E_give_initial = - mass_give_geometric * smbh_mass_geometric / (2 * orb_a_give_geometric)
+    E_take_initial = - mass_take_geometric * smbh_mass_geometric / (2 * orb_a_take_geometric)
+    J_give_initial = mass_give_geometric * np.sqrt(smbh_mass_geometric * orb_a_give_geometric * (1 - ecc_give**2))
+    J_take_initial = mass_take_geometric * np.sqrt(smbh_mass_geometric * orb_a_take_geometric * (1 - ecc_take**2))
+
+    Delta_E = delta_energy_strong * np.sqrt(E_give_initial * E_take_initial)
+
+    id_num_flung_out = None
+    id_num_flip_over = None
+
+    E_give_final, E_take_final, J_give_final, J_take_final = transition_physical_as_EL(E_give_initial, J_give_initial, E_take_initial, J_take_initial, Delta_E, mass_give_geometric, mass_take_geometric, smbh_mass=smbh_mass_geometric)
+    if E_give_initial + Delta_E > 0:
+        print("UNBINDING GIVE")
+        orb_a_give_final = 1
+        ecc_give_final = 2
+        id_num_flung_out = id_num_give
+        orb_a_take_final, ecc_take_final = components_from_EL(E_take_final / mass_take_geometric, J_take_final / mass_take_geometric, smbh_mass=smbh_mass_geometric)
+
+    elif E_take_initial - Delta_E > 0:
+        print("UNBINDING TAKE")
+        orb_a_take_final = 1
+        ecc_take_final = 2
+        id_num_flung_out = id_num_take
+        orb_a_give_final, ecc_give_final = components_from_EL(E_give_final / mass_give_geometric, J_give_final / mass_give_geometric, smbh_mass=smbh_mass_geometric)
+
+    else:
+        orb_a_give_final, ecc_give_final = components_from_EL(E_give_final / mass_give_geometric, J_give_final / mass_give_geometric, smbh_mass=smbh_mass_geometric)
+        orb_a_take_final, ecc_take_final = components_from_EL(E_take_final / mass_take_geometric, J_take_final / mass_take_geometric, smbh_mass=smbh_mass_geometric)
+
+    if J_give_final < 0:
+        print("FLIPPING GIVE")
+        ecc_give_final = 0.0
+        id_num_flip_over = id_num_give
+    elif J_take_final < 0:
+        print("FLIPPING TAKE")
+        ecc_take_final = 0.0
+        id_num_flip_over = id_num_take
+
+    print()
+    return orb_a_give_final, orb_a_take_final, ecc_give_final, ecc_take_final, id_num_flung_out, id_num_flip_over
+
+
+def encounters_new_orba_ecc_old(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_take, ecc_give, ecc_take, id_num_give, id_num_take, delta_energy_strong, epsilon_disk_radius, disk_outer_radius):
     smbh_mass_si = smbh_mass * u.solMass
     orb_a_give_si = si_from_r_g(smbh_mass_si, orb_a_give)
     orb_a_take_si = si_from_r_g(smbh_mass_si, orb_a_take)
@@ -32,13 +310,15 @@ def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_t
 
     E_give_initial = (- const.G * smbh_mass_si * mass_give_si / (2. * orb_a_give_si)).si
     E_take_initial = (- const.G * smbh_mass_si * mass_take_si / (2. * orb_a_take_si)).si
-    if orb_a_give < orb_a_take:
-        delta_E = -((delta_energy_strong / 2.) * const.G * smbh_mass_si * np.sqrt((mass_take_si * mass_give_si) / (orb_a_take_si * orb_a_give_si))).si
-    else:
-        delta_E = ((delta_energy_strong / 2.) * const.G * smbh_mass_si * np.sqrt((mass_take_si * mass_give_si) / (orb_a_take_si * orb_a_give_si))).si
+    #if orb_a_give < orb_a_take:
+    #    delta_E = -((delta_energy_strong / 2.) * const.G * smbh_mass_si * np.sqrt((mass_take_si * mass_give_si) / (orb_a_take_si * orb_a_give_si))).si
+    #else:
+    #    delta_E = ((delta_energy_strong / 2.) * const.G * smbh_mass_si * np.sqrt((mass_take_si * mass_give_si) / (orb_a_take_si * orb_a_give_si))).si
+    delta_E = ((delta_energy_strong / 2.) * const.G * smbh_mass_si * np.sqrt((mass_take_si * mass_give_si) / (orb_a_take_si * orb_a_give_si))).si
 
     E_give_final = E_give_initial - delta_E
     E_take_final = E_take_initial + delta_E
+    #print("DELTA_E ORIGINAL", delta_E)
 
     # if orbital energy > 0, then object is no longer bound to the disk
     id_num_flung_out = None
@@ -47,7 +327,7 @@ def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_t
         print("OH NO FLUNG OUT")
         orb_a_give_final_si = - const.G * smbh_mass_si * mass_give_si / (2. * E_give_final)
         orb_a_give_final_rg = r_g_from_units(smbh_mass_si, orb_a_give_final_si)
-        orb_a_take_final_rg = -1
+        orb_a_take_final_rg = 1
     else:
         orb_a_take_final_si = - const.G * smbh_mass_si * mass_take_si / (2. * E_take_final)
         orb_a_take_final_rg = r_g_from_units(smbh_mass_si, orb_a_take_final_si)
@@ -68,7 +348,7 @@ def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_t
         print("OH NO FLUNG OUT")
         orb_a_take_final_si = - const.G * smbh_mass_si * mass_take_si / (2. * E_take_final)
         orb_a_take_final_rg = r_g_from_units(smbh_mass_si, orb_a_take_final_si)
-        orb_a_give_final_rg = -1
+        orb_a_give_final_rg = 1
     else:
         orb_a_give_final_si = - const.G * smbh_mass_si * mass_give_si / (2. * E_give_final)
         orb_a_give_final_rg = r_g_from_units(smbh_mass_si, orb_a_give_final_si)
@@ -84,15 +364,12 @@ def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_t
         orb_a_take_final_si = - const.G * smbh_mass_si * mass_take_si / (2. * E_take_final)
         orb_a_take_final_rg = r_g_from_units(smbh_mass_si, orb_a_take_final_si)
 
+    #print("DELTA_E CHANGED FOR ORB_A", delta_E)
     omega_give = np.sqrt(const.G * smbh_mass_si / (orb_a_give_si ** 3)).si
     omega_take = np.sqrt(const.G * smbh_mass_si / (orb_a_take_si ** 3)).si
 
     J_give_initial = (mass_give_si * np.sqrt(const.G * smbh_mass_si * orb_a_give_si * (1 - (ecc_give ** 2)))).si
     J_take_initial = (mass_take_si * np.sqrt(const.G * smbh_mass_si * orb_a_take_si * (1 - (ecc_take ** 2)))).si
-    #if (J_give_initial / mass_give_si).si > (J_take_initial / mass_take_si).si:
-    #    delta_J = delta_E * ((J_give_initial / mass_give_si) - (J_take_initial / mass_take_si)) / ((E_give_initial / mass_give_si) - (E_take_initial / mass_take_si))
-    #if (J_take_initial / mass_take_si).si > (J_give_initial / mass_give_si).si:
-    #    delta_J = delta_E * ((J_take_initial / mass_take_si) - (J_give_initial / mass_give_si)) / ((E_take_initial / mass_take_si) - (E_give_initial / mass_give_si))
     delta_J = delta_E / omega_take
     J_give_final = J_give_initial - delta_J
     J_take_final = J_take_initial + delta_J
@@ -112,37 +389,64 @@ def encounters_new_orba_ecc(smbh_mass, orb_a_give, orb_a_take, mass_give, mass_t
     ecc_take_final = np.sqrt(1. - ((J_take_final / mass_take_si) ** 2) * 1./(const.G * smbh_mass_si * orb_a_take_final_si))
 
     if np.any(~np.isfinite(ecc_give_final)):
-        print("((J_give_final/mass_give_si).si.value)",((J_give_final/mass_give_si).si.value))
-        sol = scipy.optimize.root(fun=lambda x: epsilon_ell_curve(x, E_give_initial / mass_give_si,
-                                                                  J_give_initial / mass_give_si, omega_take,
-                                                                  smbh_mass_si), x0=((J_give_final/mass_give_si).si.value)/2)
-        print(epsilon_ell_curve(sol.x.max(), E_give_initial / mass_give_si,
-                                                                  J_give_initial / mass_give_si, omega_take,
-                                                                  smbh_mass_si))
-        print("E_give_initial / mass_give_si",(E_give_initial / mass_give_si).si)
-        print("J_give_initial / mass_give_si",(J_give_initial / mass_give_si).si)
-        print("J_give_initial",J_give_initial)
-        print("J_take_initial",J_take_initial)
-        print("omega_take",omega_take)
-        print("smbh_mass_si",smbh_mass_si.si)
-        print("ROOT FINDER THINGY")
-        print("OLD DELTA J",delta_J)
-        print("J_give_final/mass_give_si",(J_give_final/mass_give_si).si)
-        print(sol)
-        delta_J_old_pos = delta_J > 0
-        delta_J = (mass_give_si * ((sol.x.max() * (u.meter ** 2) / u.second) - J_give_initial / mass_give_si)).si
-        #if orb_a_give < orb_a_take:
-        # signs of old and new delta_j should match
-        if delta_J_old_pos and (delta_J < 0):
-            delta_J = -1. * delta_J
-        elif ~delta_J_old_pos and (delta_J > 0):
-            delta_J = -1. * delta_J
-        print("NEW DELTA J",delta_J)
-        #delta_E = delta_J * omega_take
-        J_give_final = J_give_initial - delta_J
-        J_take_final = J_take_initial + delta_J
-        ecc_take_final = np.sqrt(1. - ((J_take_final / mass_take_si) ** 2) * 1./(const.G * smbh_mass_si * orb_a_take_final_si))
-        ecc_give_final = np.sqrt(1. - ((J_give_final / mass_give_si) ** 2) * 1./(const.G * smbh_mass_si * orb_a_give_final_si))
+        #1 is give
+        #2 is take
+        smbh_mass_geometric = 1
+        mass_scale = 1 * 1e9  # if above is 1
+        #a_rg1 = 3480
+        a1_geometric = orb_a_give * 2 * smbh_mass_geometric
+        #a_rg2 = 10057
+        a2_geometric = orb_a_take * 2 * smbh_mass_geometric
+        #m1_msun = 3.2
+        m1_geometric = mass_give / mass_scale  # using Msun*mass_scale units
+        #m2_msun = 56
+        m2_geometric = mass_take / mass_scale
+        #ecc_1 = 0.49
+        #ecc_2 = 0.01
+
+        print("RICHARD THINGY")
+        print("\torb_a_give [rg]",orb_a_give)
+        print("\torb_a_take [rg]",orb_a_take)
+        print("\tmass_give [msun]",mass_give)
+        print("\tmass_take [msun]",mass_take)
+        print("\tecc_give",ecc_give)
+        print("\tecc_take",ecc_take)
+
+        E1_geometric = - m1_geometric * smbh_mass_geometric / (2 * a1_geometric)
+        E2_geometric = - m2_geometric * smbh_mass_geometric / (2 * a2_geometric)
+        L1_geometric = m1_geometric * np.sqrt(smbh_mass_geometric * a1_geometric * (1 - ecc_give ** 2))
+        L2_geometric = m2_geometric * np.sqrt(smbh_mass_geometric * a2_geometric * (1 - ecc_take ** 2))
+
+        sign_factor = 1
+        DeltaE_geometric = sign_factor * 0.1 * np.sqrt(E1_geometric * E2_geometric)
+        if DeltaE_geometric * (E2_geometric - E1_geometric) < 0:
+            print(" CONTRACTING SCENARIO ")
+        else:
+            print(" EXPANDING SCENARIO ")
+
+        E1_geometric_new, E2_geometric_new, L1_geometric_new, L2_geometric_new = transition_physical_as_EL(E1_geometric, L1_geometric, E2_geometric, L2_geometric, DeltaE_geometric, m1_geometric, m2_geometric, smbh_mass=smbh_mass_geometric)
+
+        if E1_geometric + DeltaE_geometric > 0 or E2_geometric - DeltaE_geometric > 0:
+            print(" UNBINDING SCENARIO ")
+
+            if (E1_geometric + DeltaE_geometric > 0):
+                print("UNBINDING GIVE")
+                orb_a_give_final_rg = 1
+                ecc_give_final = 1
+                orb_a_take_final, ecc_take_final = components_from_EL(E2_geometric_new / m2_geometric, L2_geometric_new / m2_geometric, smbh_mass=smbh_mass_geometric)
+                id_num_flung_out = id_num_give
+
+            if (E2_geometric - DeltaE_geometric > 0):
+                print("UNBINDING TAKE")
+                orb_a_take_final_rg = 1
+                ecc_take_final = 1
+                orb_a_give_final, ecc_give_final = components_from_EL(E1_geometric_new / m1_geometric, L1_geometric_new / m1_geometric, smbh_mass=smbh_mass_geometric)
+                id_num_flung_out = id_num_take
+
+        else:
+            orb_a_give_final, ecc_give_final = components_from_EL(E1_geometric_new / m1_geometric, L1_geometric_new / m1_geometric, smbh_mass=smbh_mass_geometric)
+            orb_a_take_final, ecc_take_final = components_from_EL(E2_geometric_new / m2_geometric, L2_geometric_new / m2_geometric, smbh_mass=smbh_mass_geometric)
+
         print("ecc_give_final",ecc_give_final)
         print("ecc_take_final",ecc_take_final)
 
@@ -562,7 +866,7 @@ def circular_singles_encounters_prograde_stars(
         for i, circ_idx in enumerate(circ_prograde_population_indices):
             for j, ecc_idx in enumerate(ecc_prograde_population_indices):
                 if (circ_prograde_population_locations[i] < ecc_orb_max[j] and circ_prograde_population_locations[i] > ecc_orb_min[j]):
-                    if (disk_star_pro_id_nums[ecc_idx] not in id_nums_flipped) and (disk_star_pro_id_nums[circ_idx] not in id_nums_flung_out):
+                    if (disk_star_pro_id_nums[ecc_idx] not in id_nums_flipped) and (disk_star_pro_id_nums[circ_idx] not in id_nums_flipped) and (disk_star_pro_id_nums[circ_idx] not in id_nums_flung_out) and (disk_star_pro_id_nums[ecc_idx] not in id_nums_flung_out):
                         # prob_encounter/orbit =hill sphere size/circumference of circ orbit =2RH/2pi a_circ1
                         # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
                         temp_bin_mass = disk_star_pro_masses[circ_idx] + disk_star_pro_masses[ecc_idx]
@@ -584,29 +888,28 @@ def circular_singles_encounters_prograde_stars(
                                     disk_star_pro_masses[ecc_idx], disk_star_pro_masses[circ_idx],
                                     disk_star_pro_orbs_ecc[ecc_idx], disk_star_pro_orbs_ecc[circ_idx],
                                     disk_star_pro_id_nums[ecc_idx], disk_star_pro_id_nums[circ_idx],
-                                    delta_energy_strong[i][j],
-                                    epsilon[i][j], disk_radius_outer
-                                )
+                                    delta_energy_strong[i][j])
                                 if id_num_out is not None:
                                     id_nums_flung_out.append(id_num_out)
                                 if id_num_flip is not None:
                                     id_nums_flipped.append(id_num_flip)
+                                if new_orb_a_ecc > disk_radius_outer:
+                                    new_orb_a_ecc = disk_radius_outer - epsilon[i][j]
+                                if new_orb_a_circ > disk_radius_outer:
+                                    new_orb_a_circ = disk_radius_outer - epsilon[i][j]
                                 disk_star_pro_orbs_a[ecc_idx] = new_orb_a_ecc
                                 disk_star_pro_orbs_a[circ_idx] = new_orb_a_circ
                                 disk_star_pro_orbs_ecc[circ_idx] = new_ecc_circ
                                 disk_star_pro_orbs_ecc[ecc_idx] = new_ecc_ecc
-                                # Catch for if orb_a > disk_radius_outer
-                                #if (disk_star_pro_orbs_a[circ_idx] > disk_radius_outer):
-                                #    disk_star_pro_orbs_a[circ_idx] = disk_radius_outer - epsilon[i][j]
-                                #new_ecc_ecc, new_ecc_circ, id_num_flip = encounters_new_ecc(smbh_mass, disk_star_pro_orbs_a[ecc_idx], disk_star_pro_orbs_a[circ_idx], disk_star_pro_masses[ecc_idx], disk_star_pro_masses[circ_idx], disk_star_pro_orbs_ecc[ecc_idx], disk_star_pro_orbs_ecc[circ_idx], disk_star_pro_id_nums[ecc_idx], delta_energy_strong[i][j])
                                 # Look for stars that are inside each other's Hill spheres and if so return them as mergers
-                                separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_star_pro_orbs_a[ecc_idx])
-                                center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_star_pro_orbs_a[ecc_idx]],
-                                                            weights=[disk_star_pro_masses[circ_idx], disk_star_pro_masses[ecc_idx]])
-                                rhill_poss_encounter = center_of_mass * ((disk_star_pro_masses[circ_idx] + disk_star_pro_masses[ecc_idx]) / (3. * smbh_mass)) ** (1./3.)
-                                if (separation - rhill_poss_encounter < 0):
-                                    id_nums_poss_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_star_pro_id_nums[ecc_idx]]))
-                                    frac_rhill_sep.append(separation / rhill_poss_encounter)
+                                if (id_num_flip is None) and (id_num_out is None):
+                                    separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_star_pro_orbs_a[ecc_idx])
+                                    center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_star_pro_orbs_a[ecc_idx]],
+                                                                weights=[disk_star_pro_masses[circ_idx], disk_star_pro_masses[ecc_idx]])
+                                    rhill_poss_encounter = center_of_mass * ((disk_star_pro_masses[circ_idx] + disk_star_pro_masses[ecc_idx]) / (3. * smbh_mass)) ** (1./3.)
+                                    if (separation - rhill_poss_encounter < 0):
+                                        id_nums_poss_touch.append(np.array([disk_star_pro_id_nums[circ_idx], disk_star_pro_id_nums[ecc_idx]]))
+                                        frac_rhill_sep.append(separation / rhill_poss_encounter)
                         num_poss_ints = num_poss_ints + 1
             num_poss_ints = 0
             num_encounters = 0
@@ -631,8 +934,16 @@ def circular_singles_encounters_prograde_stars(
     id_nums_flipped = np.array(id_nums_flipped)
 
     # Test if there are any problems
-    if np.any(~np.isin(id_nums_flung_out, id_nums_poss_touch)):
-        print("OH NOOOOO")
+    if np.any(np.isin(id_nums_flung_out, id_nums_poss_touch)):
+        print("OH NOOOOO FLUNG OUT TOUCH")
+        print("id_nums_flung_out",id_nums_flung_out)
+        print("id_nums_poss_touch",id_nums_poss_touch)
+        print(ff)
+
+    # Test if there are any problems
+    if np.any(np.isin(id_nums_flipped, id_nums_poss_touch)):
+        print("OH NOOOOO FLIP TOUCH")
+        print(ff)
 
     # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
     if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
