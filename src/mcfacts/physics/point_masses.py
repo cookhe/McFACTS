@@ -225,7 +225,7 @@ def r_g_from_units(smbh_mass, distance):
     assert np.isfinite(distance_rg).all(), \
         "Finite check failure: distance_rg"
     assert np.all(distance_rg > 0), \
-        "Finite check failure: distance_rg"
+        f"Finite check failure: distance_rg {distance_rg}"
 
     return distance_rg
 
