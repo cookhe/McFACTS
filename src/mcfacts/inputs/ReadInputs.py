@@ -119,6 +119,8 @@ Inifile
     "delta_energy_strong_mu"           : float
         Average energy change per strong interaction.
         de can be 20% in cluster interactions. May be 10% on average (with gas)
+    "delta_energy_strong_sigma"     : float
+        Standard deviation for de Gaussian
     "inner_disk_outer_radius"       : float
         Outer radius of the inner disk (Rg)
     "disk_inner_stable_circ_orb"    : float
@@ -199,7 +201,8 @@ INPUT_TYPES = {
     "disk_radius_capture_outer"     : float,
     "disk_bh_pro_orb_ecc_crit"      : float,
     "flag_dynamic_enc"              : int,
-    "delta_energy_strong_mu"           : float,
+    "delta_energy_strong_mu"        : float,
+    "delta_energy_strong_sigma"     : float,
     "inner_disk_outer_radius"       : float,
     "disk_inner_stable_circ_orb"    : float,
     "mass_pile_up"                  : float,
