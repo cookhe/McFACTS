@@ -345,22 +345,22 @@ def encounters_new_orba_ecc(smbh_mass,
     mu_geometric = mass_give_geometric * mass_take_geometric / (mass_give_geometric + mass_take_geometric)
     Delta_E = delta_energy_strong * mu_geometric * (1 / ((1 / v_relative**2) + (1 / v_esc_sq)))
 
-    print("RICHARD STUFF")
-    print("flag_obj_types", flag_obj_types)
-    print("orb_a_give", orb_a_give)
-    print("orb_a_take",orb_a_take)
-    print("mass_give",mass_give)
-    print("mass_take",mass_take)
-    print("ecc_give",ecc_give)
-    print("ecc_take",ecc_take)
-    print("radius_give", radius_give_geometric)
-    print("radius_take", radius_take)
-    print("radius_take_geometric",radius_take_geometric)
-    print("v_esc_sq",v_esc_sq)
-    print("v_relative",v_relative)
-    print("mu_geometric",mu_geometric)
-    print("delta_energy_strong",delta_energy_strong)
-    print("Delta_E",Delta_E)
+    # print("RICHARD STUFF")
+    # print("flag_obj_types", flag_obj_types)
+    # print("orb_a_give", orb_a_give)
+    # print("orb_a_take",orb_a_take)
+    # print("mass_give",mass_give)
+    # print("mass_take",mass_take)
+    # print("ecc_give",ecc_give)
+    # print("ecc_take",ecc_take)
+    # print("radius_give", radius_give_geometric)
+    # print("radius_take", radius_take)
+    # print("radius_take_geometric",radius_take_geometric)
+    # print("v_esc_sq",v_esc_sq)
+    # print("v_relative",v_relative)
+    # print("mu_geometric",mu_geometric)
+    # print("delta_energy_strong",delta_energy_strong)
+    # print("Delta_E",Delta_E)
 
     id_num_unbound = None
     id_num_flipped_rotation = None
@@ -375,7 +375,7 @@ def encounters_new_orba_ecc(smbh_mass,
     # give object (typically eccentric) is unbound
     if E_give_initial + Delta_E > 0:
         orb_a_give_final = 1
-        ecc_give_final = 2
+        ecc_give_final = 10
         id_num_unbound = id_num_give
         orb_a_take_final, ecc_take_final = components_from_EL(E_take_final / mass_take_geometric, J_take_final / mass_take_geometric, smbh_mass=smbh_mass_geometric)
         unbind_orb_a = orb_a_give
@@ -1098,13 +1098,6 @@ def circular_singles_encounters_prograde_star_bh(
 
     if (len(circ_prograde_population_indices) == 0) or (len(ecc_prograde_population_indices) == 0):
         return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, np.array([]), np.array([]), np.array([]), ()
-
-    # Get locations for circ population
-    circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
-    print("EEE")
-    print("circ_prograde_population_locations",circ_prograde_population_locations)
-    print("disk_star_pro_orbs_a", disk_star_pro_orbs_a)
-
     # Put stellar radii in rg
     disk_star_pro_radius_rg = r_g_from_units(smbh_mass, ((10 ** disk_star_pro_radius) * u.Rsun)).value
 
@@ -1141,15 +1134,6 @@ def circular_singles_encounters_prograde_star_bh(
                     (disk_star_pro_id_nums[circ_idx] not in id_nums_unbound) and
                     (disk_bh_pro_id_nums[ecc_idx] not in id_nums_unbound)):
                     if (disk_star_pro_orbs_a[circ_idx] < ecc_orb_max[j] and disk_star_pro_orbs_a[circ_idx] > ecc_orb_min[j]):
-                        print("circ_prograde_population_locations[i]",circ_prograde_population_locations[i])
-                        if circ_prograde_population_locations[i] != disk_star_pro_orbs_a[circ_idx]:
-                            print("UH OH")
-                            print("circ_prograde_population_locations[i]",circ_prograde_population_locations[i])
-                            print("disk_star_pro_orbs_a[circ_idx]",disk_star_pro_orbs_a[circ_idx])
-                            print("circ_idx",circ_idx)
-                            print("i",i)
-                            print("circ_prograde_population_indices",circ_prograde_population_indices)
-                            print(ff)
                         # prob_encounter/orbit =hill sphere size/circumference of circ orbit =2RH/2pi a_circ1
                         # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
                         temp_bin_mass = disk_star_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]
@@ -1169,7 +1153,7 @@ def circular_singles_encounters_prograde_star_bh(
                                     smbh_mass,
                                     disk_bh_pro_orbs_a[ecc_idx], disk_star_pro_orbs_a[circ_idx],
                                     disk_bh_pro_masses[ecc_idx], disk_star_pro_masses[circ_idx],
-                                    disk_star_pro_orbs_ecc[ecc_idx], disk_star_pro_orbs_ecc[circ_idx],
+                                    disk_bh_pro_orbs_ecc[ecc_idx], disk_star_pro_orbs_ecc[circ_idx],
                                     None, disk_star_pro_radius_rg[circ_idx],
                                     disk_bh_pro_id_nums[ecc_idx], disk_star_pro_id_nums[circ_idx],
                                     delta_energy_strong[i][j], flag_obj_types=1)
@@ -1188,10 +1172,10 @@ def circular_singles_encounters_prograde_star_bh(
                                     new_orb_a_ecc = disk_radius_outer - epsilon_star[i][j]
                                 if new_orb_a_circ > disk_radius_outer:
                                     new_orb_a_circ = disk_radius_outer - epsilon_star[i][j]
-                                disk_star_pro_orbs_a[ecc_idx] = new_orb_a_ecc
+                                disk_bh_pro_orbs_a[ecc_idx] = new_orb_a_ecc
                                 disk_star_pro_orbs_a[circ_idx] = new_orb_a_circ
+                                disk_bh_pro_orbs_ecc[ecc_idx] = new_ecc_ecc
                                 disk_star_pro_orbs_ecc[circ_idx] = new_ecc_circ
-                                disk_star_pro_orbs_ecc[ecc_idx] = new_ecc_ecc
                                 # Look for stars that are inside each other's Hill spheres and if so return them as mergers
                                 separation = np.abs(disk_star_pro_orbs_a[circ_idx] - disk_bh_pro_orbs_a[ecc_idx])
                                 center_of_mass = np.average([disk_star_pro_orbs_a[circ_idx], disk_bh_pro_orbs_a[ecc_idx]],
@@ -1707,7 +1691,7 @@ def circular_binaries_encounters_ecc_prograde_star(
     epsilon_orb_a = disk_radius_outer * ((ecc_prograde_population_masses / (3 * (ecc_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(ecc_prograde_population_masses))
 
     if np.size(bin_mass_1) == 0:
-        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]))
+        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]))
 
     # Create array of random numbers for the chances of encounters
     chances = rng.uniform(size=(np.size(bin_mass_1), ecc_prograde_population_indices.size))
@@ -2304,7 +2288,7 @@ def circular_binaries_encounters_circ_prograde_star(
     epsilon_orb_a = disk_radius_outer * ((circ_prograde_population_masses / (3 * (circ_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(circ_prograde_population_masses))
 
     if (np.size(bin_mass_1) == 0):
-        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]))
+        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]))
 
     # Set up random numbers
     chances = rng.uniform(size=(np.size(bin_mass_1), len(circ_prograde_population_locations)))

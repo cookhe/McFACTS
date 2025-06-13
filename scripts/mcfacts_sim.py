@@ -567,6 +567,8 @@ def main():
         # Keep track of number of stars flung out of disk/flipped to retrograde
         num_star_flung = 0
         num_star_flip = 0
+        num_bh_flip = 0
+        num_starbh_flip = 0
         # Keep track of unbound stars
         unbind_galaxy = []
         unbind_timestep = []
@@ -872,7 +874,6 @@ def main():
             stars_pro.orb_a = np.where(stars_pro.orb_a > opts.disk_inner_stable_circ_orb, stars_pro.orb_a, 3*opts.disk_inner_stable_circ_orb)
             if new_orb_a_star is not None:
                 stars_pro.orb_a = new_orb_a_star
-
             # Update filing cabinet
             filing_cabinet.update(id_num=blackholes_pro.id_num,
                                   attr="orb_a",
@@ -1093,8 +1094,8 @@ def main():
                     partner_mass.append(unbind_params[3])
                     unbind_ecc.append(unbind_params[4])
                     partner_ecc.append(unbind_params[5])
-                    unbind_type.append(1)
-                    partner_type.append(1)
+                    unbind_type.append(np.full(len(unbind_params[0]), 1))
+                    partner_type.append(np.full(len(unbind_params[0]), 1))
 
                 if stars_flipped_id_nums.size > 0:
                     num_star_flip += stars_flipped_id_nums.size
@@ -1181,7 +1182,7 @@ def main():
                     stars_pro.remove_id_num(star_touch_id_nums.flatten())
 
                 # Star-BH encounters (circular stars and eccentric BH)
-                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums, bh_unbound_id_nums, TEST_flipped_rotation_id_nums, unbind_params = dynamics.circular_singles_encounters_prograde_star_bh(
+                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums, bh_star_unbound_id_nums, TEST_flipped_rotation_id_nums, unbind_params = dynamics.circular_singles_encounters_prograde_star_bh(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
@@ -1200,10 +1201,15 @@ def main():
                     opts.disk_radius_outer
                 )
 
-                if bh_unbound_id_nums.size > 0:
-                    blackholes_pro.remove_id_num(bh_unbound_id_nums)
-                    filing_cabinet.remove_id_num(bh_unbound_id_nums)
-                    TEST_flipped_rotation_id_nums = TEST_flipped_rotation_id_nums[~np.isin(TEST_flipped_rotation_id_nums, bh_unbound_id_nums)]
+                if bh_star_unbound_id_nums.size > 0:
+                    blackholes_pro.remove_id_num(bh_star_unbound_id_nums)
+                    stars_pro.remove_id_num(bh_star_unbound_id_nums)
+                    unbound_types = filing_cabinet.at_id_num(bh_star_unbound_id_nums, "category")
+                    partner_types = np.ones(len(unbound_types))
+                    partner_types[unbound_types == 1] = 0
+                    partner_types[unbound_types == 0] = 1
+                    filing_cabinet.remove_id_num(bh_star_unbound_id_nums)
+                    TEST_flipped_rotation_id_nums = TEST_flipped_rotation_id_nums[~np.isin(TEST_flipped_rotation_id_nums, bh_star_unbound_id_nums)]
                     unbind_galaxy.append(np.full(len(unbind_params[0]), galaxy))
                     unbind_timestep.append(np.full(len(unbind_params[0]), time_passed))
                     unbind_orb_a.append(unbind_params[0])
@@ -1212,10 +1218,13 @@ def main():
                     partner_mass.append(unbind_params[3])
                     unbind_ecc.append(unbind_params[4])
                     partner_ecc.append(unbind_params[5])
-                    unbind_type.append(0)
-                    partner_type.append(1)
+                    unbind_type.append(unbound_types)
+                    partner_type.append(partner_types)
 
                 if TEST_flipped_rotation_id_nums.size > 0:
+                    len(stars_pro.at_id_num(TEST_flipped_rotation_id_nums, "mass"))
+                    num_starbh_flip += len(stars_pro.at_id_num(TEST_flipped_rotation_id_nums, "mass"))
+                    num_bh_flip += len(blackholes_pro.at_id_num(TEST_flipped_rotation_id_nums, "mass"))
                     # stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
                     #                       new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
                     #                       new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
@@ -2932,9 +2941,9 @@ def main():
                                       new_info=stars_inner_disk.orb_a)
 
                 # On 1st run through define old GW freqs (at say 9.e-7 Hz, since evolution change is 1e-6Hz)
-                if stars_tdes.num == 0:
+                if (stars_tdes.num == 0) and (stars_plunge.num == 0):
                     old_gw_tde_freq = 9.e-7*np.ones(stars_inner_disk.num)
-                if (stars_tdes.num > 0):
+                if (stars_tdes.num > 0) or (stars_plunge.num > 0):
                     old_gw_tde_freq = tde_gw_freq
 
                 tde_gw_strain, tde_gw_freq = emri.evolve_emri_gw( # KN: TDEs need their own method here bc drag
@@ -3118,6 +3127,12 @@ def main():
 
         with open("../runs/flipped.txt", "a+") as f2:
             f2.write(f"{num_star_flip}\n")
+
+        with open("../runs/flip_bhstar.txt", "a+") as f3:
+            f3.write(f"{num_bh_flip}\n")
+
+        with open("../runs/flip_starbh.txt","a+") as f4:
+            f4.write(f"{num_starbh_flip}\n")
         # Write out all singletons after AGN episode so we can use as input to another AGN phase
 
         # Assume that all BH binaries break apart
@@ -3326,7 +3341,7 @@ def main():
         unbind_ecc_pop = np.concatenate([unbind_ecc_pop, np.concatenate(unbind_ecc)])
         partner_ecc_pop = np.concatenate([partner_ecc_pop, np.concatenate(partner_ecc)])
         unbind_type_pop = np.concatenate([unbind_type_pop, np.concatenate(unbind_type)])
-        partner_type_pop = np.concatenate([partner_type_pop, np.concatenate(partner_type_pop)])
+        partner_type_pop = np.concatenate([partner_type_pop, np.concatenate(partner_type)])
 
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
