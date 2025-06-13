@@ -16,7 +16,7 @@ import scipy.optimize
 from mcfacts.mcfacts_random_state import rng
 from mcfacts.physics.point_masses import time_of_orbital_shrinkage
 from mcfacts.physics.point_masses import si_from_r_g, r_g_from_units
-from mcfacts.physics.evolve import bin_ionization_check
+from mcfacts.physics.binary.evolve import bin_ionization_check
 
 
 def components_from_EL(E, L, units='geometric', smbh_mass=1e8):
@@ -1107,6 +1107,9 @@ def circular_singles_encounters_prograde_star_bh(
 
     # Get locations for circ population
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
+    print("EEE")
+    print("circ_prograde_population_locations",circ_prograde_population_locations)
+    print("disk_star_pro_orbs_a", disk_star_pro_orbs_a)
 
     # Put stellar radii in rg
     disk_star_pro_radius_rg = r_g_from_units(smbh_mass, ((10 ** disk_star_pro_radius) * u.Rsun)).value
@@ -1118,8 +1121,8 @@ def circular_singles_encounters_prograde_star_bh(
     #      = pi (R/r_g)^1.5 (6.7e-11 2e38/27e24)= pi (R/r_g)^1.5 (1.3e11)s =(R/r_g)^1/5 (1.3e4)
     orbital_timescales_circ_pops = scipy.constants.pi*((disk_star_pro_orbs_a[circ_prograde_population_indices])**(1.5))*(2.e30*smbh_mass*scipy.constants.G)/(scipy.constants.c**(3.0)*3.15e7) 
     N_circ_orbs_per_timestep = timestep_duration_yr/orbital_timescales_circ_pops
-    ecc_orb_min = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0-disk_bh_pro_orbs_a[ecc_prograde_population_indices])
-    ecc_orb_max = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_bh_pro_orbs_a[ecc_prograde_population_indices])
+    ecc_orb_min = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0-disk_bh_pro_orbs_ecc[ecc_prograde_population_indices])
+    ecc_orb_max = disk_bh_pro_orbs_a[ecc_prograde_population_indices]*(1.0+disk_bh_pro_orbs_ecc[ecc_prograde_population_indices])
     num_poss_ints = 0
     num_encounters = 0
     # Generate all possible needed random numbers ahead of time
@@ -1144,6 +1147,15 @@ def circular_singles_encounters_prograde_star_bh(
                     (disk_star_pro_id_nums[circ_idx] not in id_nums_unbound) and
                     (disk_bh_pro_id_nums[ecc_idx] not in id_nums_unbound)):
                     if (circ_prograde_population_locations[i] < ecc_orb_max[j] and circ_prograde_population_locations[i] > ecc_orb_min[j]):
+                        print("circ_prograde_population_locations[i]",circ_prograde_population_locations[i])
+                        if circ_prograde_population_locations[i] != disk_star_pro_orbs_a[circ_idx]:
+                            print("UH OH")
+                            print("circ_prograde_population_locations[i]",circ_prograde_population_locations[i])
+                            print("disk_star_pro_orbs_a[circ_idx]",disk_star_pro_orbs_a[circ_idx])
+                            print("circ_idx",circ_idx)
+                            print("i",i)
+                            print("circ_prograde_population_indices",circ_prograde_population_indices)
+                            print(ff)
                         # prob_encounter/orbit =hill sphere size/circumference of circ orbit =2RH/2pi a_circ1
                         # r_h = a_circ1(temp_bin_mass/3smbh_mass)^1/3 so prob_enc/orb = mass_ratio^1/3/pi
                         temp_bin_mass = disk_star_pro_masses[circ_idx] + disk_bh_pro_masses[ecc_idx]
