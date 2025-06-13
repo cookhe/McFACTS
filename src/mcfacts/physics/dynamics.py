@@ -816,18 +816,18 @@ def circular_singles_encounters_prograde_stars(
         # Check if any stars are marked as both unbound and within another star's Hill sphere
         # If yes, remove them from the within Hill sphere array
         if np.any(np.isin(id_nums_poss_touch, id_nums_flung_out)):
-            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flung_out)[:, 0]) == True, :]
-            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flung_out)[:, 1]) == True, :]
             frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_flung_out)[:, 0]) == True]
             frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_flung_out)[:, 1]) == True]
+            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flung_out)[:, 0]) == True, :]
+            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flung_out)[:, 1]) == True, :]
 
         # Check if any stars are marked as both flipping from pro to retro and within another star's Hill sphere
         # If yes, remove them from the within Hill sphere array
         if np.any(np.isin(id_nums_flipped, id_nums_poss_touch)):
-            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flipped)[:, 0]) == True, :]
-            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flipped)[:, 1]) == True, :]
             frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_flipped)[:, 0]) == True]
             frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_flipped)[:, 1]) == True]
+            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flipped)[:, 0]) == True, :]
+            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_flipped)[:, 1]) == True, :]
 
     # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
     if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
