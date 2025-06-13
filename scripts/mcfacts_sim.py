@@ -242,6 +242,8 @@ def main():
     partner_mass_pop = np.array([])
     unbind_ecc_pop = np.array([])
     partner_ecc_pop = np.array([])
+    unbind_type_pop = np.array([])
+    partner_type_pop = np.array([])
 
     # tdes_pop = AGNStar()
 
@@ -574,6 +576,8 @@ def main():
         partner_mass = []
         unbind_ecc = []
         partner_ecc = []
+        unbind_type = []
+        partner_type = []
 
         # Start Loop of Timesteps
         print("Start Loop!")
@@ -1089,6 +1093,8 @@ def main():
                     partner_mass.append(unbind_params[3])
                     unbind_ecc.append(unbind_params[4])
                     partner_ecc.append(unbind_params[5])
+                    unbind_type.append(1)
+                    partner_type.append(1)
 
                 if stars_flipped_id_nums.size > 0:
                     num_star_flip += stars_flipped_id_nums.size
@@ -1175,7 +1181,7 @@ def main():
                     stars_pro.remove_id_num(star_touch_id_nums.flatten())
 
                 # Star-BH encounters (circular stars and eccentric BH)
-                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums = dynamics.circular_singles_encounters_prograde_star_bh(
+                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums, bh_unbound_id_nums, TEST_flipped_rotation_id_nums, unbind_params = dynamics.circular_singles_encounters_prograde_star_bh(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
@@ -1190,8 +1196,48 @@ def main():
                     opts.timestep_duration_yr,
                     opts.disk_bh_pro_orb_ecc_crit,
                     opts.delta_energy_strong_mu,
+                    opts.delta_energy_strong_sigma,
                     opts.disk_radius_outer
                 )
+
+                if bh_unbound_id_nums.size > 0:
+                    blackholes_pro.remove_id_num(bh_unbound_id_nums)
+                    filing_cabinet.remove_id_num(bh_unbound_id_nums)
+                    TEST_flipped_rotation_id_nums = TEST_flipped_rotation_id_nums[~np.isin(TEST_flipped_rotation_id_nums, bh_unbound_id_nums)]
+                    unbind_galaxy.append(np.full(len(unbind_params[0]), galaxy))
+                    unbind_timestep.append(np.full(len(unbind_params[0]), time_passed))
+                    unbind_orb_a.append(unbind_params[0])
+                    partner_orb_a.append(unbind_params[1])
+                    unbind_mass.append(unbind_params[2])
+                    partner_mass.append(unbind_params[3])
+                    unbind_ecc.append(unbind_params[4])
+                    partner_ecc.append(unbind_params[5])
+                    unbind_type.append(0)
+                    partner_type.append(1)
+
+                if TEST_flipped_rotation_id_nums.size > 0:
+                    # stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
+                    #                       new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
+                    #                       new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
+                    #                       new_log_radius=stars_pro.at_id_num(stars_flipped_id_nums, "log_radius"),
+                    #                       new_log_teff=stars_pro.at_id_num(stars_flipped_id_nums, "log_teff"),
+                    #                       new_log_luminosity=stars_pro.at_id_num(stars_flipped_id_nums, "log_luminosity"),
+                    #                       new_X=stars_pro.at_id_num(stars_flipped_id_nums, "star_X"),  # no metallicity evolution
+                    #                       new_Y=stars_pro.at_id_num(stars_flipped_id_nums, "star_Y"),
+                    #                       new_Z=stars_pro.at_id_num(stars_flipped_id_nums, "star_Z"),
+                    #                       new_orb_ang_mom=np.full(stars_flipped_id_nums.size, -1),  # orb_ang_mom is -1 because stars are now retrograde
+                    #                       new_orb_ecc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_ecc"),  # orb_ecc is initially very small
+                    #                       new_orb_inc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_inc"),  # orb_inc is zero
+                    #                       new_orb_arg_periapse=stars_pro.at_id_num(stars_flipped_id_nums, "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
+                    #                       new_gen=stars_pro.at_id_num(stars_flipped_id_nums, "gen"),
+                    #                       new_galaxy=stars_pro.at_id_num(stars_flipped_id_nums, "galaxy"),
+                    #                       new_time_passed=stars_pro.at_id_num(stars_flipped_id_nums, "time_passed"))
+                    # filing_cabinet.update(id_num=stars_flipped_id_nums,
+                    #                       attr="direction",
+                    #                       new_info=np.full(stars_flipped_id_nums.size, -1))
+                    blackholes_pro.remove_id_num(TEST_flipped_rotation_id_nums)
+                    stars_pro.remove_id_num(TEST_flipped_rotation_id_nums)
+                    filing_cabinet.remove_id_num(TEST_flipped_rotation_id_nums)
 
                 if (bh_star_touch_id_nums.size > 0):
                     # BH and star encounter: star blows up, BH accretes mass
@@ -1401,7 +1447,7 @@ def main():
 
                     # Soften/ionize binaries due to encounters with circular single stars
                     rstar_rhill_exponent = 2.0
-                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch = dynamics.circular_binaries_encounters_circ_prograde_star(
+                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch, bbh_id_nums_ionized = dynamics.circular_binaries_encounters_circ_prograde_star(
                         opts.smbh_mass,
                         stars_pro.orb_a,
                         stars_pro.mass,
@@ -1421,6 +1467,58 @@ def main():
                         opts.disk_radius_outer,
                         opts.mean_harden_energy_delta,
                         opts.var_harden_energy_delta)
+
+                    if (bbh_id_nums_ionized.size > 0):
+                        # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
+                        # For now add 2 new orb ecc term of 0.01. inclination is 0.0 as well. TO DO: calculate v_kick and resulting perturbation to orb ecc.
+
+                        new_orb_ecc = eccentricity.ionized_orb_ecc(bbh_id_nums_ionized.size * 2, opts.disk_bh_orb_ecc_max_init)
+                        new_id_nums = np.arange(filing_cabinet.id_max+1, filing_cabinet.id_max + 1 + bbh_id_nums_ionized.size * 2, 1)
+                        blackholes_pro.add_blackholes(
+                            new_mass=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_2")]),
+                            new_spin=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_2")]),
+                            new_spin_angle=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_angle_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_angle_2")]),
+                            new_orb_a=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_2")]),
+                            new_gen=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "gen_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "gen_2")]),
+                            new_orb_ecc=new_orb_ecc,
+                            new_orb_inc=np.full(bbh_id_nums_ionized.size * 2, 0.0),
+                            new_orb_ang_mom=np.ones(bbh_id_nums_ionized.size * 2),
+                            new_orb_arg_periapse=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_gw_freq=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_gw_strain=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_galaxy=np.full(bbh_id_nums_ionized.size * 2, galaxy),
+                            new_time_passed=np.full(bbh_id_nums_ionized.size * 2, time_passed),
+                            new_id_num=new_id_nums
+                        )
+
+                        # Update filing cabinet
+                        filing_cabinet.add_objects(
+                            new_id_num=new_id_nums,
+                            new_category=np.zeros(bbh_id_nums_ionized.size * 2),
+                            new_orb_a=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_2")]),
+                            new_mass=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_2")]),
+                            new_orb_ecc=new_orb_ecc,
+                            new_size=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_direction=np.ones(bbh_id_nums_ionized.size * 2),
+                            new_disk_inner_outer=np.ones(bbh_id_nums_ionized.size * 2)
+                        )
+
+                        blackholes_binary.remove_id_num(bbh_id_nums_ionized)
+                        filing_cabinet.remove_id_num(bbh_id_nums_ionized)
 
                     if (bbh_star_id_nums_touch.size > 0):
                         # BBH and star encounter
@@ -1672,7 +1770,7 @@ def main():
                             print("No mergers yet")
                     # Soften/ionize binaries due to encounters with eccentric single stars
                     rstar_rhill_exponent = 2.0
-                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch = dynamics.circular_binaries_encounters_ecc_prograde_star(
+                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch, bbh_id_nums_ionized = dynamics.circular_binaries_encounters_ecc_prograde_star(
                         opts.smbh_mass,
                         stars_pro.orb_a,
                         stars_pro.mass,
@@ -1690,6 +1788,58 @@ def main():
                         opts.disk_bh_pro_orb_ecc_crit,
                         opts.delta_energy_strong_mu,
                         opts.disk_radius_outer)
+
+                    if (bbh_id_nums_ionized.size > 0):
+                        # BBH is ionized from star encounter
+                        # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
+                        # For now add 2 new orb ecc term of 0.01. inclination is 0.0 as well. TO DO: calculate v_kick and resulting perturbation to orb ecc.
+                        new_orb_ecc = eccentricity.ionized_orb_ecc(bbh_id_nums_ionized.size * 2, opts.disk_bh_orb_ecc_max_init)
+                        new_id_nums = np.arange(filing_cabinet.id_max+1, filing_cabinet.id_max + 1 + bbh_id_nums_ionized.size * 2, 1)
+                        blackholes_pro.add_blackholes(
+                            new_mass=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_2")]),
+                            new_spin=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_2")]),
+                            new_spin_angle=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_angle_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "spin_angle_2")]),
+                            new_orb_a=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_2")]),
+                            new_gen=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "gen_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "gen_2")]),
+                            new_orb_ecc=new_orb_ecc,
+                            new_orb_inc=np.full(bbh_id_nums_ionized.size * 2, 0.0),
+                            new_orb_ang_mom=np.ones(bbh_id_nums_ionized.size * 2),
+                            new_orb_arg_periapse=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_gw_freq=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_gw_strain=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_galaxy=np.full(bbh_id_nums_ionized.size * 2, galaxy),
+                            new_time_passed=np.full(bbh_id_nums_ionized.size * 2, time_passed),
+                            new_id_num=new_id_nums
+                        )
+
+                        # Update filing cabinet
+                        filing_cabinet.add_objects(
+                            new_id_num=new_id_nums,
+                            new_category=np.zeros(bbh_id_nums_ionized.size * 2),
+                            new_orb_a=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "orb_a_2")]),
+                            new_mass=np.concatenate([
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_1"),
+                                blackholes_binary.at_id_num(bbh_id_nums_ionized, "mass_2")]),
+                            new_orb_ecc=new_orb_ecc,
+                            new_size=np.full(bbh_id_nums_ionized.size * 2, -1.5),
+                            new_direction=np.ones(bbh_id_nums_ionized.size * 2),
+                            new_disk_inner_outer=np.ones(bbh_id_nums_ionized.size * 2)
+                        )
+
+                        blackholes_binary.remove_id_num(bbh_id_nums_ionized)
+                        filing_cabinet.remove_id_num(bbh_id_nums_ionized)
 
                     if (bbh_star_id_nums_touch.size > 0):
                         # BBH and star encounter
@@ -3165,6 +3315,8 @@ def main():
         partner_mass.append([])
         unbind_ecc.append([])
         partner_ecc.append([])
+        unbind_type.append([])
+        partner_type.append([])
         unbind_timestep_pop = np.concatenate([unbind_timestep_pop, np.concatenate(unbind_timestep)])
         unbind_galaxy_pop = np.concatenate([unbind_galaxy_pop, np.concatenate(unbind_galaxy)])
         unbind_orb_a_pop = np.concatenate([unbind_orb_a_pop, np.concatenate(unbind_orb_a)])
@@ -3173,6 +3325,8 @@ def main():
         partner_mass_pop = np.concatenate([partner_mass_pop, np.concatenate(partner_mass)])
         unbind_ecc_pop = np.concatenate([unbind_ecc_pop, np.concatenate(unbind_ecc)])
         partner_ecc_pop = np.concatenate([partner_ecc_pop, np.concatenate(partner_ecc)])
+        unbind_type_pop = np.concatenate([unbind_type_pop, np.concatenate(unbind_type)])
+        partner_type_pop = np.concatenate([partner_type_pop, np.concatenate(partner_type_pop)])
 
     # save all mergers from Monte Carlo
     basename, extension = os.path.splitext(opts.fname_output_mergers)
@@ -3229,9 +3383,9 @@ def main():
         stars_merge_pop.to_txt(os.path.join(opts.work_directory, stars_merge_save_name),
                                cols=stars_merge_cols)
         temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep_pop, disk_arr_mass_gained_pop, disk_arr_mass_lost_pop))
-        temp_unbound_stars = np.column_stack((unbind_galaxy_pop, unbind_timestep_pop, unbind_orb_a_pop, partner_orb_a_pop, unbind_mass_pop, partner_mass_pop, unbind_ecc_pop, partner_ecc_pop))
+        temp_unbound_stars = np.column_stack((unbind_galaxy_pop, unbind_timestep_pop, unbind_orb_a_pop, partner_orb_a_pop, unbind_mass_pop, partner_mass_pop, unbind_ecc_pop, partner_ecc_pop, unbind_type_pop, partner_type_pop))
         np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_gained mass_lost")
-        np.savetxt(os.path.join(opts.work_directory, unbound_stars_save_name), temp_unbound_stars, delimiter="\t", header="galaxy\ttimestep\tunbind_orb_a\tpartner_orb_a\tunbind_mass\tpartner_mass\tunbind_ecc\tpartner_ecc")
+        np.savetxt(os.path.join(opts.work_directory, unbound_stars_save_name), temp_unbound_stars, delimiter="\t", header="galaxy\ttimestep\tunbind_orb_a\tpartner_orb_a\tunbind_mass\tpartner_mass\tunbind_ecc\tpartner_ecc\tunbind_type\tpartner_type")
 
     toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
