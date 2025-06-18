@@ -1,5 +1,6 @@
 import numpy as np
 from copy import deepcopy
+from pathlib import Path
 
 
 # TODO: dump_record_array writes every value as a float. Make dictionary with all attributes and datatypes? Or is a float fine?
@@ -117,31 +118,6 @@ def obj_to_binary_bh_array(obj):
     binary_bh_array = np.vstack(data)
 
     return (binary_bh_array)
-
-
-def create_save_file(fname=None, cols=None, extra_header=None):
-    """Creates save file and writes header
-
-    Parameters
-    ----------
-    fname : str, optional
-        Filename, by default None
-    cols : list or array, optional
-        Columns to write, can re-order or cut out columns, by default None
-    extra_header : str, optional
-        Extra header, by default None    
-    """
-
-    assert fname is not None, "Need to pass filename"
-    assert cols is not None, "Need to pass column names"
-
-    header = "# " + " ".join(cols) + "\n"
-
-    if extra_header is not None:
-        header = "# " + extra_header + "\n" + header
-
-    with open(fname, "x") as file:
-        file.write(header)
 
 
 class AGNObject(object):
@@ -526,21 +502,6 @@ class AGNObject(object):
             dat_out[attr] = getattr(self, attr)
         return (dat_out)
 
-    def dump_to_file(self, fname=None, cols=None):
-        assert fname is not None, "Need to pass filename"
-        assert cols is not None, "Need to pass column names"
-
-        self.check_consistency()
-
-        attrs_list = []
-        for attr in cols:
-            attrs_list.append(getattr(self, attr))
-
-        temp_array = np.column_stack((tuple(attrs_list)))
-
-        with open(fname, "a") as file:
-            np.savetxt(file, temp_array)
-
     def to_txt(self, fname=None, cols=None, extra_header=None):
         """
         Loads AGNObject into temporary multi-dim numpy array
@@ -559,7 +520,6 @@ class AGNObject(object):
         """
 
         assert fname is not None, "Need to pass filename"
-
         self.check_consistency()
 
         if cols is not None:
@@ -570,7 +530,7 @@ class AGNObject(object):
         header = " ".join(attributes)
 
         if extra_header is not None:
-            header = extra_header + header
+            header = extra_header + "\n" + header
 
         attrs_list = []
         for attr in attributes:
@@ -578,7 +538,11 @@ class AGNObject(object):
 
         temp_array = np.column_stack((tuple(attrs_list)))
 
-        np.savetxt(fname, temp_array, header=header)
+        if Path(fname).is_file():
+            with open(fname, "a") as file:
+                np.savetxt(file, temp_array)
+        else:
+            np.savetxt(fname, temp_array, header=header)
 
     def init_from_file(self, fname=None):
         """
