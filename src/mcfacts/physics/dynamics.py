@@ -15,7 +15,7 @@ import scipy.optimize
 
 from mcfacts.mcfacts_random_state import rng
 from mcfacts.physics.point_masses import time_of_orbital_shrinkage
-from mcfacts.physics.point_masses import si_from_r_g, r_g_from_units
+from mcfacts.physics.point_masses import si_from_r_g, r_g_from_units, r_schwarzschild_of_m
 from mcfacts.physics.binary.evolve import bin_ionization_check
 
 
@@ -366,37 +366,22 @@ def encounters_new_orba_ecc(smbh_mass,
     id_num_flipped_rotation = None
 
     E_give_final, E_take_final, J_give_final, J_take_final = transition_physical_as_EL(E_give_initial, J_give_initial, E_take_initial, J_take_initial, Delta_E, mass_give_geometric, mass_take_geometric, smbh_mass=smbh_mass_geometric, sanity=False)
-    unbind_orb_a = None
-    partner_orb_a = None
-    unbind_mass = None
-    partner_mass = None
-    unbind_ecc = None
-    partner_ecc = None
+
+    # if object is unbound, don't change parameters so they can be recorded
     # give object (typically eccentric) is unbound
     if E_give_initial + Delta_E > 0:
-        orb_a_give_final = 1
-        ecc_give_final = 10
+        orb_a_give_final = orb_a_give
+        ecc_give_final = ecc_give
         id_num_unbound = id_num_give
         orb_a_take_final, ecc_take_final = components_from_EL(E_take_final / mass_take_geometric, J_take_final / mass_take_geometric, smbh_mass=smbh_mass_geometric)
-        unbind_orb_a = orb_a_give
-        partner_orb_a = orb_a_take
-        unbind_mass = mass_give
-        partner_mass = mass_take
-        unbind_ecc = ecc_give
-        partner_ecc = ecc_take
 
     # take object (typically circular) is unbound
     elif E_take_initial - Delta_E > 0:
-        orb_a_take_final = 1
-        ecc_take_final = 2
+        orb_a_take_final = orb_a_take
+        ecc_take_final = ecc_take
         id_num_unbound = id_num_take
         orb_a_give_final, ecc_give_final = components_from_EL(E_give_final / mass_give_geometric, J_give_final / mass_give_geometric, smbh_mass=smbh_mass_geometric)
-        unbind_orb_a = orb_a_take
-        partner_orb_a = orb_a_give
-        unbind_mass = mass_take
-        partner_mass = mass_give
-        unbind_ecc = ecc_take
-        partner_ecc = ecc_give
+
     else:
         orb_a_give_final, ecc_give_final = components_from_EL(E_give_final / mass_give_geometric, J_give_final / mass_give_geometric, smbh_mass=smbh_mass_geometric)
         orb_a_take_final, ecc_take_final = components_from_EL(E_take_final / mass_take_geometric, J_take_final / mass_take_geometric, smbh_mass=smbh_mass_geometric)
@@ -415,11 +400,7 @@ def encounters_new_orba_ecc(smbh_mass,
     assert ~np.isnan(ecc_give_final),"oops"
     assert ~np.isnan(ecc_take_final),"oops"
 
-    unbind_params = (unbind_orb_a, partner_orb_a,
-                     unbind_mass, partner_mass,
-                     unbind_ecc, partner_ecc)
-
-    return orb_a_give_final, orb_a_take_final, ecc_give_final, ecc_take_final, id_num_unbound, id_num_flipped_rotation, unbind_params
+    return orb_a_give_final, orb_a_take_final, ecc_give_final, ecc_take_final, id_num_unbound, id_num_flipped_rotation
 
 
 def circular_singles_encounters_prograde(
@@ -830,7 +811,7 @@ def circular_singles_encounters_prograde_stars(
                             # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
                             # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
                             if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                                new_orb_a_ecc, new_orb_a_circ, new_ecc_ecc, new_ecc_circ, id_num_out, id_num_flip, unbind_params = encounters_new_orba_ecc(
+                                new_orb_a_ecc, new_orb_a_circ, new_ecc_ecc, new_ecc_circ, id_num_out, id_num_flip = encounters_new_orba_ecc(
                                     smbh_mass,
                                     disk_star_pro_orbs_a[ecc_idx], disk_star_pro_orbs_a[circ_idx],
                                     disk_star_pro_masses[ecc_idx], disk_star_pro_masses[circ_idx],
@@ -840,12 +821,6 @@ def circular_singles_encounters_prograde_stars(
                                     delta_energy_strong[i][j], flag_obj_types=0)
                                 if id_num_out is not None:
                                     id_nums_unbound.append(id_num_out)
-                                    unbind_orbs_a.append(unbind_params[0])
-                                    partner_orbs_a.append(unbind_params[1])
-                                    unbind_masses.append(unbind_params[2])
-                                    partner_masses.append(unbind_params[3])
-                                    unbind_eccs.append(unbind_params[4])
-                                    partner_eccs.append(unbind_params[5])
                                 if id_num_flip is not None:
                                     id_nums_flipped_rotation.append(id_num_flip)
                                 # Check if any stars are outside the disk
@@ -930,10 +905,8 @@ def circular_singles_encounters_prograde_stars(
         id_nums_touch = id_nums_poss_touch
 
     id_nums_touch = id_nums_touch.T
-    unbind_param_list = (unbind_orbs_a, partner_orbs_a,
-                         unbind_masses, partner_masses,
-                         unbind_eccs, partner_eccs)
-    return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_unbound, id_nums_flipped_rotation, unbind_param_list)
+
+    return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_unbound, id_nums_flipped_rotation)
 
 
 def circular_singles_encounters_prograde_star_bh(
@@ -1119,12 +1092,6 @@ def circular_singles_encounters_prograde_star_bh(
     id_nums_poss_touch = []
     id_nums_unbound = []
     id_nums_flipped_rotation = []
-    unbind_orbs_a = []
-    partner_orbs_a = []
-    unbind_masses = []
-    partner_masses = []
-    unbind_eccs = []
-    partner_eccs = []
     frac_rhill_sep = []
     if len(circ_prograde_population_indices) > 0:
         for i, circ_idx in enumerate(circ_prograde_population_indices):
@@ -1149,7 +1116,7 @@ def circular_singles_encounters_prograde_star_bh(
                             # drop ecc of a_i by 10% and drop a_i by 10% (P.E. = -GMm/a)
                             # if already pumped in eccentricity, no longer circular, so don't need to follow other interactions
                             if disk_star_pro_orbs_ecc[circ_idx] <= disk_bh_pro_orb_ecc_crit:
-                                new_orb_a_ecc, new_orb_a_circ, new_ecc_ecc, new_ecc_circ, id_num_out, id_num_flip, unbind_params = encounters_new_orba_ecc(
+                                new_orb_a_ecc, new_orb_a_circ, new_ecc_ecc, new_ecc_circ, id_num_out, id_num_flip = encounters_new_orba_ecc(
                                     smbh_mass,
                                     disk_bh_pro_orbs_a[ecc_idx], disk_star_pro_orbs_a[circ_idx],
                                     disk_bh_pro_masses[ecc_idx], disk_star_pro_masses[circ_idx],
@@ -1159,12 +1126,6 @@ def circular_singles_encounters_prograde_star_bh(
                                     delta_energy_strong[i][j], flag_obj_types=1)
                                 if id_num_out is not None:
                                     id_nums_unbound.append(id_num_out)
-                                    unbind_orbs_a.append(unbind_params[0])
-                                    partner_orbs_a.append(unbind_params[1])
-                                    unbind_masses.append(unbind_params[2])
-                                    partner_masses.append(unbind_params[3])
-                                    unbind_eccs.append(unbind_params[4])
-                                    partner_eccs.append(unbind_params[5])
                                 if id_num_flip is not None:
                                     id_nums_flipped_rotation.append(id_num_flip)
                                 # Check if any stars are outside the disk
@@ -1252,10 +1213,8 @@ def circular_singles_encounters_prograde_star_bh(
         id_nums_touch = id_nums_poss_touch
 
     id_nums_touch = id_nums_touch.T
-    unbind_param_list = (unbind_orbs_a, partner_orbs_a,
-                        unbind_masses, partner_masses,
-                        unbind_eccs, partner_eccs)
-    return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, id_nums_touch, id_nums_unbound, id_nums_flipped_rotation, unbind_param_list)
+
+    return (disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, id_nums_touch, id_nums_unbound, id_nums_flipped_rotation)
 
 
 def circular_binaries_encounters_ecc_prograde(
@@ -1673,6 +1632,7 @@ def circular_binaries_encounters_ecc_prograde_star(
     bin_orbital_times = 3.15 * (smbh_mass / 1.e8) * ((bin_orb_a / 1.e3) ** 1.5)
     bin_orbits_per_timestep = timestep_duration_yr/bin_orbital_times
     bin_hill_sphere = bin_orb_a * ((bin_masses / smbh_mass) / 3)**(1 / 3)
+    bin_contact_sep = r_g_from_units(smbh_mass, r_schwarzschild_of_m(bin_mass_1) + r_schwarzschild_of_m(bin_mass_2)).value
 
     # Find the e> crit_ecc population. These are the interlopers that can perturb the circularized population
     ecc_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc >= disk_bh_pro_orb_ecc_crit).nonzero()[0]
@@ -1691,13 +1651,14 @@ def circular_binaries_encounters_ecc_prograde_star(
     epsilon_orb_a = disk_radius_outer * ((ecc_prograde_population_masses / (3 * (ecc_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(ecc_prograde_population_masses))
 
     if np.size(bin_mass_1) == 0:
-        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]))
+        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]), np.array([]))
 
     # Create array of random numbers for the chances of encounters
     chances = rng.uniform(size=(np.size(bin_mass_1), ecc_prograde_population_indices.size))
     id_nums_poss_touch = []
     frac_rhill_sep = []
     id_nums_ionized_bin = []
+    id_nums_merged_bin = []
     # For each binary in blackholes_binary
     for i in range(0, np.size(bin_mass_1)):
         # We compare each single BH to that binary
@@ -1740,6 +1701,8 @@ def circular_binaries_encounters_ecc_prograde_star(
                             if (ecc_prograde_population_locations[j] > disk_radius_outer):
                                 ecc_prograde_population_locations[j] = disk_radius_outer - epsilon_orb_a[j]
                             ecc_prograde_population_eccentricities[j] = ecc_prograde_population_eccentricities[j] * (1 + delta_energy_strong)
+                            if bin_sep[i] <= bin_contact_sep[i]:
+                                id_nums_merged_bin.append(bin_id_nums[i])
 
                         if hard < 0:
                             # Binary is soft w.r.t. interloper
@@ -1791,6 +1754,7 @@ def circular_binaries_encounters_ecc_prograde_star(
     id_nums_poss_touch = np.array(id_nums_poss_touch)
     frac_rhill_sep = np.array(frac_rhill_sep)
     id_nums_ionized_bin = np.array(id_nums_ionized_bin)
+    id_nums_merged_bin = np.array(id_nums_merged_bin)
 
     if id_nums_poss_touch.size > 0:
         # Check if any binaries are marked as both unbound and within a star's Hill sphere
@@ -1798,6 +1762,10 @@ def circular_binaries_encounters_ecc_prograde_star(
         if np.any(np.isin(id_nums_poss_touch, id_nums_ionized_bin)):
             frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_ionized_bin)[:, 1]) == True]
             id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_ionized_bin)[:, 1]) == True, :]
+        # Check if any binaries are marked as both merging and within a star's Hill sphere
+        if np.any(np.isin(id_nums_poss_touch, id_nums_merged_bin)):
+            frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_merged_bin)[:, 1]) == True]
+            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_merged_bin)[:, 1]) == True, :]
 
     # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
     if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
@@ -1823,7 +1791,7 @@ def circular_binaries_encounters_ecc_prograde_star(
 
     id_nums_touch = id_nums_touch.T
 
-    return bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_ionized_bin
+    return bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_ionized_bin, id_nums_merged_bin
 
 
 def circular_binaries_encounters_circ_prograde(
@@ -2271,6 +2239,7 @@ def circular_binaries_encounters_circ_prograde_star(
     bin_orbits_per_timestep = timestep_duration_yr / bin_orbital_times
     bin_binding_energy = const.G.value * (solar_mass ** 2.0) * bin_mass_1 * bin_mass_2 / (si_from_r_g(smbh_mass, bin_sep).to("meter")).value
     bin_hill_sphere = bin_orb_a * ((bin_masses / smbh_mass) / 3)**(1 / 3)
+    bin_contact_sep = r_g_from_units(smbh_mass, r_schwarzschild_of_m(bin_mass_1) + r_schwarzschild_of_m(bin_mass_2)).value
 
     # Find the e< crit_ecc population. These are the interlopers w. low encounter vel that can harden the circularized population
     circ_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit).nonzero()[0]
@@ -2278,6 +2247,7 @@ def circular_binaries_encounters_circ_prograde_star(
     circ_prograde_population_locations = disk_star_pro_orbs_a[circ_prograde_population_indices]
     circ_prograde_population_masses = disk_star_pro_masses[circ_prograde_population_indices]
     circ_prograde_population_eccentricities = disk_star_pro_orbs_ecc[circ_prograde_population_indices]
+    circ_prograde_population_id_nums = disk_star_pro_id_nums[circ_prograde_population_indices]
     # Find min and max radii around SMBH for eccentric orbiters
     ecc_orb_min = disk_star_pro_orbs_a[circ_prograde_population_indices]*(1.0-disk_star_pro_orbs_ecc[circ_prograde_population_indices])
     ecc_orb_max = disk_star_pro_orbs_a[circ_prograde_population_indices]*(1.0+disk_star_pro_orbs_ecc[circ_prograde_population_indices])
@@ -2296,9 +2266,10 @@ def circular_binaries_encounters_circ_prograde_star(
     id_nums_poss_touch = []
     frac_rhill_sep = []
     id_nums_ionized_bin = []
+    id_nums_merged_bin = []
     for i in range(0, np.size(bin_mass_1)):
         for j in range(0, len(circ_prograde_population_locations)):
-            if bin_id_nums[i] not in id_nums_ionized_bin:
+            if (bin_id_nums[i] not in id_nums_ionized_bin) and bin_id_nums[i] not in id_nums_merged_bin:
                 # If binary com orbit lies inside circ orbit [min,max] radius
                 # i.e. does R_m3_minimum lie inside R_bin_maximum and does R_m3_max lie outside R_bin_minimum
                 if (1.0 - bin_orb_ecc[i]) * bin_orb_a[i] < ecc_orb_max[j] and (1.0 + bin_orb_ecc[i]) * bin_orb_a[i] > ecc_orb_min[j]:
@@ -2335,7 +2306,8 @@ def circular_binaries_encounters_circ_prograde_star(
                             if (circ_prograde_population_locations[j] > disk_radius_outer):
                                 circ_prograde_population_locations[j] = disk_radius_outer - epsilon_orb_a[j]
                             circ_prograde_population_eccentricities[j] = circ_prograde_population_eccentricities[j] * (1 + delta_energy_strong)
-
+                            if bin_sep[i] <= bin_contact_sep[i]:
+                                id_nums_merged_bin.append(bin_id_nums[i])
                         if hard < 0:
                             # Binary is soft w.r.t. interloper
                             # Check to see if binary is ionized
@@ -2385,11 +2357,12 @@ def circular_binaries_encounters_circ_prograde_star(
     assert np.all(circ_prograde_population_locations > 0), \
         "circ_prograde_population_locations contains values <= 0"
     assert np.all(bin_sep > 0), \
-        "bin_sep contains values <= 0"
+        f"bin_sep contains values <= 0, {bin_sep}"
 
     id_nums_poss_touch = np.array(id_nums_poss_touch)
     frac_rhill_sep = np.array(frac_rhill_sep)
     id_nums_ionized_bin = np.array(id_nums_ionized_bin)
+    id_nums_merged_bin = np.array(id_nums_merged_bin)
 
     if id_nums_poss_touch.size > 0:
         # Check if any binaries are marked as both unbound and within a star's Hill sphere
@@ -2397,6 +2370,10 @@ def circular_binaries_encounters_circ_prograde_star(
         if np.any(np.isin(id_nums_poss_touch, id_nums_ionized_bin)):
             frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_ionized_bin)[:, 1]) == True]
             id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_ionized_bin)[:, 1]) == True, :]
+        # Check if any binaries are marked as both merging and within a star's Hill sphere
+        if np.any(np.isin(id_nums_poss_touch, id_nums_merged_bin)):
+            frac_rhill_sep = frac_rhill_sep[~(np.isin(id_nums_poss_touch, id_nums_merged_bin)[:, 1]) == True]
+            id_nums_poss_touch = id_nums_poss_touch[~(np.isin(id_nums_poss_touch, id_nums_merged_bin)[:, 1]) == True, :]
 
     # Test if there are any duplicate pairs, if so only return ID numbers of pair with smallest fractional Hill sphere separation
     if np.unique(id_nums_poss_touch).shape != id_nums_poss_touch.flatten().shape:
@@ -2421,7 +2398,7 @@ def circular_binaries_encounters_circ_prograde_star(
         id_nums_touch = id_nums_poss_touch
 
     id_nums_touch = id_nums_touch.T
-    return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_ionized_bin)
+    return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, id_nums_touch, id_nums_ionized_bin, id_nums_merged_bin)
 
 
 def bin_spheroid_encounter(
