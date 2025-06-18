@@ -83,7 +83,6 @@ def arg():
                         help="Set the random seed. Randomly sets one if not passed. Default: None")
     parser.add_argument("--fname-log", default="mcfacts.log", type=str,
                         help="Specify a file in which to save the arguments and some runtime information. Default: mcfacts.log")
-
     #### Begin Argparse Nonsense
     #### Please do not modify between this line and the END Argparse Nonsense
     ####  line unless you have a good reason.
@@ -219,14 +218,14 @@ def main():
                                          verbose=opts.verbose
                                          )
 
-    blackholes_merged_pop = AGNMergedBlackHole()
-    emris_pop = AGNBlackHole()
-    blackholes_binary_gw_pop = AGNBinaryBlackHole()
-    stars_pop = AGNStar()
-    tdes_pop = AGNStar()
-    stars_plunge_pop = AGNStar()
-    stars_explode_pop = AGNExplodedStar()
-    stars_merge_pop = AGNMergedStar()
+    # blackholes_merged_pop = AGNMergedBlackHole()
+    # emris_pop = AGNBlackHole()
+    # blackholes_binary_gw_pop = AGNBinaryBlackHole()
+    # stars_pop = AGNStar()
+    # tdes_pop = AGNStar()
+    # stars_plunge_pop = AGNStar()
+    # stars_explode_pop = AGNExplodedStar()
+    # stars_merge_pop = AGNMergedStar()
 
     # Setting up arrays to keep track of how much mass is cycled through stars
     disk_arr_galaxy = []
@@ -234,19 +233,39 @@ def main():
     disk_arr_mass_lost_pop = np.array([])
     disk_arr_mass_gained_pop = np.array([])
 
-    # Keeping track of unbound stars
-    unbind_galaxy_pop = []
-    unbind_timestep_pop = []
-    unbind_orb_a_pop = np.array([])
-    partner_orb_a_pop = np.array([])
-    unbind_mass_pop = np.array([])
-    partner_mass_pop = np.array([])
-    unbind_ecc_pop = np.array([])
-    partner_ecc_pop = np.array([])
-    unbind_type_pop = np.array([])
-    partner_type_pop = np.array([])
+    # BH file save names
+    basename_mergers, extension = os.path.splitext(opts.fname_output_mergers)
+    basename, extension = os.path.splitext(opts.fname_output)
+    population_save_name = f"{basename_mergers}_population{extension}"
+    survivors_save_name = f"{basename_mergers}_survivors{extension}"
+    emris_save_name = f"{basename_mergers}_emris{extension}"
+    gws_save_name = f"{basename_mergers}_lvk{extension}"
+    unbound_save_name = f"{basename_mergers}_unbound{extension}"
 
-    # tdes_pop = AGNStar()
+    # BH columns to write
+    emri_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "gw_strain", "gw_freq", "id_num"]
+    bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
+    bh_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "spin", "spin_angle", "orb_inc", "orb_ang_mom", "gen", "id_num"]
+    population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
+                       "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
+                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet", "id_num"]
+    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2", "id_num"]
+
+    # Star file save names
+    if opts.flag_add_stars:
+        stars_save_name = f"{basename}_stars_population{extension}"
+        stars_explode_save_name = f"{basename}_stars_exploded{extension}"
+        stars_merge_save_name = f"{basename}_stars_merged{extension}"
+        stars_plunge_save_name = f"{basename}_stars_plunge{extension}"
+        stars_unbound_save_name = f"{basename}_stars_unbound{extension}"
+        tdes_save_name = f"{basename}_tdes{extension}"
+
+        # Defining columns to write for stars
+        stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
+        stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
+                                                "orb_a_bh",   "mass_bh",   "orb_ecc_bh",   "gen_bh", "id_num_bh", "orb_inc_bh"]
+        tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
+        stars_merge_cols = ["galaxy", "time_merged","orb_a_final", "mass_final", "orb_ecc", "log_radius_final", "gen_final", "id_num", "mass_1", "mass_2", "gen_1", "gen_2"]
 
     print("opts.__dict__", opts.__dict__)
     print("opts.smbh_mass", opts.smbh_mass)
@@ -455,6 +474,12 @@ def main():
         # Create empty merged stars object
         stars_merge = AGNMergedStar()
 
+        # Create empty unbound stars object
+        stars_unbound = AGNStar()
+
+        # Create empty unbound BHs object
+        blackholes_unbound = AGNBlackHole()
+
         # Find inner disk BH (potential EMRI)
         bh_id_num_inner_disk = blackholes.id_num[blackholes.orb_a < opts.inner_disk_outer_radius]
         blackholes_inner_disk = blackholes.copy()
@@ -573,21 +598,9 @@ def main():
         disk_arr_mass_gained = []
 
         # Keep track of number of stars flung out of disk/flipped to retrograde
-        num_star_flung = 0
         num_star_flip = 0
         num_bh_flip = 0
         num_starbh_flip = 0
-        # Keep track of unbound stars
-        unbind_galaxy = []
-        unbind_timestep = []
-        unbind_orb_a = []
-        partner_orb_a = []
-        unbind_mass = []
-        partner_mass = []
-        unbind_ecc = []
-        partner_ecc = []
-        unbind_type = []
-        partner_type = []
 
         # Start Loop of Timesteps
         print("Start Loop!")
@@ -1074,7 +1087,7 @@ def main():
 
                 # Star-star encounters
                 rstar_rhill_exponent = 2.0
-                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums, stars_flung_out_id_nums, stars_flipped_id_nums, unbind_params = dynamics.circular_singles_encounters_prograde_stars(
+                stars_pro.orb_a, stars_pro.orb_ecc, star_touch_id_nums, stars_unbound_id_nums, stars_flipped_id_nums = dynamics.circular_singles_encounters_prograde_stars(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
@@ -1089,45 +1102,49 @@ def main():
                     opts.disk_radius_outer
                 )
 
-                if stars_flung_out_id_nums.size > 0:
-                    num_star_flung += stars_flung_out_id_nums.size
-                    stars_pro.remove_id_num(stars_flung_out_id_nums)
-                    filing_cabinet.remove_id_num(stars_flung_out_id_nums)
-                    stars_flipped_id_nums = stars_flipped_id_nums[~np.isin(stars_flipped_id_nums, stars_flung_out_id_nums)]
-                    unbind_galaxy.append(np.full(len(unbind_params[0]), galaxy))
-                    unbind_timestep.append(np.full(len(unbind_params[0]), time_passed))
-                    unbind_orb_a.append(unbind_params[0])
-                    partner_orb_a.append(unbind_params[1])
-                    unbind_mass.append(unbind_params[2])
-                    partner_mass.append(unbind_params[3])
-                    unbind_ecc.append(unbind_params[4])
-                    partner_ecc.append(unbind_params[5])
-                    unbind_type.append(np.full(len(unbind_params[0]), 1))
-                    partner_type.append(np.full(len(unbind_params[0]), 1))
+                if stars_unbound_id_nums.size > 0:
+                    stars_unbound.add_stars(new_id_num=stars_unbound_id_nums,
+                                            new_mass=stars_pro.at_id_num(stars_unbound_id_nums, "mass"),
+                                            new_orb_a=stars_pro.at_id_num(stars_unbound_id_nums, "orb_a"),
+                                            new_log_radius=stars_pro.at_id_num(stars_unbound_id_nums, "log_radius"),
+                                            new_log_teff=stars_pro.at_id_num(stars_unbound_id_nums, "log_teff"),
+                                            new_log_luminosity=stars_pro.at_id_num(stars_unbound_id_nums, "log_luminosity"),
+                                            new_X=stars_pro.at_id_num(stars_unbound_id_nums, "star_X"),
+                                            new_Y=stars_pro.at_id_num(stars_unbound_id_nums, "star_Y"),
+                                            new_Z=stars_pro.at_id_num(stars_unbound_id_nums, "star_Z"),
+                                            new_orb_ang_mom=stars_pro.at_id_num(stars_unbound_id_nums, "orb_ang_mom"),
+                                            new_orb_ecc=stars_pro.at_id_num(stars_unbound_id_nums, "orb_ecc"),
+                                            new_orb_inc=stars_pro.at_id_num(stars_unbound_id_nums, "orb_inc"),
+                                            new_orb_arg_periapse=stars_pro.at_id_num(stars_unbound_id_nums, "orb_arg_periapse"),
+                                            new_gen=stars_pro.at_id_num(stars_unbound_id_nums, "gen"),
+                                            new_galaxy=np.full(stars_unbound_id_nums.size, galaxy),
+                                            new_time_passed=np.full(stars_unbound_id_nums.size, time_passed))
+                    stars_pro.remove_id_num(stars_unbound_id_nums)
+                    filing_cabinet.remove_id_num(stars_unbound_id_nums)
+                    stars_flipped_id_nums = stars_flipped_id_nums[~np.isin(stars_flipped_id_nums, stars_unbound_id_nums)]
 
                 if stars_flipped_id_nums.size > 0:
                     num_star_flip += stars_flipped_id_nums.size
-                    # stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
-                    #                       new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
-                    #                       new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
-                    #                       new_log_radius=stars_pro.at_id_num(stars_flipped_id_nums, "log_radius"),
-                    #                       new_log_teff=stars_pro.at_id_num(stars_flipped_id_nums, "log_teff"),
-                    #                       new_log_luminosity=stars_pro.at_id_num(stars_flipped_id_nums, "log_luminosity"),
-                    #                       new_X=stars_pro.at_id_num(stars_flipped_id_nums, "star_X"),  # no metallicity evolution
-                    #                       new_Y=stars_pro.at_id_num(stars_flipped_id_nums, "star_Y"),
-                    #                       new_Z=stars_pro.at_id_num(stars_flipped_id_nums, "star_Z"),
-                    #                       new_orb_ang_mom=np.full(stars_flipped_id_nums.size, -1),  # orb_ang_mom is -1 because stars are now retrograde
-                    #                       new_orb_ecc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_ecc"),  # orb_ecc is initially very small
-                    #                       new_orb_inc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_inc"),  # orb_inc is zero
-                    #                       new_orb_arg_periapse=stars_pro.at_id_num(stars_flipped_id_nums, "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
-                    #                       new_gen=stars_pro.at_id_num(stars_flipped_id_nums, "gen"),
-                    #                       new_galaxy=stars_pro.at_id_num(stars_flipped_id_nums, "galaxy"),
-                    #                       new_time_passed=stars_pro.at_id_num(stars_flipped_id_nums, "time_passed"))
-                    # filing_cabinet.update(id_num=stars_flipped_id_nums,
-                    #                       attr="direction",
-                    #                       new_info=np.full(stars_flipped_id_nums.size, -1))
+                    stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
+                                          new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
+                                          new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
+                                          new_log_radius=stars_pro.at_id_num(stars_flipped_id_nums, "log_radius"),
+                                          new_log_teff=stars_pro.at_id_num(stars_flipped_id_nums, "log_teff"),
+                                          new_log_luminosity=stars_pro.at_id_num(stars_flipped_id_nums, "log_luminosity"),
+                                          new_X=stars_pro.at_id_num(stars_flipped_id_nums, "star_X"),  # no metallicity evolution
+                                          new_Y=stars_pro.at_id_num(stars_flipped_id_nums, "star_Y"),
+                                          new_Z=stars_pro.at_id_num(stars_flipped_id_nums, "star_Z"),
+                                          new_orb_ang_mom=np.full(stars_flipped_id_nums.size, -1),  # orb_ang_mom is -1 because stars are now retrograde
+                                          new_orb_ecc=np.full(stars_flipped_id_nums.size, 0.0),  # orb_ecc is initially zero
+                                          new_orb_inc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_inc"),  # orb_inc is zero
+                                          new_orb_arg_periapse=stars_pro.at_id_num(stars_flipped_id_nums, "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
+                                          new_gen=stars_pro.at_id_num(stars_flipped_id_nums, "gen"),
+                                          new_galaxy=np.full(stars_flipped_id_nums.size, galaxy),
+                                          new_time_passed=np.full(stars_flipped_id_nums.size, time_passed))
+                    filing_cabinet.update(id_num=stars_flipped_id_nums,
+                                          attr="direction",
+                                          new_info=np.full(stars_flipped_id_nums.size, -1))
                     stars_pro.remove_id_num(stars_flipped_id_nums)
-                    filing_cabinet.remove_id_num(stars_flipped_id_nums)
 
                 if (star_touch_id_nums.size > 0):
                     # Star and star touch each other: stellar merger
@@ -1190,7 +1207,7 @@ def main():
                     stars_pro.remove_id_num(np.unique(star_touch_id_nums.flatten()))
 
                 # Star-BH encounters (circular stars and eccentric BH)
-                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums, bh_star_unbound_id_nums, TEST_flipped_rotation_id_nums, unbind_params = dynamics.circular_singles_encounters_prograde_star_bh(
+                stars_pro.orb_a, stars_pro.orb_ecc, blackholes_pro.orb_a, blackholes_pro.orb_ecc, bh_star_touch_id_nums, bh_star_unbound_id_nums, bh_star_flipped_rotation_id_nums = dynamics.circular_singles_encounters_prograde_star_bh(
                     opts.smbh_mass,
                     stars_pro.orb_a,
                     stars_pro.mass,
@@ -1210,51 +1227,46 @@ def main():
                 )
 
                 if bh_star_unbound_id_nums.size > 0:
+                    blackholes_unbound.add_blackholes(new_id_num=bh_star_unbound_id_nums,
+                                                      new_mass=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "mass"),
+                                                      new_orb_a=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "orb_a"),
+                                                      new_spin=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "spin"),
+                                                      new_spin_angle=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "spin_angle"),
+                                                      new_orb_ang_mom=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "orb_ang_mom"),
+                                                      new_orb_ecc=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "orb_ecc"),
+                                                      new_orb_inc=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "orb_inc"),
+                                                      new_orb_arg_periapse=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "orb_arg_periapse"),
+                                                      new_gen=blackholes_pro.at_id_num(bh_star_unbound_id_nums, "gen"),
+                                                      new_galaxy=np.full(bh_star_unbound_id_nums.size, galaxy),
+                                                      new_time_passed=np.full(bh_star_unbound_id_nums.size, time_passed))
                     blackholes_pro.remove_id_num(bh_star_unbound_id_nums)
-                    stars_pro.remove_id_num(bh_star_unbound_id_nums)
-                    unbound_types = filing_cabinet.at_id_num(bh_star_unbound_id_nums, "category")
-                    partner_types = np.ones(len(unbound_types))
-                    partner_types[unbound_types == 1] = 0
-                    partner_types[unbound_types == 0] = 1
                     filing_cabinet.remove_id_num(bh_star_unbound_id_nums)
-                    TEST_flipped_rotation_id_nums = TEST_flipped_rotation_id_nums[~np.isin(TEST_flipped_rotation_id_nums, bh_star_unbound_id_nums)]
-                    unbind_galaxy.append(np.full(len(unbind_params[0]), galaxy))
-                    unbind_timestep.append(np.full(len(unbind_params[0]), time_passed))
-                    unbind_orb_a.append(unbind_params[0])
-                    partner_orb_a.append(unbind_params[1])
-                    unbind_mass.append(unbind_params[2])
-                    partner_mass.append(unbind_params[3])
-                    unbind_ecc.append(unbind_params[4])
-                    partner_ecc.append(unbind_params[5])
-                    unbind_type.append(unbound_types)
-                    partner_type.append(partner_types)
+                    bh_star_flipped_rotation_id_nums = bh_star_flipped_rotation_id_nums[~np.isin(bh_star_flipped_rotation_id_nums, bh_star_unbound_id_nums)]
 
-                if TEST_flipped_rotation_id_nums.size > 0:
-                    len(stars_pro.at_id_num(TEST_flipped_rotation_id_nums, "mass"))
-                    num_starbh_flip += len(stars_pro.at_id_num(TEST_flipped_rotation_id_nums, "mass"))
-                    num_bh_flip += len(blackholes_pro.at_id_num(TEST_flipped_rotation_id_nums, "mass"))
-                    # stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
-                    #                       new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
-                    #                       new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
-                    #                       new_log_radius=stars_pro.at_id_num(stars_flipped_id_nums, "log_radius"),
-                    #                       new_log_teff=stars_pro.at_id_num(stars_flipped_id_nums, "log_teff"),
-                    #                       new_log_luminosity=stars_pro.at_id_num(stars_flipped_id_nums, "log_luminosity"),
-                    #                       new_X=stars_pro.at_id_num(stars_flipped_id_nums, "star_X"),  # no metallicity evolution
-                    #                       new_Y=stars_pro.at_id_num(stars_flipped_id_nums, "star_Y"),
-                    #                       new_Z=stars_pro.at_id_num(stars_flipped_id_nums, "star_Z"),
-                    #                       new_orb_ang_mom=np.full(stars_flipped_id_nums.size, -1),  # orb_ang_mom is -1 because stars are now retrograde
-                    #                       new_orb_ecc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_ecc"),  # orb_ecc is initially very small
-                    #                       new_orb_inc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_inc"),  # orb_inc is zero
-                    #                       new_orb_arg_periapse=stars_pro.at_id_num(stars_flipped_id_nums, "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
-                    #                       new_gen=stars_pro.at_id_num(stars_flipped_id_nums, "gen"),
-                    #                       new_galaxy=stars_pro.at_id_num(stars_flipped_id_nums, "galaxy"),
-                    #                       new_time_passed=stars_pro.at_id_num(stars_flipped_id_nums, "time_passed"))
-                    # filing_cabinet.update(id_num=stars_flipped_id_nums,
-                    #                       attr="direction",
-                    #                       new_info=np.full(stars_flipped_id_nums.size, -1))
-                    blackholes_pro.remove_id_num(TEST_flipped_rotation_id_nums)
-                    stars_pro.remove_id_num(TEST_flipped_rotation_id_nums)
-                    filing_cabinet.remove_id_num(TEST_flipped_rotation_id_nums)
+                if bh_star_flipped_rotation_id_nums.size > 0:
+                    len(stars_pro.at_id_num(bh_star_flipped_rotation_id_nums, "mass"))
+                    num_starbh_flip += len(stars_pro.at_id_num(bh_star_flipped_rotation_id_nums, "mass"))
+                    num_bh_flip += len(blackholes_pro.at_id_num(bh_star_flipped_rotation_id_nums, "mass"))
+                    stars_retro.add_stars(new_id_num=stars_flipped_id_nums,
+                                          new_mass=stars_pro.at_id_num(stars_flipped_id_nums, "mass"),
+                                          new_orb_a=stars_pro.at_id_num(stars_flipped_id_nums, "orb_a"),
+                                          new_log_radius=stars_pro.at_id_num(stars_flipped_id_nums, "log_radius"),
+                                          new_log_teff=stars_pro.at_id_num(stars_flipped_id_nums, "log_teff"),
+                                          new_log_luminosity=stars_pro.at_id_num(stars_flipped_id_nums, "log_luminosity"),
+                                          new_X=stars_pro.at_id_num(stars_flipped_id_nums, "star_X"),  # no metallicity evolution
+                                          new_Y=stars_pro.at_id_num(stars_flipped_id_nums, "star_Y"),
+                                          new_Z=stars_pro.at_id_num(stars_flipped_id_nums, "star_Z"),
+                                          new_orb_ang_mom=np.full(stars_flipped_id_nums.size, -1),  # orb_ang_mom is -1 because stars are now retrograde
+                                          new_orb_ecc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_ecc"),  # orb_ecc is initially very small
+                                          new_orb_inc=stars_pro.at_id_num(stars_flipped_id_nums, "orb_inc"),  # orb_inc is zero
+                                          new_orb_arg_periapse=stars_pro.at_id_num(stars_flipped_id_nums, "orb_arg_periapse"),  # Assume orb_arg_periapse is same as before
+                                          new_gen=stars_pro.at_id_num(stars_flipped_id_nums, "gen"),
+                                          new_galaxy=stars_pro.at_id_num(stars_flipped_id_nums, "galaxy"),
+                                          new_time_passed=np.full(stars_flipped_id_nums.size, time_passed))
+                    filing_cabinet.update(id_num=stars_flipped_id_nums,
+                                          attr="direction",
+                                          new_info=np.full(stars_flipped_id_nums.size, -1))
+                    stars_pro.remove_id_num(bh_star_flipped_rotation_id_nums)
 
                 if (bh_star_touch_id_nums.size > 0):
                     # BH and star encounter: star blows up, BH accretes mass
@@ -1464,7 +1476,7 @@ def main():
 
                     # Soften/ionize binaries due to encounters with circular single stars
                     rstar_rhill_exponent = 2.0
-                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch, bbh_id_nums_ionized = dynamics.circular_binaries_encounters_circ_prograde_star(
+                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch, bbh_id_nums_ionized, bbh_id_nums_merged = dynamics.circular_binaries_encounters_circ_prograde_star(
                         opts.smbh_mass,
                         stars_pro.orb_a,
                         stars_pro.mass,
@@ -1484,6 +1496,12 @@ def main():
                         opts.disk_radius_outer,
                         opts.mean_harden_energy_delta,
                         opts.var_harden_energy_delta)
+
+                    if (bbh_id_nums_merged.size > 0):
+                        # Change merger flag
+                        a, b = np.where(blackholes_binary.id_num == bbh_id_nums_merged[:, None])
+                        bbh_merged_id_mask = b[np.argsort(a)]
+                        blackholes_binary.flag_merging[bbh_merged_id_mask] = -2
 
                     if (bbh_id_nums_ionized.size > 0):
                         # Append 2 new BH to arrays of single BH locations, masses, spins, spin angles & gens
@@ -1787,7 +1805,7 @@ def main():
                             print("No mergers yet")
                     # Soften/ionize binaries due to encounters with eccentric single stars
                     rstar_rhill_exponent = 2.0
-                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch, bbh_id_nums_ionized = dynamics.circular_binaries_encounters_ecc_prograde_star(
+                    blackholes_binary.bin_sep, blackholes_binary.bin_ecc, blackholes_binary.bin_orb_ecc, stars_pro.orb_a, stars_pro.orb_ecc, bbh_star_id_nums_touch, bbh_id_nums_ionized, bbh_id_nums_merged = dynamics.circular_binaries_encounters_ecc_prograde_star(
                         opts.smbh_mass,
                         stars_pro.orb_a,
                         stars_pro.mass,
@@ -1805,6 +1823,12 @@ def main():
                         opts.disk_bh_pro_orb_ecc_crit,
                         opts.delta_energy_strong_mu,
                         opts.disk_radius_outer)
+
+                    if (bbh_id_nums_merged.size > 0):
+                        # Change merger flag
+                        a, b = np.where(blackholes_binary.id_num == bbh_id_nums_merged[:, None])
+                        bbh_merged_id_mask = b[np.argsort(a)]
+                        blackholes_binary.flag_merging[bbh_merged_id_mask] = -2
 
                     if (bbh_id_nums_ionized.size > 0):
                         # BBH is ionized from star encounter
@@ -3112,18 +3136,18 @@ def main():
         if opts.verbose:
             print("BH locations at Final Time")
             print(blackholes_pro.orb_a)
-        print("Number of binaries = ", blackholes_binary.num)
-        print("Total number of mergers = ", blackholes_merged.num)
+        print("Number of BBH = ", blackholes_binary.num)
+        print("Number of BBH mergers = ", blackholes_merged.num)
+        print("Number of single BH in the disk = ", blackholes_pro.num + blackholes_retro.num + blackholes_inner_disk.num)
+        print("Number of BH unbound from disk = ", blackholes_unbound.num)
         if opts.flag_add_stars:
-            print("Total number of immortal stars = ", len(stars_pro.mass[stars_pro.mass == opts.disk_star_initial_mass_cutoff]))
-            print("Total number of merged stars = ", stars_merge.num)
-            print("Total number of exploded stars = ", stars_explode.num)
-            print("Total number of stars unbound from disk = ", num_star_flung)
-            print("Total number of stars flipped from pro to retro = ", num_star_flip)
-        print("Nbh_disk", disk_bh_num)
-
-        with open("../runs/flung_num.txt", "a+") as f1:
-            f1.write(f"{num_star_flung}\n")
+            print("Star numbers")
+            print("\tNumber of stars in the disk = ", stars_pro.num + stars_retro.num + stars_inner_disk.num)
+            print("\tNumber of immortal stars = ", len(stars_pro.mass[stars_pro.mass == opts.disk_star_initial_mass_cutoff]))
+            print("\tNumber of merged stars = ", stars_merge.num)
+            print("\tNumber of exploded stars = ", stars_explode.num)
+            print("\tNumber of stars unbound from disk = ", stars_unbound.num)
+            print("\tNumber of stars flipped from pro to retro = ", num_star_flip)
 
         with open("../runs/flipped.txt", "a+") as f2:
             f2.write(f"{num_star_flip}\n")
@@ -3167,274 +3191,37 @@ def main():
         blackholes_binary.remove_id_num(blackholes_binary.id_num)
         filing_cabinet.remove_id_num(blackholes_binary.id_num)
 
-        # Add merged BH to the population level object
-        blackholes_merged_pop.add_blackholes(new_id_num=blackholes_merged.id_num,
-                                             new_galaxy=blackholes_merged.galaxy,
-                                             new_bin_orb_a=blackholes_merged.bin_orb_a,
-                                             new_mass_final=blackholes_merged.mass_final,
-                                             new_spin_final=blackholes_merged.spin_final,
-                                             new_spin_angle_final=blackholes_merged.spin_angle_final,
-                                             new_mass_1=blackholes_merged.mass_1,
-                                             new_mass_2=blackholes_merged.mass_2,
-                                             new_spin_1=blackholes_merged.spin_1,
-                                             new_spin_2=blackholes_merged.spin_2,
-                                             new_spin_angle_1=blackholes_merged.spin_angle_1,
-                                             new_spin_angle_2=blackholes_merged.spin_angle_2,
-                                             new_gen_1=blackholes_merged.gen_1,
-                                             new_gen_2=blackholes_merged.gen_2,
-                                             new_chi_eff=blackholes_merged.chi_eff,
-                                             new_chi_p=blackholes_merged.chi_p,
-                                             new_v_kick=blackholes_merged.v_kick,
-                                             new_lum_shock=blackholes_merged.lum_shock,
-                                             new_lum_jet=blackholes_merged.lum_jet,
-                                             new_time_merged=blackholes_merged.time_merged)
-
-        # Add list of all binaries formed to the population level object
-        blackholes_binary_gw_pop.add_binaries(new_id_num=blackholes_binary_gw.id_num,
-                                              new_mass_1=blackholes_binary_gw.mass_1,
-                                              new_mass_2=blackholes_binary_gw.mass_2,
-                                              new_orb_a_1=blackholes_binary_gw.orb_a_1, 
-                                              new_orb_a_2=blackholes_binary_gw.orb_a_2,
-                                              new_spin_1=blackholes_binary_gw.spin_1,
-                                              new_spin_2=blackholes_binary_gw.spin_2,
-                                              new_spin_angle_1=blackholes_binary_gw.spin_angle_1,
-                                              new_spin_angle_2=blackholes_binary_gw.spin_angle_2,
-                                              new_bin_sep=blackholes_binary_gw.bin_sep,
-                                              new_bin_orb_a=blackholes_binary_gw.bin_orb_a,
-                                              new_time_to_merger_gw=blackholes_binary_gw.time_to_merger_gw,
-                                              new_flag_merging=blackholes_binary_gw.flag_merging,
-                                              new_time_merged=blackholes_binary_gw.time_merged,
-                                              new_bin_ecc=blackholes_binary_gw.bin_ecc,
-                                              new_gen_1=blackholes_binary_gw.gen_1,
-                                              new_gen_2=blackholes_binary_gw.gen_2,
-                                              new_bin_orb_ang_mom=blackholes_binary_gw.bin_orb_ang_mom,
-                                              new_bin_orb_inc=blackholes_binary_gw.bin_orb_inc,
-                                              new_bin_orb_ecc=blackholes_binary_gw.bin_orb_ecc,
-                                              new_gw_freq=blackholes_binary_gw.gw_freq,
-                                              new_gw_strain=blackholes_binary_gw.gw_strain,
-                                              new_galaxy=blackholes_binary_gw.galaxy)
-
         # Save the mergers
         galaxy_save_name = f"gal{galaxy_zfilled_str}/{opts.fname_output_mergers}"
         blackholes_merged.to_txt(os.path.join(opts.work_directory, galaxy_save_name), cols=merger_cols)
 
-        # Append each galaxy result to outputs
+        # Save outputs to population level files
+        blackholes_emris.to_txt(os.path.join(opts.work_directory, emris_save_name), emri_cols)
+        blackholes_pro.to_txt(os.path.join(opts.work_directory, survivors_save_name), bh_surviving_cols)
+        blackholes_merged.to_txt(os.path.join(opts.work_directory, population_save_name), population_cols, extra_header=f"Initial seed: {opts.seed}")
+        blackholes_binary_gw.to_txt(os.path.join(opts.work_directory, gws_save_name), binary_gw_cols)
+        blackholes_unbound.to_txt(os.path.join(opts.work_directory, unbound_save_name), bh_cols)
 
-        emris_pop.add_blackholes(new_id_num=blackholes_emris.id_num,
-                                 new_mass=blackholes_emris.mass,
-                                 new_spin=blackholes_emris.spin,
-                                 new_spin_angle=blackholes_emris.spin_angle,
-                                 new_orb_a=blackholes_emris.orb_a,
-                                 new_orb_inc=blackholes_emris.orb_inc,
-                                 new_orb_ang_mom=blackholes_emris.orb_ang_mom,
-                                 new_orb_ecc=blackholes_emris.orb_ecc,
-                                 new_orb_arg_periapse=blackholes_emris.orb_arg_periapse,
-                                 new_galaxy=blackholes_emris.galaxy,
-                                 new_gen=blackholes_emris.gen,
-                                 new_time_passed=blackholes_emris.time_passed,
-                                 new_gw_freq=blackholes_emris.gw_freq,
-                                 new_gw_strain=blackholes_emris.gw_strain)
-
-        tdes_pop.add_stars(new_id_num=stars_tdes.id_num,
-                           new_mass=stars_tdes.mass,
-                           new_log_radius=stars_tdes.log_radius,
-                           new_log_teff=stars_tdes.log_teff,
-                           new_log_luminosity=stars_tdes.log_luminosity,
-                           new_X=stars_tdes.star_X,
-                           new_Y=stars_tdes.star_Y,
-                           new_Z=stars_tdes.star_Z,
-                           new_orb_a=stars_tdes.orb_a,
-                           new_orb_inc=stars_tdes.orb_inc,
-                           new_orb_ang_mom=stars_tdes.orb_ang_mom,
-                           new_orb_ecc=stars_tdes.orb_ecc,
-                           new_orb_arg_periapse=stars_tdes.orb_arg_periapse,
-                           new_galaxy=stars_tdes.galaxy,
-                           new_gen=stars_tdes.gen,
-                           new_time_passed=stars_tdes.time_passed)
-
-        stars_plunge_pop.add_stars(new_id_num=stars_plunge.id_num,
-                                   new_mass=stars_plunge.mass,
-                                   new_log_radius=stars_plunge.log_radius,
-                                   new_log_teff=stars_plunge.log_teff,
-                                   new_log_luminosity=stars_plunge.log_luminosity,
-                                   new_X=stars_plunge.star_X,
-                                   new_Y=stars_plunge.star_Y,
-                                   new_Z=stars_plunge.star_Z,
-                                   new_orb_a=stars_plunge.orb_a,
-                                   new_orb_inc=stars_plunge.orb_inc,
-                                   new_orb_ang_mom=stars_plunge.orb_ang_mom,
-                                   new_orb_ecc=stars_plunge.orb_ecc,
-                                   new_orb_arg_periapse=stars_plunge.orb_arg_periapse,
-                                   new_galaxy=stars_plunge.galaxy,
-                                   new_gen=stars_plunge.gen,
-                                   new_time_passed=stars_plunge.time_passed)
-
-        stars_pop.add_stars(new_id_num=stars_pro.id_num,
-                            new_mass=stars_pro.mass,
-                            new_log_radius=stars_pro.log_radius,
-                            new_log_teff=stars_pro.log_teff,
-                            new_log_luminosity=stars_pro.log_luminosity,
-                            new_X=stars_pro.star_X,
-                            new_Y=stars_pro.star_Y,
-                            new_Z=stars_pro.star_Z,
-                            new_orb_a=stars_pro.orb_a,
-                            new_orb_ang_mom=stars_pro.orb_ang_mom,
-                            new_orb_ecc=stars_pro.orb_ecc,
-                            new_orb_inc=stars_pro.orb_inc,
-                            new_orb_arg_periapse=stars_pro.orb_arg_periapse,
-                            new_galaxy=stars_pro.galaxy,
-                            new_gen=stars_pro.gen,
-                            new_time_passed=stars_pro.time_passed)
-        
-        stars_pop.add_stars(new_id_num=stars_inner_disk.id_num,
-                            new_mass=stars_inner_disk.mass,
-                            new_log_radius=stars_inner_disk.log_radius,
-                            new_log_teff=stars_inner_disk.log_teff,
-                            new_log_luminosity=stars_inner_disk.log_luminosity,
-                            new_X=stars_inner_disk.star_X,
-                            new_Y=stars_inner_disk.star_Y,
-                            new_Z=stars_inner_disk.star_Z,
-                            new_orb_a=stars_inner_disk.orb_a,
-                            new_orb_ang_mom=stars_inner_disk.orb_ang_mom,
-                            new_orb_ecc=stars_inner_disk.orb_ecc,
-                            new_orb_inc=stars_inner_disk.orb_inc,
-                            new_orb_arg_periapse=stars_inner_disk.orb_arg_periapse,
-                            new_galaxy=stars_inner_disk.galaxy,
-                            new_gen=stars_inner_disk.gen,
-                            new_time_passed=stars_inner_disk.time_passed)
-        
-        stars_pop.add_stars(new_id_num=stars_retro.id_num,
-                            new_mass=stars_retro.mass,
-                            new_log_radius=stars_retro.log_radius,
-                            new_log_teff=stars_retro.log_teff,
-                            new_log_luminosity=stars_retro.log_luminosity,
-                            new_X=stars_retro.star_X,
-                            new_Y=stars_retro.star_Y,
-                            new_Z=stars_retro.star_Z,
-                            new_orb_a=stars_retro.orb_a,
-                            new_orb_ang_mom=stars_retro.orb_ang_mom,
-                            new_orb_ecc=stars_retro.orb_ecc,
-                            new_orb_inc=stars_retro.orb_inc,
-                            new_orb_arg_periapse=stars_retro.orb_arg_periapse,
-                            new_galaxy=stars_retro.galaxy,
-                            new_gen=stars_retro.gen,
-                            new_time_passed=stars_retro.time_passed)
-        
-        stars_explode_pop.add_stars(new_id_num_star=stars_explode.id_num_star,
-                                    new_id_num_bh=stars_explode.id_num_bh,
-                                    new_mass_star=stars_explode.mass_star,
-                                    new_mass_bh=stars_explode.mass_bh,
-                                    new_orb_a_star=stars_explode.orb_a_star,
-                                    new_orb_a_bh=stars_explode.orb_a_bh,
-                                    new_star_log_radius=stars_explode.star_log_radius,
-                                    new_orb_inc_star=stars_explode.orb_inc_star,
-                                    new_orb_inc_bh=stars_explode.orb_inc_bh,
-                                    new_orb_ecc_star=stars_explode.orb_ecc_star,
-                                    new_orb_ecc_bh=stars_explode.orb_ecc_bh,
-                                    new_gen_star=stars_explode.gen_star,
-                                    new_gen_bh=stars_explode.gen_bh,
-                                    new_galaxy=stars_explode.galaxy,
-                                    new_time_sn=stars_explode.time_sn
-                                    )
-
-        stars_merge_pop.add_stars(new_id_num=stars_merge.id_num,
-                                  new_galaxy=stars_merge.galaxy,
-                                  new_orb_a_final=stars_merge.orb_a_final,
-                                  new_gen_final=stars_merge.gen_final,
-                                  new_mass_final=stars_merge.mass_final,
-                                  new_mass_1=stars_merge.mass_1,
-                                  new_mass_2=stars_merge.mass_2,
-                                  new_gen_1=stars_merge.gen_1,
-                                  new_gen_2=stars_merge.gen_2,
-                                  new_log_radius_final=stars_merge.log_radius_final,
-                                  new_orb_ecc=stars_merge.orb_ecc,
-                                  new_time_merged=stars_merge.time_merged)
+        if opts.flag_add_stars:
+            stars_tdes.to_txt(os.path.join(opts.work_directory, tdes_save_name), tde_cols)
+            stars_plunge.to_txt(os.path.join(opts.work_directory, stars_plunge_save_name), tde_cols)
+            stars_pro.to_txt(os.path.join(opts.work_directory, stars_save_name), stars_cols, extra_header=f"Initial seed: {opts.seed}")
+            stars_inner_disk.to_txt(os.path.join(opts.work_directory, stars_save_name), stars_cols)
+            stars_retro.to_txt(os.path.join(opts.work_directory, stars_save_name), stars_cols)
+            stars_explode.to_txt(os.path.join(opts.work_directory, stars_explode_save_name), stars_explode_cols)
+            stars_merge.to_txt(os.path.join(opts.work_directory, stars_merge_save_name), stars_merge_cols)
+            stars_unbound.to_txt(os.path.join(opts.work_directory, stars_unbound_save_name), stars_cols)
 
         # Add mass cycled info to population arrays
         disk_arr_timestep_pop = np.concatenate([disk_arr_timestep_pop, disk_arr_timestep])
         disk_arr_mass_gained_pop = np.concatenate([disk_arr_mass_gained_pop, disk_arr_mass_gained])
         disk_arr_mass_lost_pop = np.concatenate([disk_arr_mass_lost_pop, disk_arr_mass_lost])
 
-        # add unbound stars info
-        unbind_timestep.append([])
-        unbind_galaxy.append([])
-        unbind_orb_a.append([])
-        partner_orb_a.append([])
-        unbind_mass.append([])
-        partner_mass.append([])
-        unbind_ecc.append([])
-        partner_ecc.append([])
-        unbind_type.append([])
-        partner_type.append([])
-        unbind_timestep_pop = np.concatenate([unbind_timestep_pop, np.concatenate(unbind_timestep)])
-        unbind_galaxy_pop = np.concatenate([unbind_galaxy_pop, np.concatenate(unbind_galaxy)])
-        unbind_orb_a_pop = np.concatenate([unbind_orb_a_pop, np.concatenate(unbind_orb_a)])
-        partner_orb_a_pop = np.concatenate([partner_orb_a_pop, np.concatenate(partner_orb_a)])
-        unbind_mass_pop = np.concatenate([unbind_mass_pop, np.concatenate(unbind_mass)])
-        partner_mass_pop = np.concatenate([partner_mass_pop, np.concatenate(partner_mass)])
-        unbind_ecc_pop = np.concatenate([unbind_ecc_pop, np.concatenate(unbind_ecc)])
-        partner_ecc_pop = np.concatenate([partner_ecc_pop, np.concatenate(partner_ecc)])
-        unbind_type_pop = np.concatenate([unbind_type_pop, np.concatenate(unbind_type)])
-        partner_type_pop = np.concatenate([partner_type_pop, np.concatenate(partner_type)])
-
-    # save all mergers from Monte Carlo
-    basename, extension = os.path.splitext(opts.fname_output_mergers)
-    population_save_name = f"{basename}_population{extension}"
-    survivors_save_name = f"{basename}_survivors{extension}"
-    emris_save_name = f"{basename}_emris{extension}"
-    tdes_save_name = f"{basename}_tdes{extension}"
-    gws_save_name = f"{basename}_lvk{extension}"
-    stars_save_name = f"{basename}_stars_population{extension}"
-    stars_explode_save_name = f"{basename}_stars_exploded{extension}"
-    stars_merge_save_name = f"{basename}_stars_merged{extension}"
-    stars_plunge_save_name = f"{basename}_stars_plunge{extension}"
-    basename_disk, extension_disk = os.path.splitext(opts.fname_output)
-    disk_mass_cycled_save_name = f"{basename_disk}_diskmasscycled{extension_disk}"
-    unbound_stars_save_name = f"{basename_disk}_unboundstars{extension_disk}"
-
-
-    # Define columns to write
-    emri_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "gw_strain", "gw_freq", "id_num"]
-    bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
-    population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
-                       "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet", "id_num"]
-    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2", "id_num"]
-    stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
-    stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
-                                               "orb_a_bh",   "mass_bh",   "orb_ecc_bh",   "gen_bh", "id_num_bh", "orb_inc_bh"]
-    tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
-    stars_merge_cols = ["galaxy", "time_merged","orb_a_final", "mass_final", "orb_ecc", "log_radius_final", "gen_final", "id_num", "mass_1", "mass_2", "gen_1", "gen_2"]
-
-    # Save things
-    emris_pop.to_txt(os.path.join(opts.work_directory, emris_save_name),
-                     cols=emri_cols)        
-
-    blackholes_pro.to_txt(os.path.join(opts.work_directory, survivors_save_name),
-                          cols=bh_surviving_cols)
-
-    blackholes_binary_gw_pop.to_txt(os.path.join(opts.work_directory, gws_save_name),
-                                    cols=binary_gw_cols)
-
-    # Include initial seed in header
-    blackholes_merged_pop.to_txt(os.path.join(opts.work_directory, population_save_name),
-                                 cols=population_cols, extra_header=f"Initial seed: {opts.seed}\n")
+    disk_mass_cycled_save_name = f"{basename}_diskmasscycled{extension}"
 
     if opts.flag_add_stars:
-        stars_pop.to_txt(os.path.join(opts.work_directory, stars_save_name),
-                                    cols=stars_cols, extra_header=f"Initial seed: {opts.seed}\n")
-        tdes_pop.to_txt(os.path.join(opts.work_directory, tdes_save_name),
-                     cols=tde_cols)
-        stars_plunge_pop.to_txt(os.path.join(opts.work_directory, stars_plunge_save_name),
-                     cols=tde_cols)
-        stars_explode_pop.to_txt(os.path.join(opts.work_directory, stars_explode_save_name),
-                     cols=stars_explode_cols)
-        stars_merge_pop.to_txt(os.path.join(opts.work_directory, stars_merge_save_name),
-                               cols=stars_merge_cols)
         temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep_pop, disk_arr_mass_gained_pop, disk_arr_mass_lost_pop))
-        temp_unbound_stars = np.column_stack((unbind_galaxy_pop, unbind_timestep_pop, unbind_orb_a_pop, partner_orb_a_pop, unbind_mass_pop, partner_mass_pop, unbind_ecc_pop, partner_ecc_pop, unbind_type_pop, partner_type_pop))
         np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_gained mass_lost")
-        np.savetxt(os.path.join(opts.work_directory, unbound_stars_save_name), temp_unbound_stars, delimiter="\t", header="galaxy\ttimestep\tunbind_orb_a\tpartner_orb_a\tunbind_mass\tpartner_mass\tunbind_ecc\tpartner_ecc\tunbind_type\tpartner_type")
 
     toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
