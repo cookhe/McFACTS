@@ -134,9 +134,9 @@ kaila_stars: plots
 	cd runs; \
 	python ../${STARS_PLOTS} \
 	--runs-directory ${wd} \
-	--fname-stars ${wd}/output_mergers_stars_population.dat \
-	--fname-stars-merge ${wd}/output_mergers_stars_merged.dat \
-	--fname-stars-explode ${wd}/output_mergers_stars_exploded.dat \
+	--fname-stars ${wd}/output_stars_population.dat \
+	--fname-stars-merge ${wd}/output_stars_merged.dat \
+	--fname-stars-explode ${wd}/output_stars_exploded.dat \
 	--plots-directory ${wd}
 
 kaila_stars_movie: clean
@@ -162,9 +162,9 @@ kaila_stars_plots: just_plots
 	cd runs; \
 	python ../${STARS_PLOTS} \
 	--runs-directory ${wd} \
-	--fname-stars ${wd}/output_mergers_stars_population.dat \
-	--fname-stars-merge ${wd}/output_mergers_stars_merged.dat \
-	--fname-stars-explode ${wd}/output_mergers_stars_exploded.dat \
+	--fname-stars ${wd}/output_stars_population.dat \
+	--fname-stars-merge ${wd}/output_stars_merged.dat \
+	--fname-stars-explode ${wd}/output_stars_exploded.dat \
 	--plots-directory ${wd}
 
 disk_mass_plots:

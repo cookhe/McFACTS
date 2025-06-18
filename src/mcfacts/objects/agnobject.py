@@ -119,6 +119,31 @@ def obj_to_binary_bh_array(obj):
     return (binary_bh_array)
 
 
+def create_save_file(fname=None, cols=None, extra_header=None):
+    """Creates save file and writes header
+
+    Parameters
+    ----------
+    fname : str, optional
+        Filename, by default None
+    cols : list or array, optional
+        Columns to write, can re-order or cut out columns, by default None
+    extra_header : str, optional
+        Extra header, by default None    
+    """
+
+    assert fname is not None, "Need to pass filename"
+    assert cols is not None, "Need to pass column names"
+
+    header = "# " + " ".join(cols) + "\n"
+
+    if extra_header is not None:
+        header = "# " + extra_header + "\n" + header
+
+    with open(fname, "x") as file:
+        file.write(header)
+
+
 class AGNObject(object):
     """
     A superclass that holds parameters that apply to all objects in McFacts.
@@ -501,31 +526,20 @@ class AGNObject(object):
             dat_out[attr] = getattr(self, attr)
         return (dat_out)
 
-    def to_file(self, fname=None, col_order=None):
-        """
-        Writes AGNObject to csv file. Header row started with `#` character.
-
-        Parameters
-        ----------
-        fname : str
-            filename including path
-        col_order : array of str
-            array of header names to re-order or cut out columns, optional
-        """
-
+    def dump_to_file(self, fname=None, cols=None):
         assert fname is not None, "Need to pass filename"
+        assert cols is not None, "Need to pass column names"
 
         self.check_consistency()
 
-        import pandas
-        samples_out = self.return_record_array()
-        dframe = pandas.DataFrame(samples_out)
-        if col_order is not None:
-            dframe = dframe[col_order]
-        dframe = dframe.fillna(value=np.nan)
-        dframe.to_csv(fname, sep=' ',
-                      header=[f"#{x}" if x == dframe.columns[0] else x for x in dframe.columns],
-                      index=False)  # `#` is not pre-appended...just boolean
+        attrs_list = []
+        for attr in cols:
+            attrs_list.append(getattr(self, attr))
+
+        temp_array = np.column_stack((tuple(attrs_list)))
+
+        with open(fname, "a") as file:
+            np.savetxt(file, temp_array)
 
     def to_txt(self, fname=None, cols=None, extra_header=None):
         """
