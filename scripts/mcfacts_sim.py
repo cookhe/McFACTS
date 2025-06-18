@@ -218,15 +218,6 @@ def main():
                                          verbose=opts.verbose
                                          )
 
-    # blackholes_merged_pop = AGNMergedBlackHole()
-    # emris_pop = AGNBlackHole()
-    # blackholes_binary_gw_pop = AGNBinaryBlackHole()
-    # stars_pop = AGNStar()
-    # tdes_pop = AGNStar()
-    # stars_plunge_pop = AGNStar()
-    # stars_explode_pop = AGNExplodedStar()
-    # stars_merge_pop = AGNMergedStar()
-
     # Setting up arrays to keep track of how much mass is cycled through stars
     disk_arr_galaxy = []
     disk_arr_timestep_pop = np.array([])
