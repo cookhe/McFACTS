@@ -153,7 +153,7 @@ kaila_stars_make_movie: kaila_stars_plots
 	cd runs; \
 	python ../${ORBA_MASS_FRAMES} \
 	--fpath-snapshots ${wd}/gal000/ \
-	--num-timesteps 50 \
+	--num-timesteps 60 \
 	--plots-directory ${wd}/gal000
 	rm -fv ${wd}/runs/orba_mass_movie.mp4
 	ffmpeg -f image2 -framerate 5 -i ${wd}/runs/gal000/orba_mass_movie_timestep_%02d_log.png -vcodec libx264 -pix_fmt yuv420p -crf 22 ${wd}/runs/orba_mass_movie.mp4
