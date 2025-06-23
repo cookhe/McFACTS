@@ -759,7 +759,7 @@ def circular_singles_encounters_prograde_stars(
     ecc_prograde_population_indices = np.asarray(disk_star_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
 
     if (len(circ_prograde_population_indices) == 0) or (len(ecc_prograde_population_indices) == 0):
-        return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]), np.array([]), ()
+        return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]), np.array([])
 
     # Put stellar radii in rg
     disk_star_pro_radius_rg = r_g_from_units(smbh_mass, ((10 ** disk_star_pro_radius) * u.Rsun)).value
@@ -782,12 +782,6 @@ def circular_singles_encounters_prograde_stars(
     frac_rhill_sep = []
     id_nums_unbound = []
     id_nums_flipped_rotation = []
-    unbind_orbs_a = []
-    partner_orbs_a = []
-    unbind_masses = []
-    partner_masses = []
-    unbind_eccs = []
-    partner_eccs = []
     if len(circ_prograde_population_indices) > 0:
         for i, circ_idx in enumerate(circ_prograde_population_indices):
             for j, ecc_idx in enumerate(ecc_prograde_population_indices):
@@ -1070,7 +1064,7 @@ def circular_singles_encounters_prograde_star_bh(
     ecc_prograde_population_indices = np.asarray(disk_bh_pro_orbs_ecc > disk_bh_pro_orb_ecc_crit).nonzero()[0]
 
     if (len(circ_prograde_population_indices) == 0) or (len(ecc_prograde_population_indices) == 0):
-        return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, np.array([]), np.array([]), np.array([]), ()
+        return disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, disk_bh_pro_orbs_a, disk_bh_pro_orbs_ecc, np.array([]), np.array([]), np.array([])
     # Put stellar radii in rg
     disk_star_pro_radius_rg = r_g_from_units(smbh_mass, ((10 ** disk_star_pro_radius) * u.Rsun)).value
 
@@ -2258,7 +2252,7 @@ def circular_binaries_encounters_circ_prograde_star(
     epsilon_orb_a = disk_radius_outer * ((circ_prograde_population_masses / (3 * (circ_prograde_population_masses + smbh_mass)))**(1. / 3.)) * rng.uniform(size=len(circ_prograde_population_masses))
 
     if (np.size(bin_mass_1) == 0):
-        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]))
+        return (bin_sep, bin_ecc, bin_orb_ecc, disk_star_pro_orbs_a, disk_star_pro_orbs_ecc, np.array([]), np.array([]),np.array([]))
 
     # Set up random numbers
     chances = rng.uniform(size=(np.size(bin_mass_1), len(circ_prograde_population_locations)))
