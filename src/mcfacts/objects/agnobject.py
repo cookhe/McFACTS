@@ -382,7 +382,7 @@ class AGNObject(object):
 
         self.check_consistency()
 
-    def at_id_num(self, id_num, attr):
+    def at_id_num(self, id_num, attr=None):
         """Returns the attribute at the specified ID numbers
 
         Parameters
@@ -410,12 +410,19 @@ class AGNObject(object):
         # Ensures that values are returned in the order of the original id_num array
         _, id_mask = np.where(getattr(self, "id_num") == id_num_arr[:, None])
 
-        try:
-            val = getattr(self, attr)[id_mask]
-        except:
-            raise AttributeError("{} is not an attribute of the AGNObject".format(attr))
+        if attr is not None:
+            try:
+                val = getattr(self, attr)[id_mask]
+            except:
+                raise AttributeError("{} is not an attribute of the AGNObject".format(attr))
 
-        return (val)
+            return (val)
+        else:
+            attr_list = get_attr_list(self)
+            attr_str = f"ID(s) {id_num}\n"
+            for attr in attr_list:
+                attr_str += f"\t{attr}\t{getattr(self, attr)[id_mask]}\n"
+            return attr_str[:-2]
 
     def copy(self):
         """
@@ -1877,28 +1884,41 @@ class AGNFilingCabinet(AGNObject):
         new_info : numpy array
             the new data for the attribute
         """
-
-        if not isinstance(attr, str):
-            raise TypeError("`attr` must be passed as a string")
-
-        try:
-            getattr(self, attr)
-        except:
-            raise AttributeError("{} is not an attribute of AGNFilingCabinet".format(attr))
         # Check if passed id_num is a numpy array, if not we make it one
-        if isinstance(id_num, np.ndarray):
-            id_num_arr = id_num
-        elif isinstance(id_num, list):
+        if isinstance(id_num, (np.ndarray, list)):
+            if len(id_num) == 0:
+                return
             id_num_arr = np.array(id_num)
-        elif (isinstance(id_num, float) | isinstance(id_num, (int, np.integer))) & (not isinstance(id_num, bool)):
+        elif (isinstance(id_num, (float, int, np.integer))) & (not isinstance(id_num, bool)):
             id_num_arr = np.array([id_num])
         else:
             print(id_num, type(id_num))
             raise AttributeError("Passed id_num is not a valid type.")
+
         # Ensures that values are returned in the order of the original id_num array
-        a, b = np.where(getattr(self, "id_num") == id_num_arr[:, None])
-        id_mask = b[np.argsort(a)]
-        getattr(self, attr)[id_mask] = new_info
+        _, id_mask = np.where(getattr(self, "id_num") == id_num_arr[:, None])
+        assert len(id_mask) == len(id_num_arr), "Not all IDs exist in AGNFilingCabinet."
+
+        if isinstance(attr, (np.ndarray, list)):
+            try:
+                new_info_arr = np.array(new_info)
+            except:
+                raise ValueError("Not all arrays inside new_info_arr are the same length")
+            assert new_info_arr.shape[0] == len(attr), "Number of attrs and number of arrays inside new_info does not match"
+            for at, ni in zip(attr, new_info):
+                try:
+                    getattr(self, at)[id_mask] = ni
+                except:
+                    raise AttributeError("Attempting to set {} for IDS {} to {}. Check that inputs are correct.".format(at, id_num_arr, ni, at))
+
+        elif isinstance(attr, str):
+            try:
+                getattr(self, attr)[id_mask] = new_info
+            except:
+                raise AttributeError("Attempting to set {} for IDS {} to {}. Check that inputs are correct.".format(attr, id_num_arr, new_info))
+        
+        else:
+            raise TypeError("attr must be a list, array, or string.")
 
     def add_objects(self, new_id_num, new_category, new_orb_a,
                     new_mass, new_orb_ecc, new_size, new_direction, new_disk_inner_outer, fc_num=0):
