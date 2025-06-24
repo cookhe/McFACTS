@@ -24,12 +24,6 @@ from mcfacts.physics import gw
 from mcfacts.physics import migration
 from mcfacts.physics import stellar_interpolation
 #from mcfacts.physics import star_interactions
-from mcfacts.physics import point_masses
-from mcfacts.physics import lum
-from mcfacts.physics import analytical_velo
-#from mcfacts.physics import evolve_bin
-#from mcfacts.external.evolve_binary import evolve_binary
-#rom mcfacts.external.evolve_binary import fit_modeler
 
 from mcfacts.inputs import ReadInputs
 from mcfacts.inputs import data as input_data
@@ -200,6 +194,14 @@ def arg():
 def main():
     """
     """
+    
+    from mcfacts.physics import point_masses
+    from mcfacts.physics import lum
+    from mcfacts.physics import analytical_velo
+
+    from mcfacts.inputs import ReadInputs
+    from mcfacts.inputs import data as input_data
+    
     tic_perf = time.perf_counter()
     # Setting up automated input parameters
     # see IOdocumentation.txt for documentation of variable names/types/etc.

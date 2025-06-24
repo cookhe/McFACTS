@@ -7,9 +7,9 @@ from astropy import constants as const
 from mcfacts.mcfacts_random_state import rng
 from mcfacts.physics.binary import merge
 from mcfacts.physics import analytical_velo, lum
-from mcfacts.physics import evolve_bin
-from mcfacts.external.evolve_binary import evolve_binary
-from mcfacts.external.evolve_binary import fit_modeler
+from mcfacts.external import evolve_bin
+#from scripts.sxs import evolve_binary
+from scripts.sxs import fit_modeler
 
 from mcfacts.physics.point_masses import time_of_orbital_shrinkage, si_from_r_g
 
