@@ -7,9 +7,9 @@ from astropy import constants as const
 from mcfacts.mcfacts_random_state import rng
 from mcfacts.physics.binary import merge
 from mcfacts.physics import analytical_velo, lum
-from mcfacts.external import evolve_bin
+from mcfacts.external.sxs import evolve_binary
 #from scripts.sxs import evolve_binary
-from scripts.sxs import fit_modeler
+from mcfacts.external.sxs import fit_modeler
 
 from mcfacts.physics.point_masses import time_of_orbital_shrinkage, si_from_r_g
 
@@ -382,7 +382,7 @@ def merge_blackholes(blackholes_binary, blackholes_pro, blackholes_merged, bh_bi
     else:
         #bh_v_kick = 200 #evolve_binary.velocity()
         surrogate = fit_modeler.GPRFitters.read_from_file(f"../src/mcfacts/inputs/data/surrogate.joblib")
-        bh_mass_merged, bh_spin_merged, bh_v_kick = evolve_bin.surrogate(
+        bh_mass_merged, bh_spin_merged, bh_v_kick = evolve_binary.surrogate(
             blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_1"),
             blackholes_binary.at_id_num(bh_binary_id_num_merger, "mass_2"),
             blackholes_binary.at_id_num(bh_binary_id_num_merger, "spin_1"),
