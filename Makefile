@@ -153,7 +153,12 @@ kaila_stars_make_movie: kaila_stars_plots
 	cd runs; \
 	python ../${ORBA_MASS_FRAMES} \
 	--fpath-snapshots ${wd}/gal000/ \
+	--fname-stars-merge ${wd}/output_stars_merged.dat \
+	--fname-stars-explode ${wd}/output_stars_exploded.dat \
+	--fname-stars-unbound ${wd}/output_stars_unbound.dat \
+	--fname-bh-unbound ${wd}/output_mergers_unbound.dat \
 	--num-timesteps 60 \
+	--timestep-duration-yr 10000 \
 	--plots-directory ${wd}/gal000
 	rm -fv ${wd}/runs/orba_mass_movie.mp4
 	ffmpeg -f image2 -framerate 5 -i ${wd}/runs/gal000/orba_mass_movie_timestep_%02d_log.png -vcodec libx264 -pix_fmt yuv420p -crf 22 ${wd}/runs/orba_mass_movie.mp4
