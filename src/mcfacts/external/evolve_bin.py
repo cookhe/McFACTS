@@ -2,11 +2,10 @@
 Module to process binary black hole mergers using the surfinBH surrogate model.
 """
 
-import juliacall
+#import juliacall
 import numpy as np
-from mcfacts.external.evolve_binary import fit_modeler
-from mcfacts.external.evolve_binary import evolve_binary
-from mcfacts.physics import evolve_bin
+#from scripts.sxs import fit_modeler
+from scripts.sxs import evolve_binary
 
 import pandas as pd
 import time, os
@@ -18,19 +17,14 @@ def surrogate(m1, m2, s1m, s2m, sa1, sa2, p12, bin_sep, bin_inc, bin_phase, bin_
 
     #print(m1, m2, s1m, s2m, sa1, sa2, p12)
     mass_final, spin_final, kick_final = [], [], []
-    mass_1, mass_2, spin_1_mag, spin_2_mag, spin_angle_1, spin_angle_2, phi_12 = [], [], [], [], [], [], []
-    
-    '''m1 = list(m1)
-    m2 = list(m2)
-    s1m = list(s1m)
-    s2m = list(s2m)
-    sa1 = list(sa1)
-    sa2 = list(sa2)
-    p12 = list(p12)'''
+    #mass_1, mass_2, spin_1_mag, spin_2_mag, spin_angle_1, spin_angle_2, phi_12 = [], [], [], [], [], [], []
     
     for i in range(len(m1)):
         #print(mass_1, mass_2, spin_1_mag, spin_2_mag, spin_angle_1, spin_angle_2, phi_12, bin_sep, bin_inc, bin_phase, bin_orb_a, mass_SMBH, spin_SMBH, surrogate)
-
+        
+        # Variables are all sent to surrogate model 
+        # McFACTS outputs arrays with all values and the surrogate requrires float values 
+        # Calling the values by iterating through the arrays and running the surrogate and then assembling them back into an array
         start = time.time()
         M_f, spin_f, v_f = evolve_binary.evolve_binary(
             m1[i],

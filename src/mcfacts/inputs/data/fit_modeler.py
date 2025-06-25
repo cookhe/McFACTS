@@ -1,5 +1,3 @@
-# NRSurrogate model published by Varma+2019 and modified for use in McFACTS by Keefe Mitman
-
 import joblib
 import warnings
 import numpy as np
