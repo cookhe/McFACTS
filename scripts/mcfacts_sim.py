@@ -34,15 +34,13 @@ from mcfacts.inputs import data as input_data
 from mcfacts.mcfacts_random_state import reset_random
 from mcfacts.objects.agnobject import AGNBlackHole, AGNBinaryBlackHole, AGNMergedBlackHole, AGNStar, AGNMergedStar, AGNExplodedStar, AGNFilingCabinet
 from mcfacts.setup import setupdiskblackholes, setupdiskstars, initializediskstars
+from mcfacts.outputs import merger_cols, binary_cols
+from mcfacts.outputs import emri_cols, bh_surviving_cols, \
+    population_cols, binary_gw_cols, stars_cols, stars_explode_cols, \
+    tde_cols, stars_merge_cols
 
-binary_field_names = "bin_orb_a1 bin_orb_a2 mass1 mass2 spin1 spin2 theta1 theta2 sep bin_com time_gw merger_flag time_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
-
-# columns to write for incremental data files
-merger_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final", "mass_1", "mass_2",
-               "spin_1", "spin_2", "spin_angle_1", "spin_angle_2", "gen_1", "gen_2", "time_merged", ]
-binary_cols = ["orb_a_1", "orb_a_2", "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-               "bin_sep", "bin_orb_a", "time_to_merger_gw", "flag_merging", "time_merged", "bin_ecc",
-               "gen_1", "gen_2", "bin_orb_ang_mom", "bin_orb_inc", "bin_orb_ecc", "gw_freq", "gw_strain", "id_num"]
+#binary_field_names = "bin_orb_a1 bin_orb_a2 mass1 mass2 spin1 spin2 theta1 theta2 sep bin_com time_gw merger_flag time_mgr  gen_1 gen_2  bin_ang_mom bin_ecc bin_incl bin_orb_ecc nu_gw h_bin"
+# This one isn't used anywhere
 
 # Do not change this line EVER
 DEFAULT_INI = impresources.files(input_data) / "model_choice.ini"
@@ -2323,7 +2321,7 @@ def main():
                     if num_bbh_gw_tracked == 0:
                         old_bbh_gw_freq = 9.e-7*np.ones(bh_binary_id_num_gw.size)
                     if num_bbh_gw_tracked > 0:
-                        old_bbh_gw_freq = bbh_gw_freq
+                        old_bbh_gw_freq = blackholes_binary.at_id_num(bh_binary_id_num_gw, "gw_freq")
 
                     num_bbh_gw_tracked = bh_binary_id_num_gw.size
 
@@ -2746,7 +2744,8 @@ def main():
                     new_gen=blackholes_pro.at_id_num(bh_id_num_pro_inner_disk, "gen"),
                     new_galaxy=blackholes_pro.at_id_num(bh_id_num_pro_inner_disk, "galaxy"),
                     new_time_passed=blackholes_pro.at_id_num(bh_id_num_pro_inner_disk, "time_passed"),
-                    new_id_num=blackholes_pro.at_id_num(bh_id_num_pro_inner_disk, "id_num")
+                    new_id_num=blackholes_pro.at_id_num(bh_id_num_pro_inner_disk, "id_num"),
+                    new_gw_freq=9.e-7 * np.ones(len(bh_id_num_pro_inner_disk))
                 )
 
                 # Remove from blackholes_pro and update filing_cabinet
@@ -2800,7 +2799,8 @@ def main():
                     new_gen=blackholes_retro.at_id_num(bh_id_num_retro_inner_disk, "gen"),
                     new_galaxy=blackholes_retro.at_id_num(bh_id_num_retro_inner_disk, "galaxy"),
                     new_time_passed=blackholes_retro.at_id_num(bh_id_num_retro_inner_disk, "time_passed"),
-                    new_id_num=blackholes_retro.at_id_num(bh_id_num_retro_inner_disk, "id_num")
+                    new_id_num=blackholes_retro.at_id_num(bh_id_num_retro_inner_disk, "id_num"),
+                    new_gw_freq=9.e-7*np.ones(len(bh_id_num_retro_inner_disk))
                 )
                 # Remove from blackholes_retro and update filing_cabinet
                 blackholes_retro.remove_id_num(bh_id_num_retro_inner_disk)
@@ -2856,8 +2856,8 @@ def main():
                 # On 1st run through define old GW freqs (at say 9.e-7 Hz, since evolution change is 1e-6Hz)
                 if blackholes_emris.num == 0:
                     old_gw_freq = 9.e-7*np.ones(blackholes_inner_disk.num)
-                if (blackholes_emris.num > 0):
-                    old_gw_freq = emri_gw_freq
+                if blackholes_emris.num > 0:
+                    old_gw_freq = blackholes_inner_disk.gw_freq
 
                 emri_gw_strain, emri_gw_freq = emri.evolve_emri_gw(
                     blackholes_inner_disk,
@@ -2866,6 +2866,9 @@ def main():
                     opts.smbh_mass,
                     agn_redshift
                 )
+
+                blackholes_inner_disk.gw_freq = emri_gw_freq
+                blackholes_inner_disk.gw_strain = emri_gw_strain
 
             if (stars_inner_disk.num > 0):
                 # FIX THIS: Return the new evolved bh_orb_ecc_inner_disk as they decay inwards.
