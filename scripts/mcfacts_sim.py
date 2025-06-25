@@ -566,7 +566,7 @@ def main():
 
         while time_passed < time_final:
             # Record snapshots if user wishes
-            if opts.save_snapshots == 0:
+            if opts.save_snapshots == 1:
 
                 blackholes_pro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_pro_{timestep_current_num}.dat"))
                 blackholes_retro.to_txt(os.path.join(opts.work_directory, f"gal{galaxy_zfilled_str}/output_bh_single_retro_{timestep_current_num}.dat"))
