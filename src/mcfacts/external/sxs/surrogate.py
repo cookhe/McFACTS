@@ -3,7 +3,7 @@ import quaternionic
 from sxs import WaveformModes
 from sxs import m_sun_in_seconds
 
-import fit_modeler
+import mcfacts.external.sxs.fit_modeler
 
 import juliacall
 
