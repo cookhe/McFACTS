@@ -50,7 +50,8 @@ MSTAR_RUNS_WKDIR_FIXED = ${HERE}/runs_mstar_bins_fixed
 # gwalk (pip3 install gwalk)
 FNAME_GWTC2_NAL = ${HOME}/Repos/nal-data/GWTC-2.nal.hdf5
 #Set this to change your working directory
-wd=${HC_WKDIR}
+# wd=${HC_WKDIR}
+wd=${HERE}
 
 ## Setup for dumb parallelization
 MBINS_FIXED := \
