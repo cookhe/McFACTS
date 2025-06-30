@@ -3063,6 +3063,7 @@ def main():
         print("Number of BBH mergers = ", blackholes_merged.num)
         print("Number of single BH in the disk = ", blackholes_pro.num + blackholes_retro.num + blackholes_inner_disk.num)
         print("Number of BH unbound from disk = ", blackholes_unbound.num)
+        print("Number of BH flipped from pro to retro = ", num_bh_flip)
         if opts.flag_add_stars:
             print("Star numbers")
             print("\tNumber of stars in the disk = ", stars_pro.num + stars_retro.num + stars_inner_disk.num)
@@ -3070,16 +3071,8 @@ def main():
             print("\tNumber of merged stars = ", stars_merge.num)
             print("\tNumber of exploded stars = ", stars_explode.num)
             print("\tNumber of stars unbound from disk = ", stars_unbound.num)
-            print("\tNumber of stars flipped from pro to retro = ", num_star_flip)
+            print("\tNumber of stars flipped from pro to retro = ", num_star_flip + num_starbh_flip)
 
-        with open("../runs/flipped.txt", "a+") as f2:
-            f2.write(f"{num_star_flip}\n")
-
-        with open("../runs/flip_bhstar.txt", "a+") as f3:
-            f3.write(f"{num_bh_flip}\n")
-
-        with open("../runs/flip_starbh.txt","a+") as f4:
-            f4.write(f"{num_starbh_flip}\n")
         # Write out all singletons after AGN episode so we can use as input to another AGN phase
 
         # Assume that all BH binaries break apart
