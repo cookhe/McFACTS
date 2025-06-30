@@ -154,11 +154,15 @@ kaila_stars_make_movie: kaila_stars_plots
 	--fname-stars-explode ${wd}/output_stars_exploded.dat \
 	--fname-stars-unbound ${wd}/output_stars_unbound.dat \
 	--fname-bh-unbound ${wd}/output_mergers_unbound.dat \
+	--fname-emri ${wd}/output_mergers_emris.dat \
+	--fname-star-tde ${wd}/output_tdes.dat \
+	--fname-star-plunge ${wd}/output_stars_plunge.dat \
 	--num-timesteps 60 \
 	--timestep-duration-yr 10000 \
-	--plots-directory ${wd}/gal000
+	--plots-directory ${wd}/gal000 \
+	--plot-objects 0
 	rm -fv ${wd}/runs/orba_mass_movie.mp4
-	ffmpeg -f image2 -framerate 5 -i ${wd}/runs/gal000/orba_mass_movie_timestep_%02d_log.png -vcodec libx264 -pix_fmt yuv420p -crf 22 ${wd}/runs/orba_mass_movie.mp4
+	ffmpeg -f image2 -framerate 5 -i ${wd}/runs/gal000/orba_mass_movie_timestep_%03d_log.png -vcodec libx264 -pix_fmt yuv420p -crf 22 ${wd}/runs/orba_mass_movie.mp4
 
 kaila_stars_plots: just_plots
 	cd runs; \
