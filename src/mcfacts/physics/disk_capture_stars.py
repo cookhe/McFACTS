@@ -57,6 +57,7 @@ def stellar_mass_captured_nsc(disk_lifetime, smbh_mass, nsc_density_index_inner,
     # Mass fraction of stars in NSC
     f_star = total_mass_star_in_nsc / nsc_mass_si
 
+    # sigma_NSC = 2.3 km/s (M_SMBH / Msun) ^ (1/4.38) given by Kormendy and Ho (2013), 2013ARA&A..51..511K
     disk_velocity_dispersion = (2.3 * u.km / u.second) * ((smbh_mass_si / u.Msun) ** (1. / 4.38))
 
     # Gravitational influence radius for disk
@@ -71,6 +72,7 @@ def stellar_mass_captured_nsc(disk_lifetime, smbh_mass, nsc_density_index_inner,
 
     star_mass_average = (setupdiskstars.setup_disk_stars_mass_avg(disk_star_mass_min_init, disk_star_mass_max_init, nsc_imf_star_powerlaw_index)) * u.Msun
 
+    # given by eqn 46 in WZL2024, Sigma_sun * (m / Msun) ^-1/2
     star_surface_density = ((1.39e11) * (u.gram/u.cm**2) * ((star_mass_average / u.Msun) ** -0.5))
 
     captured_mass = (2. * smbh_mass_si * f_star * ((disk_surface_density_at_rm_rg / star_surface_density) * (disk_lifetime_si / disk_orbital_period)) ** (1. - (nsc_density_index_inner / 3.))).to("Msun")
@@ -146,6 +148,7 @@ def setup_captured_stars_orbs_a(num_stars_captured, disk_lifetime, smbh_mass, di
     disk_lifetime_si = disk_lifetime * u.year
     smbh_mass_si = smbh_mass * u.Msun
 
+    # sigma_NSC = 2.3 km/s (M_SMBH / Msun) ^ (1/4.38) given by Kormendy and Ho (2013), 2013ARA&A..51..511K
     disk_velocity_dispersion = (2.3 * u.km / u.second) * ((smbh_mass_si / u.Msun) ** (1. / 4.38))
 
     # Gravitational influence radius for disk
@@ -165,6 +168,7 @@ def setup_captured_stars_orbs_a(num_stars_captured, disk_lifetime, smbh_mass, di
     radius_tde_si = (star_radius_avg * (smbh_mass_si / star_mass_average_si) ** (1/3)).to("pc")
     radius_tde_rg = r_g_from_units(smbh_mass_si, radius_tde_si)
 
+    # given by eqn 46 in WZL2024, Sigma_sun * (m / Msun) ^-1/2
     star_surface_density = ((1.39e11) * (u.gram/u.cm**2) * ((star_mass_average_si / u.Msun) ** -0.5))
 
     # Disk orbital period at gravitational influence radius
