@@ -345,23 +345,6 @@ def encounters_new_orba_ecc(smbh_mass,
     mu_geometric = mass_give_geometric * mass_take_geometric / (mass_give_geometric + mass_take_geometric)
     Delta_E = delta_energy_strong * mu_geometric * (1 / ((1 / v_relative**2) + (1 / v_esc_sq)))
 
-    # print("RICHARD STUFF")
-    # print("flag_obj_types", flag_obj_types)
-    # print("orb_a_give", orb_a_give)
-    # print("orb_a_take",orb_a_take)
-    # print("mass_give",mass_give)
-    # print("mass_take",mass_take)
-    # print("ecc_give",ecc_give)
-    # print("ecc_take",ecc_take)
-    # print("radius_give", radius_give_geometric)
-    # print("radius_take", radius_take)
-    # print("radius_take_geometric",radius_take_geometric)
-    # print("v_esc_sq",v_esc_sq)
-    # print("v_relative",v_relative)
-    # print("mu_geometric",mu_geometric)
-    # print("delta_energy_strong",delta_energy_strong)
-    # print("Delta_E",Delta_E)
-
     id_num_unbound = None
     id_num_flipped_rotation = None
 
@@ -390,15 +373,10 @@ def encounters_new_orba_ecc(smbh_mass,
     if J_give_final < 0:
         ecc_give_final = 0.0
         id_num_flipped_rotation = id_num_give
-        print("FLIPPED ECC")
     # take object is flipped from prograde to retrograde
     elif J_take_final < 0:
         ecc_take_final = 0.0
         id_num_flipped_rotation = id_num_take
-        print("FLIPPED CIRC")
-
-    assert ~np.isnan(ecc_give_final),"oops"
-    assert ~np.isnan(ecc_take_final),"oops"
 
     return orb_a_give_final, orb_a_take_final, ecc_give_final, ecc_take_final, id_num_unbound, id_num_flipped_rotation
 
