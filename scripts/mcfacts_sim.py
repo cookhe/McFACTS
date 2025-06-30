@@ -2660,8 +2660,6 @@ def main():
                     star_mass_captured = captured_stars[time_passed][1]
                     star_orb_a_captured = captured_stars[time_passed][2]
                     star_orb_inc_captured = np.full(num_star_captured, 0.0)  # setupdiskstars.setup_disk_stars_inclination(num_star_captured)
-                    star_orb_ang_mom_captured = setupdiskstars.setup_disk_stars_orb_ang_mom(num_star_captured)
-                    star_orb_arg_periapse_captured = setupdiskstars.setup_disk_stars_arg_periapse(num_star_captured)
                     star_orb_ecc_captured = np.full(num_star_captured, 0.0)
                     star_X_captured, star_Y_captured, star_Z_captured = setupdiskstars.setup_disk_stars_comp(star_num=num_star_captured,
                                                                                                              star_ZAMS_metallicity=opts.nsc_star_metallicity_z_init,
@@ -2677,9 +2675,9 @@ def main():
                                         new_Y=star_Y_captured,
                                         new_Z=star_Z_captured,
                                         new_orb_inc=star_orb_inc_captured,
-                                        new_orb_ang_mom=star_orb_ang_mom_captured,
+                                        new_orb_ang_mom=np.ones(num_star_captured),
                                         new_orb_ecc=star_orb_ecc_captured,
-                                        new_orb_arg_periapse=star_orb_arg_periapse_captured,
+                                        new_orb_arg_periapse=np.full(num_star_captured, -1.5),
                                         new_gen=np.full(num_star_captured, 1),
                                         new_galaxy=np.full(num_star_captured, galaxy),
                                         new_time_passed=np.full(num_star_captured, time_passed),
