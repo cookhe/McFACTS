@@ -35,7 +35,7 @@ from mcfacts.mcfacts_random_state import reset_random
 from mcfacts.objects.agnobject import AGNBlackHole, AGNBinaryBlackHole, AGNMergedBlackHole, AGNStar, AGNMergedStar, AGNExplodedStar, AGNFilingCabinet
 from mcfacts.setup import setupdiskblackholes, setupdiskstars, initializediskstars
 from mcfacts.outputs import merger_cols, binary_cols
-from mcfacts.outputs import emri_cols, bh_surviving_cols, \
+from mcfacts.outputs import emri_cols, bh_surviving_cols, bh_cols, \
     population_cols, binary_gw_cols, stars_cols, stars_explode_cols, \
     tde_cols, stars_merge_cols
 
@@ -216,12 +216,6 @@ def main():
                                          verbose=opts.verbose
                                          )
 
-    # Setting up arrays to keep track of how much mass is cycled through stars
-    disk_arr_galaxy = []
-    disk_arr_timestep_pop = np.array([])
-    disk_arr_mass_lost_pop = np.array([])
-    disk_arr_mass_gained_pop = np.array([])
-
     # BH file save names
     basename_mergers, extension = os.path.splitext(opts.fname_output_mergers)
     basename, extension = os.path.splitext(opts.fname_output)
@@ -231,15 +225,6 @@ def main():
     gws_save_name = f"{basename_mergers}_lvk{extension}"
     unbound_save_name = f"{basename_mergers}_unbound{extension}"
 
-    # BH columns to write
-    emri_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "gw_strain", "gw_freq", "id_num"]
-    bh_surviving_cols = ["galaxy", "orb_a", "mass", "spin", "spin_angle", "gen", "id_num"]
-    bh_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "spin", "spin_angle", "orb_inc", "orb_ang_mom", "gen", "id_num"]
-    population_cols = ["galaxy", "bin_orb_a", "mass_final", "chi_eff", "spin_final", "spin_angle_final",
-                       "mass_1", "mass_2", "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
-                       "gen_1", "gen_2", "time_merged", "chi_p", "v_kick", "lum_shock", "lum_jet", "id_num"]
-    binary_gw_cols = ["galaxy", "time_merged", "bin_sep", "mass_total", "bin_ecc", "gw_strain", "gw_freq", "gen_1", "gen_2", "id_num"]
-
     # Star file save names
     if opts.flag_add_stars:
         stars_save_name = f"{basename}_stars_population{extension}"
@@ -248,14 +233,7 @@ def main():
         stars_plunge_save_name = f"{basename}_stars_plunge{extension}"
         stars_unbound_save_name = f"{basename}_stars_unbound{extension}"
         tdes_save_name = f"{basename}_tdes{extension}"
-        disk_mass_cycled_save_name = f"{basename}_diskmasscycled{extension}
-
-        # Defining columns to write for stars
-        stars_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
-        stars_explode_cols = ["galaxy", "time_sn", "orb_a_star", "mass_star", "orb_ecc_star", "star_log_radius", "gen_star", "id_num_star", "orb_inc_star",
-                                                "orb_a_bh",   "mass_bh",   "orb_ecc_bh",   "gen_bh", "id_num_bh", "orb_inc_bh"]
-        tde_cols = ["galaxy", "time_passed", "orb_a", "mass", "orb_ecc", "log_radius", "gen", "id_num", "log_teff", "log_luminosity", "star_X", "star_Y", "star_Z"]
-        stars_merge_cols = ["galaxy", "time_merged","orb_a_final", "mass_final", "orb_ecc", "log_radius_final", "gen_final", "id_num", "mass_1", "mass_2", "gen_1", "gen_2"]
+        disk_mass_cycled_save_name = f"{basename}_diskmasscycled{extension}"
 
         with open(os.path.join(opts.work_directory, disk_mass_cycled_save_name), "w") as file:
             file.write("galaxy timestep mass_gained mass_lost\n")
@@ -1466,8 +1444,7 @@ def main():
 
                     if (bbh_id_nums_merged.size > 0):
                         # Change merger flag
-                        a, b = np.where(blackholes_binary.id_num == bbh_id_nums_merged[:, None])
-                        bbh_merged_id_mask = b[np.argsort(a)]
+                        _, bbh_merged_id_mask = np.where(blackholes_binary.id_num == bbh_id_nums_merged[:, None])
                         blackholes_binary.flag_merging[bbh_merged_id_mask] = -2
 
                     if (bbh_id_nums_ionized.size > 0):
@@ -1537,8 +1514,7 @@ def main():
 
                         if (star_id_nums_fakequasi.size > 0):
                             # if star mass > binary mass the BBH hardens so bin_sep = Rsun and star blows up
-                            a, b = np.where(blackholes_binary.id_num == bbh_id_nums_fakequasi[:, None])
-                            bbh_fakequasi_id_mask = b[np.argsort(a)]
+                            _, bbh_fakequasi_id_mask = np.where(blackholes_binary.id_num == bbh_id_nums_fakequasi[:, None])
                             blackholes_binary.bin_sep[bbh_fakequasi_id_mask] = point_masses.r_g_from_units(opts.smbh_mass, 1.*u.Rsun).value
                             stars_explode.add_stars(new_id_num_star=star_id_nums_fakequasi,
                                                     new_id_num_bh=bbh_id_nums_fakequasi,
@@ -1564,8 +1540,7 @@ def main():
 
                         if (star_id_nums_normal.size > 0):
                             # if star mass < binary mass the BBH accretes and spins up and star blows up
-                            a, b = np.where(blackholes_binary.id_num == bbh_id_nums_normal[:, None])
-                            bbh_normal_id_mask = b[np.argsort(a)]
+                            _, bbh_normal_id_mask = np.where(blackholes_binary.id_num == bbh_id_nums_normal[:, None])
                             stars_explode.add_stars(new_id_num_star=star_id_nums_normal,
                                                     new_id_num_bh=bbh_id_nums_normal,
                                                     new_mass_star=stars_pro.at_id_num(star_id_nums_normal, "mass"),
@@ -1774,8 +1749,7 @@ def main():
 
                     if (bbh_id_nums_merged.size > 0):
                         # Change merger flag
-                        a, b = np.where(blackholes_binary.id_num == bbh_id_nums_merged[:, None])
-                        bbh_merged_id_mask = b[np.argsort(a)]
+                        _, bbh_merged_id_mask = np.where(blackholes_binary.id_num == bbh_id_nums_merged[:, None])
                         blackholes_binary.flag_merging[bbh_merged_id_mask] = -2
 
                     if (bbh_id_nums_ionized.size > 0):
@@ -1844,8 +1818,7 @@ def main():
 
                         if (star_id_nums_fakequasi.size > 0):
                             # if star mass > binary mass the BBH hardens so bin_sep = Rsun and star blows up
-                            a, b = np.where(blackholes_binary.id_num == bbh_id_nums_fakequasi[:, None])
-                            bbh_fakequasi_id_mask = b[np.argsort(a)]
+                            _, bbh_fakequasi_id_mask = np.where(blackholes_binary.id_num == bbh_id_nums_fakequasi[:, None])
                             blackholes_binary.bin_sep[bbh_fakequasi_id_mask] = point_masses.r_g_from_units(opts.smbh_mass, 1.*u.Rsun).value
                             stars_explode.add_stars(new_id_num_star=star_id_nums_fakequasi,
                                                     new_id_num_bh=bbh_id_nums_fakequasi,
@@ -1870,8 +1843,7 @@ def main():
 
                         if (star_id_nums_normal.size > 0):
                             # if star mass < binary mass the BBH accretes and spins up and star blows up
-                            a, b = np.where(blackholes_binary.id_num == bbh_id_nums_normal[:, None])
-                            bbh_normal_id_mask = b[np.argsort(a)]
+                            _, bbh_normal_id_mask = np.where(blackholes_binary.id_num == bbh_id_nums_normal[:, None])
                             stars_explode.add_stars(new_id_num_star=star_id_nums_normal,
                                                     new_id_num_bh=bbh_id_nums_normal,
                                                     new_mass_star=stars_pro.at_id_num(star_id_nums_normal, "mass"),
@@ -2891,7 +2863,7 @@ def main():
                 if (stars_tdes.num == 0) and (stars_plunge.num == 0):
                     old_gw_tde_freq = 9.e-7*np.ones(stars_inner_disk.num)
                 if (stars_tdes.num > 0) or (stars_plunge.num > 0):
-                    old_gw_tde_freq = tde_gw_freq
+                    old_gw_tde_freq = np.concatenate((tde_gw_freq, 9.e-7*np.ones(np.abs(stars_inner_disk.num - len(tde_gw_freq)))))
 
                 tde_gw_strain, tde_gw_freq = emri.evolve_emri_gw( # KN: TDEs need their own method here bc drag
                     stars_inner_disk,
@@ -2950,6 +2922,10 @@ def main():
                     new_gen=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "gen"),
                     new_id_num=stars_inner_disk.at_id_num(star_rlof_smbh_id_num, "id_num")
                     )
+                _, star_inner_disk_mask = np.where(stars_inner_disk.id_num == star_rlof_smbh_id_num[:, None])
+                gw_tde_keep_mask = np.ones(len(tde_gw_freq), dtype=bool)
+                gw_tde_keep_mask[star_inner_disk_mask] = 0
+                tde_gw_freq = tde_gw_freq[gw_tde_keep_mask]
                 stars_inner_disk.remove_id_num(star_rlof_smbh_id_num)
                 filing_cabinet.remove_id_num(star_rlof_smbh_id_num)
 
@@ -3041,7 +3017,6 @@ def main():
 
             # Record mass cycled parameters
             disk_arr_timestep.append(time_passed)
-            disk_arr_galaxy.append(galaxy)
             disk_arr_mass_gained.append(sum(disk_mass_gained))
             disk_arr_mass_lost.append(sum(disk_mass_lost))
 
@@ -3127,19 +3102,9 @@ def main():
             stars_explode.to_txt(os.path.join(opts.work_directory, stars_explode_save_name), stars_explode_cols)
             stars_merge.to_txt(os.path.join(opts.work_directory, stars_merge_save_name), stars_merge_cols)
             stars_unbound.to_txt(os.path.join(opts.work_directory, stars_unbound_save_name), stars_cols)
-            temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep, disk_arr_mass_gained, disk_arr_mass_lost))
+            temp_mass_cycled = np.column_stack((np.full(len(disk_arr_timestep), galaxy), disk_arr_timestep, disk_arr_mass_gained, disk_arr_mass_lost))
             with open(os.path.join(opts.work_directory, disk_mass_cycled_save_name), "a") as file:
                 np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled)
-        # Add mass cycled info to population arrays
-        disk_arr_timestep_pop = np.concatenate([disk_arr_timestep_pop, disk_arr_timestep])
-        disk_arr_mass_gained_pop = np.concatenate([disk_arr_mass_gained_pop, disk_arr_mass_gained])
-        disk_arr_mass_lost_pop = np.concatenate([disk_arr_mass_lost_pop, disk_arr_mass_lost])
-
-    #disk_mass_cycled_save_name = f"{basename}_diskmasscycled{extension}"
-
-    #if opts.flag_add_stars:
-    #    temp_mass_cycled = np.column_stack((disk_arr_galaxy, disk_arr_timestep_pop, disk_arr_mass_gained_pop, disk_arr_mass_lost_pop))
-    #    np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, header="galaxy timestep mass_gained mass_lost")
 
     toc_perf = time.perf_counter()
     print("Perf time: %0.2f"%(toc_perf - tic_perf))
