@@ -28,7 +28,7 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
         Mass [M_sun] of the SMBH
     agn_redshift : float
         Redshift [unitless] of the SMBH
-    flag_include_old_gw_freq : boolean
+    flag_include_old_gw_freq : int
         Flag indicating if old_gw_freq should be included in calculations
         if not, we use the hardcoded value (see note below)
         0 if no, 1 if yes
@@ -80,7 +80,10 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
     # But power builds up in band over multiple cycles!
     # So characteristic strain amplitude measured by e.g. LISA is given by h_char^2 = N/8*h_0^2 where N is number of cycles per year & divide by 8 to average over viewing angles
     strain_factor = np.ones(len(nu_gw))
-
+    #count LISA-LIGO binaries
+    gwb = np.count_nonzero (nu_gw > 1.e-6 *u.Hz)
+    # of which count tight binaries (nu_gw >2.e-3 Hz)
+    tight = nu_gw >2.e-3 *u.Hz
     # char amplitude = strain_factor*h0
     #                = sqrt(N/8)*h_0 and N=freq*1yr for approx const. freq. sources over ~~yr.
     strain_factor[nu_gw < (1e-6) * u.Hz] = np.sqrt(nu_gw[nu_gw < (1e-6) * u.Hz] * np.pi * (1e7) / 8)
@@ -92,16 +95,34 @@ def gw_strain_freq(mass_1, mass_2, obj_sep, timestep_duration_yr, old_gw_freq, s
         delta_nu = np.abs(old_gw_freq - nu_gw)
         delta_nu_delta_timestep = delta_nu/timestep_units
         nu_squared = (nu_gw * nu_gw)
-        strain_factor[nu_gw > (1e-6) * u.Hz] = np.sqrt((nu_squared[nu_gw > (1e-6) * u.Hz] / delta_nu_delta_timestep[nu_gw > (1e-6) * u.Hz]) / 8.)
+        nu_factor = (nu_gw)**(-5./6.)
+        strain_factor[~tight] = np.sqrt((nu_squared[~tight] / delta_nu_delta_timestep[~tight]) / 8.)
+        # If BBH merges within next timestep then nu_gw>2e-3 Hz
+        #  N = (1/8pi)sqrt(5/96)(1/pi)^1/3 (c/r_g_chirp)^5/6 freq^-5/6
+        #for i in range (0,tight):
+        #if nu_gw.any(> 2.e-3 * u.Hz) :
+        #print ('tight', tight)
+        if np.any(tight):
+            num_factor = np.sqrt(5./96.)*(1/(8*np.pi))*(1/np.pi)**(1./3.)
+            #rg_chirp = ((const.G * mass_chirp) / (const.c ** 2.0)).to(u.meter)
+
+            strain_factor[tight] = num_factor * ((const.c/rg_chirp[tight])**(5./6.)) * (nu_gw[tight])**(-5./6.)
+    
+
     # Condition from evolve_gw
     elif (flag_include_old_gw_freq == 0):
-        strain_factor[nu_gw > (1e-6) * u.Hz] = np.full(np.sum(nu_gw > (1e-6) * u.Hz), 4.e3)
+        strain_factor[nu_gw > (1e-6) * u.Hz] = 4.e3
     char_strain = strain_factor*strain
+
+    assert np.isfinite(char_strain.value).all(), \
+        "Finite check failure: char_strain.value"
+    assert np.isfinite(nu_gw.value).all(), \
+        "Finite check failure: nu_gw.value"
 
     return (char_strain.value, nu_gw.value)
 
 
-def evolve_gw(blackholes_binary, smbh_mass, agn_redshift):
+def evolve_gw(bin_mass_1, bin_mass_2, bin_sep, smbh_mass, agn_redshift):
     """Wrapper function to calculate GW strain [unitless] and frequency [Hz] for BBH with no previous GW frequency
 
     Parameters
@@ -119,23 +140,19 @@ def evolve_gw(blackholes_binary, smbh_mass, agn_redshift):
         BBH with GW strain [unitless] and frequency [Hz] updated
     """
 
-    char_strain, nu_gw = gw_strain_freq(mass_1=blackholes_binary.mass_1,
-                                        mass_2=blackholes_binary.mass_2,
-                                        obj_sep=blackholes_binary.bin_sep,
+    char_strain, nu_gw = gw_strain_freq(mass_1=bin_mass_1,
+                                        mass_2=bin_mass_2,
+                                        obj_sep=bin_sep,
                                         timestep_duration_yr=-1,
                                         old_gw_freq=-1,
                                         smbh_mass=smbh_mass,
                                         agn_redshift=agn_redshift,
                                         flag_include_old_gw_freq=0)
 
-    # Update binaries
-    blackholes_binary.gw_freq = nu_gw
-    blackholes_binary.gw_strain = char_strain
-
-    return (blackholes_binary)
+    return (nu_gw, char_strain)
 
 
-def bbh_gw_params(blackholes_binary, bh_binary_id_num_gw, smbh_mass, timestep_duration_yr, old_bbh_freq, agn_redshift):
+def bbh_gw_params(bin_mass_1, bin_mass_2, bin_sep, smbh_mass, timestep_duration_yr, old_bbh_freq, agn_redshift):
     """Wrapper function to calculate GW strain and frequency for BBH at the end of each timestep
 
     Parameters
@@ -143,7 +160,7 @@ def bbh_gw_params(blackholes_binary, bh_binary_id_num_gw, smbh_mass, timestep_du
     blackholes_binary : AGNBinaryBlackHole
         Binary black hole parameters
     bh_binary_id_num_gw : numpy.ndarray
-        ID numbers of binaries with separations below :math:`\\mathtt{min_bbh_gw_separation}` with :obj:`float` type
+        ID numbers of binaries with separations below :math:`mathtt_{min_bbh_gw_separation}` with :obj:`float` type
     smbh_mass : float
         Mass [M_sun] of the SMBH
     timestep_duration_yr : float
@@ -161,19 +178,19 @@ def bbh_gw_params(blackholes_binary, bh_binary_id_num_gw, smbh_mass, timestep_du
         GW frequency [Hz] with :obj:`float` type
     """
 
-    num_tracked = bh_binary_id_num_gw.size
+    num_tracked = bin_mass_1.size
 
     old_bbh_freq = old_bbh_freq * u.Hz
 
-    while (num_tracked > len(old_bbh_freq)):
-        old_bbh_freq = np.append(old_bbh_freq, (9.e-7) * u.Hz)
+    # while (num_tracked > len(old_bbh_freq)):
+    #     old_bbh_freq = np.append(old_bbh_freq, (9.e-7) * u.Hz)
+    #
+    # while (num_tracked < len(old_bbh_freq)):
+    #     old_bbh_freq = np.delete(old_bbh_freq, 0)
 
-    while (num_tracked < len(old_bbh_freq)):
-        old_bbh_freq = np.delete(old_bbh_freq, 0)
-
-    char_strain, nu_gw = gw_strain_freq(mass_1=blackholes_binary.at_id_num(bh_binary_id_num_gw, "mass_1"),
-                                        mass_2=blackholes_binary.at_id_num(bh_binary_id_num_gw, "mass_2"),
-                                        obj_sep=blackholes_binary.at_id_num(bh_binary_id_num_gw, "bin_sep"),
+    char_strain, nu_gw = gw_strain_freq(mass_1=bin_mass_1,
+                                        mass_2=bin_mass_2,
+                                        obj_sep=bin_sep,
                                         timestep_duration_yr=timestep_duration_yr,
                                         old_gw_freq=old_bbh_freq,
                                         smbh_mass=smbh_mass,
