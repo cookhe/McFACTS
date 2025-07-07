@@ -2,7 +2,8 @@ import numpy as np
 import scipy
 
 import mcfacts.physics.disk_capture
-from misc import retro_mig, retro_ecc
+from scripts.misc import retro_mig, retro_ecc
+
 #from mcfacts.physics.disk_capture import capture_inc_damp
 
 if __name__ == "__main__":
