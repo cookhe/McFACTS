@@ -190,7 +190,7 @@ star cluster variables second, and assorted other choices (time resolution etc.)
     save_snapshots : int
         Saving the snapshots of each object being per time step. Deafult is 0 [off] 
         default : 0
-    flag_use_surrogate : float
+    flag_use_surrogate : int
         Switch (0) uses analytical kick prescription from Akiba et al. (2024). Switch (1) sets 200 km/s for each merger's kick velocity.
         default : 0
 
