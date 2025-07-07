@@ -1136,11 +1136,11 @@ def main():
     # inv_freq_lvk = 1.0/ma_freq_lvk
     # timestep =1.e4yr
     timestep = 1.e4
-    strain_per_freq_emris = emris[:, 5] * inv_freq_emris / timestep
+    strain_per_freq_emris = emris[:, 5] # * inv_freq_emris / timestep
 
-    strain_per_freq_lvk_g1 = lvk_g1[:, 5] * (1 / lvk_g1[:, 6]) / timestep
-    strain_per_freq_lvk_g2 = lvk_g2[:, 5] * (1 / lvk_g2[:, 6]) / timestep
-    strain_per_freq_lvk_gX = lvk_gX[:, 5] * (1 / lvk_gX[:, 6]) / timestep
+    strain_per_freq_lvk_g1 = lvk_g1[:, 5] # * (1 / lvk_g1[:, 6]) / timestep
+    strain_per_freq_lvk_g2 = lvk_g2[:, 5] # * (1 / lvk_g2[:, 6]) / timestep
+    strain_per_freq_lvk_gX = lvk_gX[:, 5] # * (1 / lvk_gX[:, 6]) / timestep
 
     # plot the characteristic detector strains
     svf_ax.loglog(lisa_freq, np.sqrt(lisa_freq * lisa_sn),
@@ -1197,7 +1197,7 @@ def main():
         plt.legend(loc="upper right")
 
     svf_ax.set_xlabel(r'$\nu_{\rm GW}$ [Hz]')  # , fontsize=20, labelpad=10)
-    svf_ax.set_ylabel(r'$h_{\rm char}/\nu_{\rm GW}$')  # , fontsize=20, labelpad=10)
+    svf_ax.set_ylabel(r'$h_{\rm char}$')  # , fontsize=20, labelpad=10)
 
     plt.savefig(opts.plots_directory + './gw_strain.png', format='png')
     plt.close()
