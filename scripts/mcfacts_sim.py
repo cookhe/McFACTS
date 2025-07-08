@@ -3106,8 +3106,11 @@ def main():
             stars_merge.to_txt(os.path.join(opts.work_directory, stars_merge_save_name), stars_merge_cols)
             stars_unbound.to_txt(os.path.join(opts.work_directory, stars_unbound_save_name), stars_cols)
             temp_mass_cycled = np.column_stack((np.full(len(disk_arr_timestep), galaxy), disk_arr_timestep, disk_arr_mass_gained, disk_arr_mass_lost))
-            with open(os.path.join(opts.work_directory, disk_mass_cycled_save_name), "a") as file:
-                np.savetxt(os.path.join(file, temp_mass_cycled))
+            if Path(os.path.join(opts.work_directory, disk_mass_cycled_save_name)).is_file():
+                with open(os.path.join(opts.work_directory, disk_mass_cycled_save_name), "a") as file:
+                    np.savetxt(file, temp_mass_cycled)
+            else:
+                np.savetxt(os.path.join(opts.work_directory, disk_mass_cycled_save_name), temp_mass_cycled, "galaxy timestep mass_gained mass_lost")
 
     toc_perf = time.perf_counter()
     fin_perf = toc_perf - tic_perf
