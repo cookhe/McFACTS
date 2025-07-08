@@ -134,7 +134,7 @@ Inifile
     "var_harden_energy_delta"       : float
         The Gaussian variance value for the energy change during a strong interaction
     "flag_use_surrogate"            : int
-        Switch (0) uses analytical kick prescription from Akiba et al. (2024). Switch (1) sets 200 km/s for each merger's kick velocity.
+        Switch (0) uses analytical kick prescription from Akiba et al. (2024). Switch (1) uses NRSurrogate model from (paper in prep).
 """
 # Things everyone needs
 import configparser as ConfigParser

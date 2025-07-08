@@ -25,6 +25,7 @@ STARS_PLOTS = ${HERE}/scripts/stars_plots.py
 DISK_MASS_PLOTS = ${HERE}/scripts/disk_mass_plots.py
 ORBA_MASS_FRAMES = ${HERE}/scripts/star_bh_movie_frames.py
 EM_PLOTS = ${HERE}/scripts/em_plots.py
+COMPARE_SUR = ${HERE}/scripts/compare_plots.py
 
 #### Setup ####
 SEED=3456789108 # put an 8 here
@@ -242,6 +243,21 @@ mstar_runs_scale: $(MBINS_SCALE)
 $(MBINS_SCALE): %: %.run_scale
 mstar_runs_fixed: $(MBINS_FIXED)
 $(MBINS_FIXED): %: %.run_fixed
+
+# Compare surrogate plots (In progress)
+compare_sur: 
+	cd runs; \
+	python ../${COMPARE_SUR} --fname-surmergers ${wd}/sur_output_mergers_population.dat --plots-directory ${wd}
+
+nosur_save: mcfacts_sim
+	cd runs; \
+	cp ${wd}/output_mergers_population.dat ../nosur_output_mergers_population.dat
+
+sur_save: mcfacts_sim
+	cd runs; \
+	cp output_mergers_population.dat sur_output_mergers_population.dat; \
+	cp ../nosur_output_mergers_population.dat nosur_output_mergers_population.dat; \
+	rm ../nosur_output_mergers_population.dat
 
 
 #### CLEAN ####
