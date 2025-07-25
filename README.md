@@ -127,6 +127,9 @@ McFACTS will also generate the following plots:
 * `r_chi_p.png` $\chi_\mathrm{p}$ as a function of disk radius and generation
 * `time_of_merger.png` Mass of BH merger mass against time of merger and BH generation
 
+## Contributing
+
+Want to contribute? Great! We've got a lot of stuff for you to work on. Please read our [Contributor's Guide](https://github.com/McFACTS/McFACTS/blob/main/docs/source/contribute.rst) for details on our process.
 
 ## Citing McFACTS
 
