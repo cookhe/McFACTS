@@ -12,7 +12,7 @@
 
 McFACTS is the first public, open source, population synthesis code modeling the *full* AGN channel for LVK detectable BBH mergers.
 
-### Documentation
+## Documentation
 
 You can find more information about McFACTS as well as contact and office hour information at our [website](https://saavikford.wixsite.com/saavik/general-7). It's a work in progress, so please be patient!
 
@@ -39,7 +39,7 @@ $ make clean
 $ make html
 ```
 
-### Installation
+## Installation
 
 To clone and run this application, you'll need [Git](https://git-scm.com) and [Conda](https://docs.conda.io/en/latest/).
 
@@ -50,7 +50,7 @@ $ git clone https://github.com/McFACTS/McFACTS
 $ cd McFACTS
 ```
 
-#### Automated Setup
+### Automated Setup
 
 Contained in the `Makefile` are a few make commands to get everything setup and running.
 
@@ -78,7 +78,7 @@ $ make clean
 $ make install
 ```
 
-#### Manual Setup
+### Manual Setup
 
 We recommend that you create a Conda environment for working with McFACTS.
 You can do this by running
@@ -105,7 +105,7 @@ To use a different ini file, replace the file path after the `--fname-ini` argum
 $ python mcfacts_sim.py --fname-ini /path/to/your/file.ini
 ```
 
-### Output Files
+## Output Files
 
 Output files will appear in `runs`. For each timestep there will be a folder called `gal$N`, with `$N` as the run number. Inside that folder will be `initial_params_bh.dat` which records the initial parameters of all black holes in the simulation and `output_mergers.dat` which records the details of every merger throughout that run. If you are trying to get distributions of merger properties, you probably only need `output_mergers.dat`. If you are trying to track the history of individual mergers or want to know e.g. the state of the nuclear star cluster after an AGN of some duration, you might want to enable the command line option `--save_snapshots`, which will then write `output_bh_single_$ts.dat` and `output_bh_binary_$ts.dat` where `$ts` is the timestep number (0-N)---these files track every single/binary in the simulation at that timestep.
 
@@ -128,7 +128,7 @@ McFACTS will also generate the following plots:
 * `time_of_merger.png` Mass of BH merger mass against time of merger and BH generation
 
 
-### Citing McFACTS
+## Citing McFACTS
 
 Paper 1: (https://arxiv.org/abs/2410.16515)
 
