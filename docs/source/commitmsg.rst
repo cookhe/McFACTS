@@ -56,7 +56,7 @@ The ``type`` and ``scope`` must be lower case.
 **<description> should be:**
 
 #. present tense
-#. gramatically structured to complete the sentence, "Making this change will _____."
+#. gramatically structured to complete the sentence, "If applied, this commit will _____."
 
 
 The ``[optional body]`` can be used to include additional details when necessary, and \
