@@ -7,8 +7,8 @@ The latest development version is available directly from our `GitHub Repo <http
 
 .. code-block:: bash
 
-   $ git clone https://github.com/bmckernan/test_mcfacts
-   $ cd test_mcfacts
+   $ git clone https://github.com/mcfacts/mcfacts
+   $ cd mcfacts
 
 Automated Setup
 ---------------
@@ -27,8 +27,11 @@ Contained in the `Makefile` are a few make commands to get everything setup and 
    # Activate the conda environment that was created for us
    $ conda activate mcfacts-dev
 
-   # Run mcfacts_sim.py with default initial values, then run population_plots.py
-   $ make plots
+   # Run mcfacts_sim.py with default initial values and generate plots
+   $ mcfacts
+
+   # Overwrite existing output from a previous run by including the `-o` option
+   $ mcfacts -o=True
 
 Done! Below are some extra commands that you might find helpful:
 
@@ -57,15 +60,15 @@ We recommend that you create a Conda environment for working with McFACTS. You c
    $ python -m pip install --editable .
 
    # Now all that we have left to do is run McFACTS!
-   $ python mcfacts_sim.py --galaxy_num 10 --fname-ini ./recipes/model_choice_old.ini --fname-log out.log --seed 3456789012
+   $ mcfacts --galaxy_num 10 --fname-ini ./recipes/model_choice.ini --seed 3456789012
 
-Our default inputs are located at `./recipes/model_choice_old.ini`. Edit this file or create your own `model_choice.ini` file with different inputs.
+Our default inputs are located at `./recipes/model_choice.ini`. Edit this file or create your own `my_choice.ini` file with different inputs.
 
 To use a different ini file, replace the file path after the `--fname-ini` argument:
 
 .. code-block:: bash
 
-   $ python mcfacts_sim.py --fname-ini /path/to/your/file.ini
+   $ mcfacts --fname-ini /path/to/your/my_choice.ini
 
 Output Files
 ------------

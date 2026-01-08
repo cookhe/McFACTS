@@ -1,6 +1,6 @@
 <h1 align="center">
     <br>
-    <a href="https://github.com/McFACTS/McFACTS"><img src="branding/logo/mcfacts_logo.png" alt="Markdownify" width="500"></a>
+    <a href="https://github.com/mcfacts/mcfacts"><img src="branding/logo/mcfacts_logo.png" alt="Markdownify" width="500"></a>
     <br>
     <span style="font-weight: normal">
         <b>M</b>onte <b>c</b>arlo <b>F</b>or <b>A</b>GN <b>C</b>hannel <b>T</b>esting and <b>S</b>imulations
@@ -12,17 +12,19 @@
 
 McFACTS is the first public, open source, population synthesis code modeling the *full* AGN channel for LVK detectable BBH mergers.
 
-### Documentation
+### Stay in the Know
 
 You can find more information about McFACTS as well as contact and office hour information at our [website](https://saavikford.wixsite.com/saavik/general-7). It's a work in progress, so please be patient!
 
 Opt-in to everything McFACTS: click [here](https://docs.google.com/forms/d/e/1FAIpQLSeupzj8ledPslYc0bHbnJHKB7_LKlr8SY3SfbEVyL5AfeFlVg/viewform) to join our mailing list.
 
+### Documentation
+
 You can find documentation for our code and modules at our [Read the Docs](https://mcfacts.readthedocs.io).
 
 Input and outputs are documented in [`IOdocumentation.txt`](https://github.com/McFACTS/McFACTS/blob/main/IOdocumentation.txt). 
 
-Want build or browse the docs locally? Run the following:
+Want to build or browse the docs locally? Run the following:
 
 ```bash
 # Switch to the mcfacts-dev environment and install required packages to build the docs
@@ -43,10 +45,10 @@ $ make html
 
 To clone and run this application, you'll need [Git](https://git-scm.com) and [Conda](https://docs.conda.io/en/latest/).
 
-The latest development version is available directly from our [GitHub Repo](https://github.com/McFACTS/McFACTS). To start, clone the repository:
+The latest development version is available directly from our [GitHub Repo](https://github.com/mcfacts/mcfacts). To start, clone the repository:
 
 ```bash
-$ git clone https://github.com/McFACTS/McFACTS
+$ git clone https://github.com/mcfacts/mcfacts
 $ cd McFACTS
 ```
 
@@ -64,8 +66,14 @@ $ make setup
 # Activate the conda environment that was created for us
 $ conda activate mcfacts-dev
 
-# Run mcfacts_sim.py with default initial values, then run population_plots.py
-$ make plots
+# Run mcfacts with default initial values, and generate plots
+$ mcfacts
+
+# Overwrite existing output from a previous run by including the `-o` option
+$ mcfacts -o=True
+
+# or set a custom output directory, for example "myDir" and run for a small number of galaxies:
+$ mcfacts --output_dir myDir --galaxy_num 10
 ```
 
 Done! Below are some extra commands that you might find helpful
@@ -94,15 +102,13 @@ $ conda activate mcfacts-dev
 $ python -m pip install --editable .
 
 # Now all that we have left to do is run McFACTS!
-$ python mcfacts_sim.py --galaxy_num 10 --fname-ini ./recipes/model_choice_old.ini --fname-log out.log --seed 3456789012
+$ mcfacts --galaxy_num 10
 ```
 
-Our default inputs are located at `./recipes/model_choice_old.ini`. Edit this file or create your own `model_choice.ini` file with different inputs.
-
-To use a different ini file, replace the file path after the `--fname-ini` argument.
+Our default inputs are located at `./recipes/model_choice.ini`. Edit this file or create your own `my_choice.ini` file with different inputs and pass it to the `--fname-ini` option. You can also change the pseudorandom number generator seed with `--seed`.
 
 ```bash
-$ python mcfacts_sim.py --fname-ini /path/to/your/file.ini
+$ mcfacts --fname-ini /path/to/your/my_choice.ini --seed 3456789012
 ```
 
 ### Output Files
