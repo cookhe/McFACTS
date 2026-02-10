@@ -123,6 +123,43 @@ def close_encounters_check(id_nums,
 
     return (encounter_id_nums)
 
+def id_binary_check(
+        disk_bh_pro_unique_ids,
+        disk_bh_pro_orbs_a,
+        disk_bh_pro_masses,
+        smbh_mass,
+        disk_bh_pro_orbs_ecc,
+        disk_bh_pro_orb_ecc_crit
+):
+    if disk_bh_pro_unique_ids.size == 0:
+        return disk_bh_pro_unique_ids
+
+    # Create a mask for things that are circular
+    can_form_mask = disk_bh_pro_orbs_ecc <= disk_bh_pro_orb_ecc_crit
+    orb_a_can_form = disk_bh_pro_orbs_a[can_form_mask]
+    orb_mass_can_form = disk_bh_pro_masses[can_form_mask]
+
+    # Create a column vector of our orb_a and calculate the pairwise differences
+    # This gives us an NxN matrix of all of our distances
+    orb_a_column = orb_a_can_form.reshape(-1, 1)
+    dist_mat = orb_a_column.T - orb_a_column
+    dist_mat[dist_mat < 0] = 0
+    dist_filter = dist_mat < 0
+
+    mass_column = orb_mass_can_form.reshape(-1, 1)
+    mass_sum_mat = mass_column.T + mass_column
+
+    r_hill = orb_a_can_form + (dist_mat / 2) * np.power(mass_sum_mat / (smbh_mass * 3.0), (1/3))
+    r_hill[~dist_filter] = 0
+
+    print(dist_mat)
+    print(r_hill)
+
+    formation = dist_mat - r_hill
+    formation_indicies = np.transpose((formation < 0).nonzero())
+
+    return formation_indicies
+
 
 def binary_check(
         disk_bh_pro_orbs_a,
@@ -477,6 +514,7 @@ class BinaryBlackHoleFormation(TimelineActor):
 
         blackholes_pro = filing_cabinet.get_array(sm.bh_prograde_array_name, AGNBlackHoleArray)
 
+        # TODO: Upgrade from index iteration to unique_id iteration, work started in id_binary_check method.
         encounter_indices = binary_check(
             blackholes_pro.orb_a,
             blackholes_pro.mass,
@@ -484,6 +522,15 @@ class BinaryBlackHoleFormation(TimelineActor):
             blackholes_pro.orb_ecc,
             sm.disk_bh_pro_orb_ecc_crit
         )
+
+        # other_encounter_indices = id_binary_check(
+        #     blackholes_pro.unique_id,
+        #     blackholes_pro.orb_a,
+        #     blackholes_pro.mass,
+        #     sm.smbh_mass,
+        #     blackholes_pro.orb_ecc,
+        #     sm.disk_bh_pro_orb_ecc_crit
+        # )
 
         if len(encounter_indices) == 0:
             self.log("No binaries formed")
@@ -515,15 +562,15 @@ class BinaryBlackHoleFormation(TimelineActor):
 
         new_binaries = AGNBinaryBlackHoleArray(
             unique_id=new_unique_ids,
-            parent_unique_id_1=primary_ids,
+            parent_unique_id=primary_ids,
             parent_unique_id_2=secondary_ids,
-            orb_a_1=orb_a_1,
+            orb_a=orb_a_1,
             orb_a_2=orb_a_2,
-            mass_1=mass_1,
+            mass=mass_1,
             mass_2=mass_2,
-            spin_1=blackholes_pro.get_attribute("spin", primary_ids),
+            spin=blackholes_pro.get_attribute("spin", primary_ids),
             spin_2=blackholes_pro.get_attribute("spin", secondary_ids),
-            spin_angle_1=blackholes_pro.get_attribute("spin_angle", primary_ids),
+            spin_angle=blackholes_pro.get_attribute("spin_angle", primary_ids),
             spin_angle_2=blackholes_pro.get_attribute("spin_angle", secondary_ids),
             bin_sep=bin_sep,
             bin_orb_a=bin_orb_a,
@@ -531,7 +578,7 @@ class BinaryBlackHoleFormation(TimelineActor):
             flag_merging=np.zeros(primary_ids.size, dtype=np.int_),
             time_merged=np.zeros(primary_ids.size, dtype=np.float64),
             bin_ecc=np.array([random_generator.uniform() for _ in range(primary_ids.size)], dtype=np.float64),
-            gen_1=blackholes_pro.get_attribute("gen", primary_ids),
+            gen=blackholes_pro.get_attribute("gen", primary_ids),
             gen_2=blackholes_pro.get_attribute("gen", secondary_ids),
             bin_orb_ang_mom=np.array(bin_orb_ang_mom, dtype=np.float64),
             bin_orb_inc=np.zeros(primary_ids.size, dtype=np.float64),

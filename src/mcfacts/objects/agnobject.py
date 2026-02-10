@@ -25,9 +25,15 @@ attr_merged_star = ["id_num", "galaxy", "orb_a_final", "mass_final", "gen_final"
                     "log_radius_final", "orb_ecc",
                     "time_merged"]
 
-attr_exploded_star = ["galaxy", "id_num_star", "id_num_bh", "orb_a_star", "orb_a_bh",
+attr_disrupted_star = ["galaxy", "id_num_star", "id_num_bh", "orb_a_star", "orb_a_bh",
                       "mass_star", "mass_bh", "gen_star", "gen_bh", "orb_inc_star", "orb_inc_bh",
                       "orb_ecc_star", "orb_ecc_bh", "star_log_radius", "time_sn"]
+
+attr_immortal_star = ["id_num", "orb_a", "orb_a_initial", "mass", "mass_initial",
+                      "orb_inc", "orb_ecc", "orb_arg_periapse", "orb_ang_mom",
+                      "gen", "galaxy", "time_passed",
+                      "star_X", "star_Y", "star_Z", "log_radius", "log_teff", "log_luminosity",
+                      "source"]
 
 attr_binary_bh = ["id_num", "orb_a_1", "orb_a_2", "mass_1", "mass_2", #"mass_total",
                   "spin_1", "spin_2", "spin_angle_1", "spin_angle_2",
@@ -43,7 +49,7 @@ attr_merged_bh = ["id_num", "galaxy", "bin_orb_a", "mass_final",
                   "gen_1", "gen_2",
                   "chi_eff", "chi_p", "v_kick",
                   "mass_1_20Hz", "mass_2_20Hz", "spin_1_20Hz", "spin_2_20Hz",
-                   "lum_shock", "lum_jet", "time_merged"]
+                  "lum_shock", "lum_jet", "time_merged"]
 
 attr_filing_cabinet = ["id_num", "category", "orb_a", "mass", "orb_ecc", "size",
                        "direction", "disk_inner_outer"]
@@ -75,8 +81,10 @@ def get_attr_list(obj):
         return (attr_binary_bh)
     elif isinstance(obj, AGNMergedStar):
         return (attr_merged_star)
-    elif isinstance(obj, AGNExplodedStar):
-        return (attr_exploded_star)
+    elif isinstance(obj, AGNDisruptedStar):
+        return (attr_disrupted_star)
+    elif isinstance(obj, AGNImmortalStar):
+        return(attr_immortal_star)
     else:
         raise TypeError("obj is not an AGNObject subclass")
 
@@ -1624,9 +1632,9 @@ class AGNMergedStar(AGNObject):
         self.check_consistency()
 
 
-class AGNExplodedStar(AGNObject):
+class AGNDisruptedStar(AGNObject):
     """
-    Array of exploded stars with BH parameters.
+    Array of disrupted stars with BH parameters.
     """
     def __init__(self,
                  id_num_star=empty_arr,
@@ -1644,13 +1652,13 @@ class AGNExplodedStar(AGNObject):
                  orb_ecc_bh=empty_arr,
                  star_log_radius=empty_arr,
                  time_sn=empty_arr,
-                 num_obj_explode=0):
-        """Creates an instance of AGNExplodedStar.
+                 num_obj_disrupt=0):
+        """Creates an instance of AGNDisruptedStar.
 
         Parameters
         ----------
         id_num_star : numpy array
-            ID number of exploded star
+            ID number of disrupted star
         id_num_bh : numpy array
             ID number of BH that interacted with star
         galaxy : numpy array
@@ -1679,12 +1687,12 @@ class AGNExplodedStar(AGNObject):
             Log radius of star in Rsun
         time_sn : numpy array
             the timestep of explosion
-        num_obj_explode : int
+        num_obj_disrupt : int
             number of objects
         """
 
-        if (num_obj_explode == 0):
-            num_obj_explode = id_num_star.shape[0]
+        if (num_obj_disrupt == 0):
+            num_obj_disrupt = id_num_star.shape[0]
 
         self.id_num_star = id_num_star
         self.id_num_bh = id_num_bh
@@ -1702,7 +1710,7 @@ class AGNExplodedStar(AGNObject):
         self.star_log_radius = star_log_radius
         self.time_sn = time_sn
 
-        self.num = num_obj_explode
+        self.num = num_obj_disrupt
 
         self.check_consistency()
 
@@ -1710,7 +1718,7 @@ class AGNExplodedStar(AGNObject):
                   new_orb_a_star=empty_arr, new_orb_a_bh=empty_arr, new_mass_star=empty_arr, new_mass_bh=empty_arr,
                   new_gen_star=empty_arr, new_gen_bh=empty_arr, new_orb_inc_star=empty_arr, new_orb_inc_bh=empty_arr,
                   new_orb_ecc_star=empty_arr, new_orb_ecc_bh=empty_arr, new_star_log_radius=empty_arr, new_time_sn=empty_arr,
-                  num_obj_explode=0):
+                  num_obj_disrupt=0):
         """
         Add stars to the AGNMergedStar object
 
@@ -1719,19 +1727,19 @@ class AGNExplodedStar(AGNObject):
         new_galaxy : numpy array
             galaxy (iteration)
         new_id_num_star : numpy array
-            ID number of exploded star
+            ID number of disrupted star
         new_id_num_bh : numpy array
             ID number of BH that interacted with star
         new_orb_a_star : numpy array
-            Semi-major axis of exploded star wrt SMBH in R_g
+            Semi-major axis of disrupted star wrt SMBH in R_g
         new_orb_a_bh : numpy array
             Semi-major axis of BH wrt SMBH in R_g
         new_mass_star : numpy array
-            Mass [M_sun] of exploded star
+            Mass [M_sun] of disrupted star
         new_mass_bh : numpy array
             Mass [M_sun] of BH
         new_gen_star : numpy array
-            Generation of exploded star
+            Generation of disrupted star
         new_gen_bh : numpy array
             Generation of BH
         new_orb_inc_star : numpy array
@@ -1746,7 +1754,7 @@ class AGNExplodedStar(AGNObject):
             Log radius [R_sun] of star
         new_time_sn : numpy array
             Time of explosion
-        num_obj_explode : int
+        num_obj_disrupt : int
             Number of objects
         """
 
@@ -1766,18 +1774,162 @@ class AGNExplodedStar(AGNObject):
         self.star_log_radius = np.concatenate([self.star_log_radius, new_star_log_radius])
         self.time_sn = np.concatenate([self.time_sn, new_time_sn])
 
-        if (num_obj_explode == 0):
-            num_obj_explode = new_mass_star.shape[0]
+        if (num_obj_disrupt == 0):
+            num_obj_disrupt = new_mass_star.shape[0]
 
-        self.num += num_obj_explode
+        self.num += num_obj_disrupt
 
         self.check_consistency()
+
+
+class AGNImmortalStar(AGNObject):
+    """
+    A subclass of AGNObject for immortal stars. It extends AGNObject by adding
+    attributes for mass, radius, chemical composition, and initial mass.
+    """
+
+    def __init__(self,
+                 mass=empty_arr,
+                 mass_initial=empty_arr,
+                 orb_a_initial=empty_arr,
+                 log_radius=empty_arr,
+                 log_luminosity=empty_arr,
+                 log_teff=empty_arr,
+                 star_X=empty_arr,
+                 star_Y=empty_arr,
+                 star_Z=empty_arr,
+                 source=empty_arr,
+                 star_num=0,
+                 **kwargs):
+        """Creates an instance of the AGNStar class. This is a subclass
+           of the AGNObject class. AGNStar adds additional star-specific
+           parameters to the AGNObject. It calculates orbital angular
+           momentum for stars.
+
+        Parameters
+        ----------
+        mass : numpy array
+            star mass
+        mass_initial : numpy array
+            initial star mass
+        orb_a : numpy array
+            star orbital semi-major axis with respect to the SMBH
+        orb_a_initial : numpy array
+            initial star orbital semi-major axis with respect to the SMBH
+        radius : numpy array
+            log of star radius in Rsun
+        orb_inc : numpy array
+            star orbital inclination with respect to the SMBH
+        star_Y : numpy array
+            helium fraction of stars
+        star_Z : numpy array
+            metals fraction of stars
+        source : numpy array
+            how the star becomes immortal
+            0: accretion. 1: merger.
+        star_num : int, optional
+            number of stars, by default 0
+        smbh_mass : float
+            mass of the SMBH
+        """
+        # Make sure all inputs are included
+        # if radius is None: raise AttributeError('radius is not included in inputs')
+        """ if star_Y is None: raise AttributeError('star_Y is not included in inputs')
+        if star_Z is None: raise AttributeError('star_Z is not included in inputs') """
+
+        if (star_num == 0):
+            star_num = mass.shape[0]
+
+        assert mass.shape == (star_num,), "star_num must match the number of objects"
+
+        self.mass_initial = mass_initial
+        self.orb_a_initial = orb_a_initial
+        self.log_radius = log_radius
+        self.log_luminosity = log_luminosity
+        self.log_teff = log_teff
+        self.source = source
+
+        if (np.any(star_X + star_Y + star_Z > 1.)):
+            raise ValueError("star_X, star_Y, and star_Z must sum to 1 or less.")
+
+        self.star_X = star_X
+        self.star_Y = star_Y
+        self.star_Z = star_Z
+
+        super(AGNImmortalStar, self).__init__(mass=mass, obj_num=star_num, **kwargs)  # calls top level functions
+
+    def __repr__(self):
+        """
+        Creates a string representation of AGNStar. Prints out
+        the number of stars present in this instance of AGNStar.
+
+        Returns
+        -------
+        totals : str
+            number of stars in AGNStar
+        """
+        totals = 'AGNStar(): {} immortal stars'.format(self.num)
+        return (totals)
+
+    def add_stars(self,
+                  new_mass_initial=empty_arr,
+                  new_orb_a_initial=empty_arr,
+                  new_log_radius=empty_arr,
+                  new_log_luminosity=empty_arr,
+                  new_log_teff=empty_arr,
+                  new_X=empty_arr,
+                  new_Y=empty_arr,
+                  new_Z=empty_arr,
+                  new_source=empty_arr,
+                  star_num=0,
+                  **kwargs):
+        """
+        Append new stars to the end of AGNStar. This method updates the star
+        specific parameters and then sends the rest to the AGNObject
+        add_objects() method.
+
+        Parameters
+        ----------
+        new_mass_initial : numpy array
+            initial masses of new stars
+        new_log_radius : numpy array
+            log radii of new stars
+        new_Y : numpy array
+            helium mass fraction of new stars
+        new_Z : numpy array
+            metals mass fraction of new stars
+        new_source : numpy array
+            how the new stars become immortal
+            0: accretion. 1: merger.
+        obj_num : int, optional
+            number of objects to be added, by default None
+        """
+
+        if (star_num == 0):
+            star_num = new_log_radius.shape[0]
+
+        assert new_log_radius.shape == (star_num,), "star_num must match the number of objects"
+
+        if (np.any(new_X + new_Y + new_Z) > 1.): raise ValueError("new_Y and new_Z must sum to 1 or less")
+
+        self.mass_initial = np.concatenate([self.mass_initial, new_mass_initial])
+        self.orb_a_initial = np.concatenate([self.orb_a_initial, new_orb_a_initial])
+        self.star_X = np.concatenate([self.star_X, new_X])
+        self.star_Y = np.concatenate([self.star_Y, new_Y])
+        self.star_Z = np.concatenate([self.star_Z, new_Z])
+        self.log_radius = np.concatenate([self.log_radius, new_log_radius])
+        self.log_teff = np.concatenate([self.log_teff, new_log_teff])
+        self.log_luminosity = np.concatenate([self.log_luminosity, new_log_luminosity])
+        self.source = np.concatenate([self.source, new_source])
+
+        super(AGNImmortalStar, self).add_objects(obj_num=star_num, **kwargs)
+
 
 obj_types = {0: "single black hole",
              1: "single star",
              2: "binary black hole",
              3: "binary star",}
-             #5: "exploded star"
+             #5: "disrupted star"
              #} # Other types are not in use yet
 
 obj_direction = {0: "orbit direction undetermined",
@@ -1951,7 +2103,7 @@ class AGNFilingCabinet(AGNObject):
                 getattr(self, attr)[id_mask] = new_info
             except:
                 raise AttributeError("Attempting to set {} for IDS {} to {}. Check that inputs are correct.".format(attr, id_num_arr, new_info))
-        
+
         else:
             raise TypeError("attr must be a list, array, or string.")
 
